@@ -54,8 +54,8 @@ export default function BriefingCard({ lead, onGenerate }: BriefingCardProps) {
       ) : (
         <div className="text-center py-4">
           <p className="text-sm text-[var(--text-secondary)] mb-3">
-            KI erstellt ein massgeschneidertes Demo-Briefing basierend auf dem
-            Gespraech.
+            KI erstellt ein maßgeschneidertes Demo-Briefing basierend auf dem
+            Gespräch.
           </p>
           <button
             type="button"

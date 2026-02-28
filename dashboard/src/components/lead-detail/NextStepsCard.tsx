@@ -42,7 +42,7 @@ export default function NextStepsCard({ steps, onUpdate }: NextStepsCardProps) {
   return (
     <Card>
       <h3 className="text-sm font-medium text-[var(--muted)] mb-4">
-        Naechste Schritte
+        Nächste Schritte
       </h3>
 
       {currentSteps.length > 0 ? (
@@ -69,7 +69,7 @@ export default function NextStepsCard({ steps, onUpdate }: NextStepsCardProps) {
         </ul>
       ) : (
         <p className="text-sm text-[var(--muted)] italic mb-4">
-          Keine naechsten Schritte definiert
+          Keine nächsten Schritte definiert
         </p>
       )}
 
@@ -81,7 +81,7 @@ export default function NextStepsCard({ steps, onUpdate }: NextStepsCardProps) {
             value={newStep}
             onChange={(e) => setNewStep(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Schritt hinzufuegen..."
+            placeholder="Schritt hinzufügen..."
             className="w-full bg-transparent border border-[var(--card-border)] rounded-lg pl-3 pr-8 py-2 text-sm text-[var(--foreground)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--accent)] transition-colors"
           />
           <button
@@ -89,7 +89,7 @@ export default function NextStepsCard({ steps, onUpdate }: NextStepsCardProps) {
             onClick={addStep}
             disabled={!newStep.trim()}
             className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--muted)] hover:text-[var(--accent)] transition-colors disabled:opacity-30"
-            aria-label="Schritt hinzufuegen"
+            aria-label="Schritt hinzufügen"
           >
             <Plus size={16} />
           </button>

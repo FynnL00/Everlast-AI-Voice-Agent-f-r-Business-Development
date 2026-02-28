@@ -144,7 +144,7 @@ export default function StatusTimeline({
       {/* Status dropdown */}
       <div className="pt-3 border-t border-[var(--card-border)]">
         <label className="text-xs text-[var(--muted)] block mb-1.5">
-          Status aendern
+          Status ändern
         </label>
         <select
           value={currentStatus}

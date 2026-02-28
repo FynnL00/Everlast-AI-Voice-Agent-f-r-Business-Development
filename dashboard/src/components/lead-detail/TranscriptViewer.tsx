@@ -32,7 +32,7 @@ export default function TranscriptViewer({ transcript }: TranscriptViewerProps) 
           Transkript
         </h3>
         <p className="text-sm text-[var(--muted)] italic">
-          Kein Transkript verfuegbar
+          Kein Transkript verfügbar
         </p>
       </Card>
     );

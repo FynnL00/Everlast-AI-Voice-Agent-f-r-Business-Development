@@ -45,7 +45,7 @@ function CustomTooltip({
   return (
     <div className="rounded-lg border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm shadow-lg">
       <span className="text-[var(--foreground)]">{entry.label}</span>
-      <span className="text-[var(--text-secondary)] ml-2">{entry.count} Gespraeche</span>
+      <span className="text-[var(--text-secondary)] ml-2">{entry.count} Gespräche</span>
     </div>
   );
 }
@@ -72,12 +72,12 @@ export default function CallDurationDistribution({ leads }: CallDurationDistribu
   return (
     <Card>
       <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-4">
-        Gespraechsdauer
+        Gesprächsdauer
       </h3>
       <div className="h-[260px]">
         {!hasData ? (
           <div className="flex items-center justify-center h-full text-[var(--text-secondary)] text-sm">
-            Keine Gespraechsdauer-Daten vorhanden
+            Keine Gesprächsdauer-Daten vorhanden
           </div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">

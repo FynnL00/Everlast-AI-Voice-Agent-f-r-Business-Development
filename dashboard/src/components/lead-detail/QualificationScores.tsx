@@ -65,7 +65,7 @@ export default function QualificationScores({ lead }: QualificationScoresProps) 
         Qualifizierungs-Scores
       </h3>
 
-      <ScoreBar label="Unternehmensgroesse" score={lead.score_company_size} />
+      <ScoreBar label="Unternehmensgröße" score={lead.score_company_size} />
       <ScoreBar label="Tech-Stack" score={lead.score_tech_stack} />
       <ScoreBar label="Pain Point" score={lead.score_pain_point} />
       <ScoreBar label="Timeline" score={lead.score_timeline} />

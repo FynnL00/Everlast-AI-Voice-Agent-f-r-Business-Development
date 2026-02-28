@@ -2,7 +2,7 @@
 
 ## Ueberblick
 
-Inbound Voice Agent "Lisa" (SDR bei n8n) fuer die Everlast AI Vibe Coding Challenge.
+Inbound Voice Agent "Lisa" (SDR bei n8n) (Voice-ID:NkMe1eztMQReztnhYfeX) fuer die Everlast AI Vibe Coding Challenge.
 Lisa nimmt Anrufe entgegen, qualifiziert Leads (A/B/C Scoring), bucht Demo-Termine
 via Cal.com und speichert alles in Supabase. Ein Next.js Dashboard zeigt Live-KPIs.
 
@@ -120,6 +120,7 @@ Die qualification-criteria.json dient als Referenz fuer die Scoring-Beschreibung
 
 ## Wichtige Regeln
 
+- **Deutsche Umlaute korrekt schreiben**: Alle deutschen Texte im Code (UI-Labels, Platzhalter, aria-labels, Tooltips) MUESSEN echte Umlaute verwenden: ä, ö, ü, ß. NIEMALS ASCII-Ersetzungen wie "ae", "oe", "ue", "ss" in sichtbaren Texten nutzen. Beispiele: "Übersicht" (nicht "Uebersicht"), "Größe" (nicht "Groesse"), "zurück" (nicht "zurueck"), "Gespräch" (nicht "Gespraech"), "ändern" (nicht "aendern"), "verfügbar" (nicht "verfuegbar"), "hinzufügen" (nicht "hinzufuegen"), "schließen" (nicht "schliessen"), "maßgeschneidert" (nicht "massgeschneidert").
 - Bestehende Dashboard-Komponenten NICHT umschreiben - sie funktionieren
 - Webhooks MUESSEN `responseMode: "responseNode"` nutzen (fuer synchrone Vapi-Antworten)
 - Alle Texte die Lisa spricht sind auf Deutsch

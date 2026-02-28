@@ -81,7 +81,7 @@ export default function NotesEditor({ notes, onSave }: NotesEditorProps) {
       <textarea
         value={value}
         onChange={handleChange}
-        placeholder="Notizen hinzufuegen..."
+        placeholder="Notizen hinzufügen..."
         className="w-full min-h-32 bg-transparent border-none text-sm text-[var(--foreground)] placeholder:text-[var(--muted)] resize-y focus:outline-none leading-relaxed"
       />
     </Card>

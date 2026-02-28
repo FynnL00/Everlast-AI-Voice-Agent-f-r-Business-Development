@@ -71,7 +71,7 @@ export default function AnalyticsKPIs({ leads }: AnalyticsKPIsProps) {
         value={`${kpis.decisionMakerPct.toFixed(1)}%`}
         icon={Shield}
         color="#8b5cf6"
-        subtitle="Anteil Entscheidungstraeger"
+        subtitle="Anteil Entscheidungsträger"
       />
       <KPICard
         label="Ø Score"
@@ -85,7 +85,7 @@ export default function AnalyticsKPIs({ leads }: AnalyticsKPIsProps) {
         value={`${kpis.positivePct.toFixed(1)}%`}
         icon={Smile}
         color="#42d77d"
-        subtitle="Positives Gespraechssentiment"
+        subtitle="Positives Gesprächssentiment"
       />
       <KPICard
         label="A-Lead Termin-%"

@@ -45,7 +45,7 @@ export default function ContactCard({ lead, onUpdate }: ContactCardProps) {
         />
         <EditableField
           icon={Users}
-          label="Groesse"
+          label="Größe"
           value={lead.company_size}
           onSave={(v) => onUpdate({ company_size: v })}
         />

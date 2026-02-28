@@ -21,7 +21,7 @@ export default function LeadDetailHeader({ lead }: LeadDetailHeaderProps) {
         className="inline-flex items-center gap-1.5 text-sm text-[var(--text-secondary)] hover:text-[var(--foreground)] transition-colors mb-4"
       >
         <ArrowLeft size={16} />
-        <span>Zurueck zu Leads</span>
+        <span>Zurück zu Leads</span>
       </Link>
 
       {/* Main header row */}

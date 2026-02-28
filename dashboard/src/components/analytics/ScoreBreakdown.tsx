@@ -24,7 +24,7 @@ interface RadarEntry {
 }
 
 const DIMENSION_LABELS: Record<string, string> = {
-  company_size: "Unternehmensgroesse",
+  company_size: "Unternehmensgröße",
   tech_stack: "Tech-Stack",
   pain_point: "Pain Point",
   timeline: "Zeitrahmen",

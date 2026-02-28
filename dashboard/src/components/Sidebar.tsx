@@ -14,7 +14,7 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/", label: "Uebersicht", icon: LayoutDashboard },
+  { href: "/", label: "Übersicht", icon: LayoutDashboard },
   { href: "/leads", label: "Leads", icon: Users },
   { href: "/pipeline", label: "Pipeline", icon: Kanban },
   { href: "/analytics", label: "Analytik", icon: BarChart3 },
@@ -95,7 +95,7 @@ export default function Sidebar({ isLive = false }: SidebarProps) {
         type="button"
         onClick={() => setMobileOpen(true)}
         className="fixed top-4 left-4 z-50 md:hidden p-2 rounded-lg bg-[var(--card)] border border-[var(--card-border)] text-[var(--text-secondary)] hover:text-white transition-colors duration-150"
-        aria-label="Menue oeffnen"
+        aria-label="Menü öffnen"
       >
         <Menu size={20} />
       </button>
@@ -117,7 +117,7 @@ export default function Sidebar({ isLive = false }: SidebarProps) {
             }}
             role="button"
             tabIndex={0}
-            aria-label="Menue schliessen"
+            aria-label="Menü schließen"
           />
           {/* Slide-in panel */}
           <aside className="absolute inset-y-0 left-0 w-60 flex flex-col bg-[#151845] border-r border-[var(--card-border)] shadow-2xl">
@@ -126,7 +126,7 @@ export default function Sidebar({ isLive = false }: SidebarProps) {
               type="button"
               onClick={() => setMobileOpen(false)}
               className="absolute top-4 right-4 p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-white transition-colors duration-150"
-              aria-label="Menue schliessen"
+              aria-label="Menü schließen"
             >
               <X size={18} />
             </button>

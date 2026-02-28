@@ -25,7 +25,7 @@ export default function ConversationSummary({
   return (
     <Card>
       <h3 className="text-sm font-medium text-[var(--muted)] mb-4">
-        Gespraechszusammenfassung
+        Gesprächszusammenfassung
       </h3>
 
       {/* Sentiment banner */}
@@ -52,7 +52,7 @@ export default function ConversationSummary({
         </p>
       ) : (
         <p className="text-sm text-[var(--muted)] italic">
-          Keine Zusammenfassung verfuegbar
+          Keine Zusammenfassung verfügbar
         </p>
       )}
     </Card>

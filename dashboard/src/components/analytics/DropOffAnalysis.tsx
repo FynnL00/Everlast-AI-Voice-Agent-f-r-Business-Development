@@ -34,7 +34,7 @@ function CustomTooltip({
   return (
     <div className="rounded-lg border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm shadow-lg">
       <span className="text-[var(--foreground)]">{entry.phase}</span>
-      <span className="text-[var(--text-secondary)] ml-2">{entry.count} Abbrueche</span>
+      <span className="text-[var(--text-secondary)] ml-2">{entry.count} Abbrüche</span>
     </div>
   );
 }

@@ -24,7 +24,7 @@ export default function ObjectionsCard({
   return (
     <Card>
       <h3 className="text-sm font-medium text-[var(--muted)] mb-4">
-        Einwaende
+        Einwände
       </h3>
 
       {hasObjections ? (
@@ -47,7 +47,7 @@ export default function ObjectionsCard({
         </div>
       ) : (
         <p className="text-sm text-[var(--muted)] italic mb-3">
-          Keine Einwaende erhoben
+          Keine Einwände erhoben
         </p>
       )}
 

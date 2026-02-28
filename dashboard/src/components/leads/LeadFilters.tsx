@@ -220,7 +220,7 @@ export default function LeadFilters({ filters, onChange, leadCount, className }:
           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--danger)] hover:bg-[var(--danger)]/10 transition-colors duration-150"
         >
           <X size={14} />
-          Filter zuruecksetzen
+          Filter zurücksetzen
         </button>
       )}
     </div>
