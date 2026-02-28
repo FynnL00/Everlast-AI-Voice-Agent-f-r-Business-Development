@@ -11,7 +11,7 @@ const SENTIMENT_CONFIG: Record<string, { label: string; color: string }> = {
 
 export default function SentimentIndicator({ sentiment, showLabel = false }: SentimentIndicatorProps) {
   const config = sentiment ? SENTIMENT_CONFIG[sentiment] : null;
-  if (!config) return <span className="text-[var(--muted)]">&mdash;</span>;
+  if (!config) return <span className="text-muted-foreground">&mdash;</span>;
 
   return (
     <div className="flex items-center gap-1.5">

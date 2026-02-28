@@ -16,5 +16,16 @@ interface StatusBadgeProps {
 
 export default function StatusBadge({ status, size = "sm" }: StatusBadgeProps) {
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.new;
-  return <Badge label={config.label} color={config.color} size={size} />;
+  return (
+    <Badge
+      className={`px-2.5 py-0.5 rounded-full font-bold tracking-wide ring-1 ring-inset ${size === 'md' ? 'text-sm' : 'text-xs'}`}
+      style={{
+        backgroundColor: `${config.color}15`,
+        color: config.color,
+        borderColor: `${config.color}30`
+      }}
+    >
+      {config.label}
+    </Badge>
+  );
 }

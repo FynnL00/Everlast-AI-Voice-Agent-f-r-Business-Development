@@ -104,22 +104,16 @@ export default function LeadFilters({ filters, onChange, leadCount, className }:
 
   const activePreset = getDatePreset(filters);
   const selectClasses = cn(
-    "bg-[var(--card)] border border-[var(--card-border)] rounded-lg",
-    "px-3 py-2 text-sm text-[var(--foreground)]",
-    "focus:outline-none focus:ring-2 focus:ring-[var(--accent)]/50",
+    "bg-card border border-border rounded-lg",
+    "px-3 py-2 text-sm text-foreground",
+    "focus:outline-none focus:ring-2 focus:ring-ring/50",
     "cursor-pointer appearance-none"
   );
 
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
       {/* Lead count badge */}
-      <span
-        className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
-        style={{
-          backgroundColor: "var(--accent-light)",
-          color: "var(--accent)",
-        }}
-      >
+      <span className="text-sm font-medium text-muted-foreground shrink-0">
         {leadCount} Leads
       </span>
 
@@ -135,11 +129,11 @@ export default function LeadFilters({ filters, onChange, leadCount, className }:
                 "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors duration-150",
                 active
                   ? "border-transparent text-white"
-                  : "border-[var(--card-border)] bg-[var(--card)] text-[var(--text-secondary)] hover:bg-[var(--card-hover)]"
+                  : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
               style={
                 active
-                  ? { backgroundColor: opt.color }
+                  ? { backgroundColor: opt.color, color: "#ffffff" }
                   : undefined
               }
             >
@@ -183,8 +177,8 @@ export default function LeadFilters({ filters, onChange, leadCount, className }:
         className={cn(
           "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-150",
           filters.appointmentBooked === true
-            ? "bg-[var(--accent)] border-[var(--accent)] text-white"
-            : "border-[var(--card-border)] bg-[var(--card)] text-[var(--text-secondary)] hover:bg-[var(--card-hover)]"
+            ? "bg-primary border-primary text-primary-foreground"
+            : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
         )}
       >
         <CalendarCheck size={14} />
@@ -204,8 +198,8 @@ export default function LeadFilters({ filters, onChange, leadCount, className }:
             className={cn(
               "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-150",
               activePreset === preset.value
-                ? "bg-[var(--accent)] border-[var(--accent)] text-white"
-                : "border-[var(--card-border)] bg-[var(--card)] text-[var(--text-secondary)] hover:bg-[var(--card-hover)]"
+                ? "bg-primary border-primary text-primary-foreground"
+                : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
             {preset.label}
@@ -217,7 +211,7 @@ export default function LeadFilters({ filters, onChange, leadCount, className }:
       {hasActiveFilters(filters) && (
         <button
           onClick={resetFilters}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--danger)] hover:bg-[var(--danger)]/10 transition-colors duration-150"
+          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors duration-150"
         >
           <X size={14} />
           Filter zurücksetzen

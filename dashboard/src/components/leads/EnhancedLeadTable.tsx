@@ -14,6 +14,7 @@ import type { Lead, SortField, SortDirection } from "@/lib/types";
 import StatusBadge from "@/components/leads/StatusBadge";
 import SentimentIndicator from "@/components/leads/SentimentIndicator";
 import EmptyState from "@/components/ui/EmptyState";
+import { Badge } from "@/components/ui/Badge";
 
 interface EnhancedLeadTableProps {
   leads: Lead[];
@@ -46,11 +47,11 @@ function SortIcon({ field, currentField, direction }: {
   direction: SortDirection;
 }) {
   if (field !== currentField) {
-    return <ArrowUpDown size={14} className="text-[var(--muted)]" />;
+    return <ArrowUpDown size={14} className="text-muted-foreground opacity-50 transition-opacity hover:opacity-100" />;
   }
   return direction === "asc"
-    ? <ArrowUp size={14} className="text-[var(--accent)]" />
-    : <ArrowDown size={14} className="text-[var(--accent)]" />;
+    ? <ArrowUp size={14} className="text-primary" />
+    : <ArrowDown size={14} className="text-primary" />;
 }
 
 export default function EnhancedLeadTable({
@@ -70,21 +71,24 @@ export default function EnhancedLeadTable({
   }
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto w-full px-4 sm:px-6">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-[var(--card-border)]">
+          <tr className="border-b border-border/60">
             {COLUMNS.map((col) => (
               <th
                 key={col.field}
                 className={cn(
-                  "px-4 py-3 text-left text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider",
+                  "px-4 py-4 text-left text-xs font-semibold text-muted-foreground tracking-wider uppercase",
                   col.className,
-                  col.sortable && "cursor-pointer select-none hover:text-[var(--foreground)] transition-colors"
+                  col.sortable && "cursor-pointer select-none hover:text-foreground transition-colors group"
                 )}
                 onClick={() => col.sortable && onSort(col.field)}
               >
-                <span className="inline-flex items-center gap-1">
+                <div className={cn("inline-flex items-center gap-1.5",
+                  col.className?.includes("text-right") && "justify-end",
+                  col.className?.includes("text-center") && "justify-center"
+                )}>
                   {col.label}
                   {col.sortable && (
                     <SortIcon
@@ -93,96 +97,100 @@ export default function EnhancedLeadTable({
                       direction={sortDirection}
                     />
                   )}
-                </span>
+                </div>
               </th>
             ))}
             {/* Arrow column */}
             <th className="w-10" />
           </tr>
         </thead>
-        <tbody className="divide-y divide-[var(--card-border)]">
+        <tbody>
           {leads.map((lead) => (
             <Link
               key={lead.id}
               href={`/leads/${lead.id}`}
               className="contents"
             >
-              <tr className="group hover:bg-[var(--card-hover)] transition-colors duration-150 cursor-pointer">
+              <tr className="group hover:bg-muted/50 border-b border-border/40 transition-colors duration-200 cursor-pointer">
                 {/* Name */}
-                <td className="px-4 py-3">
-                  <div className="font-medium text-[var(--foreground)]">
+                <td className="px-4 py-4 align-middle">
+                  <div className="font-semibold text-foreground group-hover:text-primary transition-colors">
                     {lead.caller_name || "Unbekannt"}
                   </div>
                   {lead.phone && (
-                    <div className="text-xs text-[var(--muted)] mt-0.5">{lead.phone}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5 tracking-wide font-mono">{lead.phone}</div>
                   )}
                 </td>
 
                 {/* Firma */}
-                <td className="px-4 py-3">
-                  <div className="text-[var(--foreground)]">
+                <td className="px-4 py-4 align-middle">
+                  <div className="font-medium text-foreground">
                     {lead.company || "\u2014"}
                   </div>
                   {lead.company_size && (
-                    <div className="text-xs text-[var(--muted)] mt-0.5">{lead.company_size}</div>
+                    <div className="text-[11px] text-muted-foreground mt-0.5 uppercase tracking-wider">{lead.company_size}</div>
                   )}
                 </td>
 
                 {/* Score / Grade */}
-                <td className="px-4 py-3 text-center">
+                <td className="px-4 py-4 text-center align-middle">
                   {lead.lead_grade ? (
                     <span
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold text-white"
-                      style={{ backgroundColor: getGradeColor(lead.lead_grade) }}
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold shadow-sm ring-1 ring-inset"
+                      style={{
+                        backgroundColor: `${getGradeColor(lead.lead_grade)}15`,
+                        color: getGradeColor(lead.lead_grade),
+                        "--tw-ring-color": `${getGradeColor(lead.lead_grade)}30`
+                      } as React.CSSProperties}
                     >
                       {lead.lead_grade}
                     </span>
                   ) : (
-                    <span className="text-[var(--muted)]">&mdash;</span>
+                    <span className="text-muted-foreground">&mdash;</span>
                   )}
                 </td>
 
                 {/* Status */}
-                <td className="px-4 py-3">
+                <td className="px-4 py-4 align-middle">
                   <StatusBadge status={lead.status} />
                 </td>
 
                 {/* Sentiment */}
-                <td className="px-4 py-3 text-center">
+                <td className="px-4 py-4 text-center align-middle">
                   <div className="flex justify-center">
                     <SentimentIndicator sentiment={lead.sentiment} showLabel />
                   </div>
                 </td>
 
                 {/* Dauer */}
-                <td className="px-4 py-3 text-right text-[var(--text-secondary)]">
+                <td className="px-4 py-4 text-right align-middle text-muted-foreground font-mono text-xs">
                   {lead.call_duration_seconds != null
                     ? formatDuration(lead.call_duration_seconds)
                     : "\u2014"}
                 </td>
 
                 {/* Termin */}
-                <td className="px-4 py-3">
+                <td className="px-4 py-4 align-middle text-center">
                   {lead.appointment_booked && lead.appointment_datetime ? (
-                    <div className="inline-flex items-center gap-1.5 text-xs text-[var(--success)]">
-                      <CalendarCheck size={14} />
-                      {formatDate(lead.appointment_datetime)}
-                    </div>
+                    <Badge className="bg-score-good-bg text-score-good hover:bg-score-good-bg shrink-0">
+                      <CalendarCheck size={12} className="mr-1" />
+                      Gebucht
+                    </Badge>
                   ) : (
-                    <span className="text-[var(--muted)]">&mdash;</span>
+                    <span className="text-muted-foreground">&mdash;</span>
                   )}
                 </td>
 
                 {/* Datum */}
-                <td className="px-4 py-3 text-right text-[var(--text-secondary)]">
+                <td className="px-4 py-4 text-right align-middle text-muted-foreground text-xs whitespace-nowrap">
                   {formatDate(lead.created_at)}
                 </td>
 
                 {/* Arrow */}
-                <td className="px-2 py-3 text-right">
+                <td className="px-2 py-4 text-right align-middle">
                   <ChevronRight
                     size={16}
-                    className="text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors"
+                    className="text-muted-foreground group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
                   />
                 </td>
               </tr>

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import type { Lead } from "@/lib/types";
 import { STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
-import Card from "@/components/ui/Card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
+import { Check } from "lucide-react";
 
 interface StatusTimelineProps {
   currentStatus: Lead["status"];
@@ -49,122 +50,134 @@ export default function StatusTimeline({
   };
 
   return (
-    <Card>
-      <h3 className="text-sm font-medium text-[var(--muted)] mb-4">Status</h3>
+    <Card className="shadow-sm overflow-visible">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-sm font-semibold text-muted-foreground">
+          Status & Verlauf
+        </CardTitle>
+      </CardHeader>
 
-      {/* Horizontal timeline */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between relative">
-          {/* Connecting line */}
-          <div className="absolute top-3 left-3 right-3 h-0.5 bg-[var(--card-border)]" />
-
-          {MAIN_STATUSES.map((status, idx) => {
-            const isCompleted = !isLost && currentIndex >= 0 && idx < currentIndex;
-            const isCurrent = !isLost && status === currentStatus;
-            const isFuture = isLost || currentIndex < 0 || idx > currentIndex;
-            const color = STATUS_COLORS[status];
-
-            return (
+      <CardContent className="pt-2">
+        {/* Horizontal timeline */}
+        <div className="mb-6 px-4">
+          <div className="flex items-start justify-between relative mt-2">
+            {/* Connecting line background */}
+            <div className="absolute top-3.5 left-4 right-4 h-0.5 bg-border/50 rounded-full" />
+            {/* Connecting line active */}
+            {!isLost && currentIndex > 0 && (
               <div
-                key={status}
-                className="flex flex-col items-center z-10 relative"
-              >
-                {/* Circle */}
+                className="absolute top-3.5 left-4 h-0.5 bg-primary rounded-full transition-all duration-700 ease-out"
+                style={{
+                  width: `calc(${((currentIndex) / (MAIN_STATUSES.length - 1)) * 100}% - ${currentIndex === MAIN_STATUSES.length - 1 ? 32 : 16}px)`,
+                  backgroundColor: STATUS_COLORS[currentStatus]
+                }}
+              />
+            )}
+
+            {MAIN_STATUSES.map((status, idx) => {
+              const isCompleted = !isLost && currentIndex >= 0 && idx < currentIndex;
+              const isCurrent = !isLost && status === currentStatus;
+              const isFuture = isLost || currentIndex < 0 || idx > currentIndex;
+              const color = STATUS_COLORS[status];
+
+              return (
                 <div
-                  className={cn(
-                    "w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all",
-                    isCurrent && "animate-pulse"
-                  )}
-                  style={{
-                    borderColor: isFuture ? "var(--card-border)" : color,
-                    backgroundColor: isCompleted || isCurrent ? color : "var(--card)",
-                  }}
+                  key={status}
+                  className="flex flex-col items-center z-10 relative group"
                 >
-                  {isCompleted && (
-                    <svg
-                      width="10"
-                      height="10"
-                      viewBox="0 0 10 10"
-                      fill="none"
-                      className="text-white"
-                    >
-                      <path
-                        d="M2 5L4 7L8 3"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  )}
+                  {/* Circle */}
+                  <div
+                    className={cn(
+                      "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 shadow-sm",
+                      isCurrent && "ring-4 ring-opacity-20",
+                      isCurrent && "scale-110",
+                      (!isCurrent && !isFuture) && "hover:scale-110"
+                    )}
+                    style={{
+                      borderColor: isFuture ? "var(--border)" : color,
+                      backgroundColor: isCompleted || isCurrent ? color : "var(--card)",
+                      ...(isCurrent ? { "--tw-ring-color": color } : {})
+                    } as React.CSSProperties}
+                  >
+                    {isCompleted && (
+                      <Check size={14} className="text-white" strokeWidth={3} />
+                    )}
+                    {isCurrent && (
+                      <div className="w-2.5 h-2.5 rounded-full bg-white shadow-sm" />
+                    )}
+                  </div>
+                  {/* Label */}
+                  <span
+                    className={cn(
+                      "text-[11px] mt-2.5 text-center max-w-[70px] leading-tight transition-colors",
+                      isCurrent
+                        ? "font-bold text-foreground"
+                        : isFuture
+                          ? "text-muted-foreground/60 font-medium"
+                          : "text-muted-foreground font-semibold"
+                    )}
+                    style={isCurrent ? { color } : undefined}
+                  >
+                    {STATUS_LABELS[status]}
+                  </span>
                 </div>
-                {/* Label */}
-                <span
-                  className={cn(
-                    "text-[10px] mt-1.5 text-center max-w-[60px] leading-tight",
-                    isCurrent
-                      ? "font-medium"
-                      : isFuture
-                        ? "text-[var(--muted)]"
-                        : "text-[var(--text-secondary)]"
-                  )}
-                  style={isCurrent ? { color } : undefined}
-                >
-                  {STATUS_LABELS[status]}
-                </span>
+              );
+            })}
+          </div>
+
+          {/* Lost branch */}
+          {isLost && (
+            <div className="flex flex-col items-center mt-6 relative mx-auto w-fit">
+              <div className="absolute -top-6 left-1/2 w-0.5 h-6 bg-border/50 -translate-x-1/2" />
+              <div
+                className={cn(
+                  "w-7 h-7 rounded-full border-2 flex items-center justify-center scale-110 ring-4 ring-opacity-20 shadow-sm"
+                )}
+                style={{
+                  borderColor: STATUS_COLORS.lost,
+                  backgroundColor: STATUS_COLORS.lost,
+                  "--tw-ring-color": STATUS_COLORS.lost
+                } as React.CSSProperties}
+              >
+                <div className="w-2.5 h-2.5 rounded-full bg-white shadow-sm" />
               </div>
-            );
-          })}
+              <span
+                className="text-[11px] mt-2.5 font-bold text-center"
+                style={{ color: STATUS_COLORS.lost }}
+              >
+                {STATUS_LABELS.lost}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Lost branch */}
-        <div className="flex items-center mt-3 ml-[50%] -translate-x-1/2">
-          <div
-            className={cn(
-              "w-6 h-6 rounded-full border-2 flex items-center justify-center",
-              isLost && "animate-pulse"
-            )}
-            style={{
-              borderColor: isLost ? STATUS_COLORS.lost : "var(--card-border)",
-              backgroundColor: isLost ? STATUS_COLORS.lost : "var(--card)",
-            }}
-          />
-          <span
-            className={cn(
-              "text-[10px] ml-2",
-              isLost ? "font-medium" : "text-[var(--muted)]"
-            )}
-            style={isLost ? { color: STATUS_COLORS.lost } : undefined}
-          >
-            {STATUS_LABELS.lost}
-          </span>
+        {/* Status dropdown */}
+        <div className="pt-4 border-t border-border/40 mt-2">
+          <label className="text-xs font-semibold text-muted-foreground block mb-2 uppercase tracking-wider">
+            Status manuell ändern
+          </label>
+          <div className="relative">
+            <select
+              value={currentStatus}
+              onChange={handleStatusChange}
+              disabled={isSaving}
+              className="w-full bg-card/50 border border-border/80 rounded-xl px-4 py-2.5 text-sm font-medium text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors disabled:opacity-50 appearance-none cursor-pointer hover:bg-card hover:border-border"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 1rem center",
+                backgroundSize: "1rem",
+              }}
+            >
+              {ALL_STATUSES.map((status) => (
+                <option key={status} value={status} className="bg-card text-foreground">
+                  {STATUS_LABELS[status]}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-      </div>
-
-      {/* Status dropdown */}
-      <div className="pt-3 border-t border-[var(--card-border)]">
-        <label className="text-xs text-[var(--muted)] block mb-1.5">
-          Status ändern
-        </label>
-        <select
-          value={currentStatus}
-          onChange={handleStatusChange}
-          disabled={isSaving}
-          className="w-full bg-[var(--background)] border border-[var(--card-border)] rounded-lg px-3 py-2 text-sm text-[var(--foreground)] focus:outline-none focus:border-[var(--accent)] transition-colors disabled:opacity-50 appearance-none cursor-pointer"
-          style={{
-            backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235e6278' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e")`,
-            backgroundRepeat: "no-repeat",
-            backgroundPosition: "right 0.5rem center",
-            backgroundSize: "1rem",
-          }}
-        >
-          {ALL_STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {STATUS_LABELS[status]}
-            </option>
-          ))}
-        </select>
-      </div>
+      </CardContent>
     </Card>
   );
 }

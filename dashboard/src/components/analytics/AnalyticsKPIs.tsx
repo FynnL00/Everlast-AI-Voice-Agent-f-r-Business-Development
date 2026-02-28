@@ -2,8 +2,8 @@
 
 import { useMemo } from "react";
 import { Shield, Target, Smile, CalendarCheck } from "lucide-react";
-import Card from "@/components/ui/Card";
 import type { Lead } from "@/lib/types";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 
 interface AnalyticsKPIsProps {
   leads: Lead[];
@@ -12,27 +12,39 @@ interface AnalyticsKPIsProps {
 function KPICard({
   label,
   value,
+  numericValue,
+  suffix = "",
   icon: Icon,
-  color,
+  colorClass,
+  bgClass,
   subtitle,
 }: {
   label: string;
-  value: string;
+  value?: string;
+  numericValue?: number;
+  suffix?: string;
   icon: React.ElementType;
-  color: string;
+  colorClass: string;
+  bgClass: string;
   subtitle: string;
 }) {
   return (
-    <Card accentColor={color}>
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-[var(--text-secondary)]">{label}</span>
-        <Icon size={20} color={color} />
+    <div className="flex items-center p-4 rounded-2xl bg-sidebar-accent/50 border border-border relative group hover:bg-sidebar-accent transition-colors gap-4">
+      <div className={`p-3 rounded-full shrink-0 ${bgClass} ${colorClass}`}>
+        <Icon className="h-6 w-6" />
       </div>
-      <div className="text-3xl font-bold" style={{ color }}>
-        {value}
+      <div className="flex flex-col min-w-0">
+        <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-0.5">{label}</span>
+        <span className="text-2xl font-bold tabular-nums text-foreground">
+          {numericValue !== undefined ? (
+            <AnimatedNumber value={numericValue} suffix={suffix} />
+          ) : (
+            value
+          )}
+        </span>
+        <span className="text-[10px] text-muted-foreground mt-0.5 tracking-tight truncate">{subtitle}</span>
       </div>
-      <p className="text-xs text-[var(--text-secondary)] mt-1">{subtitle}</p>
-    </Card>
+    </div>
   );
 }
 
@@ -65,34 +77,42 @@ export default function AnalyticsKPIs({ leads }: AnalyticsKPIsProps) {
   }, [leads]);
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <KPICard
         label="Entscheider-Quote"
-        value={`${kpis.decisionMakerPct.toFixed(1)}%`}
+        numericValue={kpis.decisionMakerPct}
+        suffix="%"
         icon={Shield}
-        color="#8b5cf6"
+        colorClass="text-purple-400"
+        bgClass="bg-purple-500/10"
         subtitle="Anteil Entscheidungsträger"
       />
       <KPICard
         label="Ø Score"
-        value={kpis.avgScore.toFixed(1)}
+        numericValue={kpis.avgScore}
+        suffix=""
         icon={Target}
-        color="#f59e0b"
+        colorClass="text-amber-400"
+        bgClass="bg-amber-500/10"
         subtitle="Durchschnittlicher Lead-Score"
       />
       <KPICard
         label="Positiv-Rate"
-        value={`${kpis.positivePct.toFixed(1)}%`}
+        numericValue={kpis.positivePct}
+        suffix="%"
         icon={Smile}
-        color="#42d77d"
+        colorClass="text-green-400"
+        bgClass="bg-green-500/10"
         subtitle="Positives Gesprächssentiment"
       />
       <KPICard
         label="A-Lead Termin-%"
-        value={`${kpis.aLeadAppointmentPct.toFixed(1)}%`}
+        numericValue={kpis.aLeadAppointmentPct}
+        suffix="%"
         icon={CalendarCheck}
-        color="#EA4B71"
-        subtitle="A-Leads mit gebuchtem Termin"
+        colorClass="text-pink-400"
+        bgClass="bg-pink-500/10"
+        subtitle="A-Leads mit geb. Termin"
       />
     </div>
   );

@@ -55,7 +55,7 @@ export default function Pagination({
   return (
     <div className={cn("flex flex-col sm:flex-row items-center justify-between gap-3", className)}>
       {/* Info text */}
-      <span className="text-sm text-[var(--text-secondary)]">
+      <span className="text-sm text-muted-foreground">
         Zeige {start}&ndash;{end} von {totalItems} Leads
       </span>
 
@@ -67,10 +67,10 @@ export default function Pagination({
           disabled={currentPage === 0}
           className={cn(
             buttonBase,
-            "px-2 border-[var(--card-border)] bg-[var(--card)]",
+            "px-2 border-border bg-card",
             currentPage === 0
               ? "opacity-40 cursor-not-allowed"
-              : "hover:bg-[var(--card-hover)] text-[var(--foreground)]"
+              : "hover:bg-muted text-foreground"
           )}
           aria-label="Vorherige Seite"
         >
@@ -82,7 +82,7 @@ export default function Pagination({
           page === "..." ? (
             <span
               key={`ellipsis-${idx}`}
-              className="inline-flex items-center justify-center min-w-[36px] h-9 text-sm text-[var(--muted)]"
+              className="inline-flex items-center justify-center min-w-[36px] h-9 text-sm text-muted-foreground"
             >
               ...
             </span>
@@ -93,8 +93,8 @@ export default function Pagination({
               className={cn(
                 buttonBase,
                 page === currentPage
-                  ? "bg-[var(--accent)] border-[var(--accent)] text-white"
-                  : "border-[var(--card-border)] bg-[var(--card)] text-[var(--text-secondary)] hover:bg-[var(--card-hover)]"
+                  ? "bg-primary border-primary text-primary-foreground"
+                  : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
             >
               {page + 1}
@@ -108,10 +108,10 @@ export default function Pagination({
           disabled={currentPage >= totalPages - 1}
           className={cn(
             buttonBase,
-            "px-2 border-[var(--card-border)] bg-[var(--card)]",
+            "px-2 border-border bg-card",
             currentPage >= totalPages - 1
               ? "opacity-40 cursor-not-allowed"
-              : "hover:bg-[var(--card-hover)] text-[var(--foreground)]"
+              : "hover:bg-muted text-foreground"
           )}
           aria-label="Naechste Seite"
         >

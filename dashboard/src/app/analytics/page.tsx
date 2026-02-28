@@ -8,6 +8,7 @@ import DropOffAnalysis from "@/components/analytics/DropOffAnalysis";
 import ScoreBreakdown from "@/components/analytics/ScoreBreakdown";
 import DecisionMakerRatio from "@/components/analytics/DecisionMakerRatio";
 import CallDurationDistribution from "@/components/analytics/CallDurationDistribution";
+import { PieChart } from "lucide-react";
 
 export default function AnalyticsPage() {
   const { leads, loading } = useLeads();
@@ -15,16 +16,17 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-[var(--text-secondary)]">Analytik laedt...</div>
+        <div className="text-muted-foreground animate-pulse">Analytik lädt...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6 max-w-7xl mx-auto">
+    <div className="min-h-screen p-6 md:p-8 max-w-[1600px] mx-auto space-y-6">
       <PageHeader
         title="Analytik"
         subtitle="Detaillierte Auswertungen"
+        icon={PieChart}
       />
 
       {/* KPI Row */}

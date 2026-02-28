@@ -1,7 +1,7 @@
 "use client";
 
 import { Phone, CalendarCheck, Clock, Star } from "lucide-react";
-import Card from "@/components/ui/Card";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 
 interface KPICardsProps {
   totalCalls: number;
@@ -13,41 +13,36 @@ interface KPICardsProps {
 function KPICard({
   label,
   value,
+  numericValue,
+  suffix = "",
   icon: Icon,
-  color,
-  subtitle,
+  colorClass,
+  bgClass,
 }: {
   label: string;
-  value: string;
+  value?: string;
+  numericValue?: number;
+  suffix?: string;
   icon: React.ElementType;
-  color: string;
-  subtitle?: string;
+  colorClass: string;
+  bgClass: string;
 }) {
   return (
-    <Card accentColor={color}>
-      <div className="flex items-center gap-4">
-        {/* Icon circle */}
-        <div
-          className="shrink-0 flex items-center justify-center w-12 h-12 rounded-full"
-          style={{ backgroundColor: `${color}20` }}
-        >
-          <Icon size={22} color={color} />
-        </div>
-
-        {/* Content */}
-        <div className="min-w-0">
-          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
-            {label}
-          </span>
-          <div className="text-3xl font-bold leading-tight" style={{ color }}>
-            {value}
-          </div>
-          {subtitle && (
-            <p className="text-xs text-[var(--muted)] mt-0.5">{subtitle}</p>
-          )}
-        </div>
+    <div className="flex items-center p-4 rounded-2xl bg-sidebar-accent/50 border border-border relative group hover:bg-sidebar-accent transition-colors gap-4">
+      <div className={`p-3 rounded-full shrink-0 ${bgClass} ${colorClass}`}>
+        <Icon className="h-6 w-6" />
       </div>
-    </Card>
+      <div className="flex flex-col min-w-0">
+        <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{label}</span>
+        <span className="text-2xl font-bold tabular-nums text-foreground">
+          {numericValue !== undefined ? (
+            <AnimatedNumber value={numericValue} suffix={suffix} />
+          ) : (
+            value
+          )}
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -64,31 +59,34 @@ export default function KPICards({
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <KPICard
         label="Total Calls"
-        value={totalCalls.toString()}
+        numericValue={totalCalls}
+        suffix=""
         icon={Phone}
-        color="#8b5cf6"
-        subtitle="Alle eingehenden Anrufe"
+        colorClass="text-purple-400"
+        bgClass="bg-purple-500/10"
       />
       <KPICard
         label="Conversion Rate"
-        value={`${conversionRate.toFixed(1)}%`}
+        numericValue={conversionRate}
+        suffix="%"
         icon={CalendarCheck}
-        color="#22c55e"
-        subtitle="Calls → gebuchte Termine"
+        colorClass="text-green-400"
+        bgClass="bg-green-500/10"
       />
       <KPICard
-        label="Ø Gesprächsdauer"
+        label="Gesprächsdauer"
         value={`${mins}:${secs.toString().padStart(2, "0")}`}
         icon={Clock}
-        color="#f59e0b"
-        subtitle="Minuten pro Call"
+        colorClass="text-amber-400"
+        bgClass="bg-amber-500/10"
       />
       <KPICard
         label="A-Leads heute"
-        value={aLeadsToday.toString()}
+        numericValue={aLeadsToday}
+        suffix=""
         icon={Star}
-        color="#ff6d5a"
-        subtitle="Hot Leads mit Score 10-12"
+        colorClass="text-red-400"
+        bgClass="bg-red-500/10"
       />
     </div>
   );

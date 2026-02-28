@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
-import Card from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import type { Lead } from "@/lib/types";
 
 interface ScoreBreakdownProps {
@@ -40,9 +40,9 @@ function CustomTooltip({
   if (!active || !payload || payload.length === 0) return null;
   const entry = payload[0].payload;
   return (
-    <div className="rounded-lg border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm shadow-lg">
-      <span className="text-[var(--foreground)]">{entry.dimension}</span>
-      <span className="text-[var(--text-secondary)] ml-2">Ø {entry.value.toFixed(2)}</span>
+    <div className="rounded-xl bg-card border border-border px-4 py-3 shadow-[0_6px_20px_rgba(0,0,0,0.4)] min-w-[160px] backdrop-blur-xl">
+      <span className="font-semibold text-foreground">{entry.dimension}</span>
+      <span className="text-muted-foreground ml-2">Ø {entry.value.toFixed(2)}</span>
     </div>
   );
 }
@@ -66,43 +66,45 @@ export default function ScoreBreakdown({ leads }: ScoreBreakdownProps) {
   const hasData = data.some((d) => d.value > 0);
 
   return (
-    <Card>
-      <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-4">
-        Score-Radar
-      </h3>
-      <div className="h-[260px]">
-        {!hasData ? (
-          <div className="flex items-center justify-center h-full text-[var(--text-secondary)] text-sm">
-            Keine Score-Daten vorhanden
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <RadarChart data={data} cx="50%" cy="50%" outerRadius="70%">
-              <PolarGrid stroke="#e5e7eb" />
-              <PolarAngleAxis
-                dataKey="dimension"
-                tick={{ fill: "#6b7280", fontSize: 11 }}
-              />
-              <PolarRadiusAxis
-                angle={90}
-                domain={[0, 3]}
-                tick={{ fill: "#6b7280", fontSize: 10 }}
-                tickCount={4}
-                axisLine={false}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Radar
-                name="Score"
-                dataKey="value"
-                stroke="#22c55e"
-                fill="#22c55e"
-                fillOpacity={0.3}
-                strokeWidth={2}
-              />
-            </RadarChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5 w-full h-full">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-semibold">Score-Radar</CardTitle>
+      </CardHeader>
+      <CardContent className="pb-6">
+        <div className="h-[280px]">
+          {!hasData ? (
+            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+              Keine Score-Daten vorhanden
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart data={data} cx="50%" cy="50%" outerRadius="70%">
+                <PolarGrid stroke="var(--border)" />
+                <PolarAngleAxis
+                  dataKey="dimension"
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
+                />
+                <PolarRadiusAxis
+                  angle={90}
+                  domain={[0, 3]}
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                  tickCount={4}
+                  axisLine={false}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Radar
+                  name="Score"
+                  dataKey="value"
+                  stroke="var(--score-good)"
+                  fill="var(--score-good)"
+                  fillOpacity={0.3}
+                  strokeWidth={2}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </CardContent>
     </Card>
   );
 }

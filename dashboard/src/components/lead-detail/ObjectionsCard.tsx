@@ -1,6 +1,7 @@
 "use client";
 
-import Card from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { AlertTriangle } from "lucide-react";
 
 interface ObjectionsCardProps {
   objections: string[] | null;
@@ -8,11 +9,11 @@ interface ObjectionsCardProps {
 }
 
 const TAG_COLORS = [
-  "var(--accent)",
-  "var(--danger)",
-  "var(--warning)",
-  "var(--info)",
-  "#8b5cf6",
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
 ];
 
 export default function ObjectionsCard({
@@ -22,40 +23,55 @@ export default function ObjectionsCard({
   const hasObjections = objections && objections.length > 0;
 
   return (
-    <Card>
-      <h3 className="text-sm font-medium text-[var(--muted)] mb-4">
-        Einwände
-      </h3>
+    <Card className="shadow-sm">
+      <CardHeader className="pb-3 border-b border-border/50">
+        <CardTitle className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+          <span>Einwände</span>
+          {(hasObjections || dropOffPoint) && (
+            <AlertTriangle size={14} className="text-amber-500" />
+          )}
+        </CardTitle>
+      </CardHeader>
 
-      {hasObjections ? (
-        <div className="flex flex-wrap gap-2 mb-3">
-          {objections.map((objection, idx) => {
-            const color = TAG_COLORS[idx % TAG_COLORS.length];
-            return (
-              <span
-                key={idx}
-                className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium"
-                style={{
-                  backgroundColor: `${color}18`,
-                  color: color,
-                }}
-              >
-                {objection}
-              </span>
-            );
-          })}
-        </div>
-      ) : (
-        <p className="text-sm text-[var(--muted)] italic mb-3">
-          Keine Einwände erhoben
-        </p>
-      )}
+      <CardContent className="pt-4">
+        {hasObjections ? (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {objections.map((objection, idx) => {
+              const color = TAG_COLORS[idx % TAG_COLORS.length];
+              return (
+                <span
+                  key={idx}
+                  className="inline-flex items-center rounded-md px-3 py-1.5 text-xs font-bold ring-1 ring-inset shadow-sm transition-all hover:brightness-110"
+                  style={{
+                    backgroundColor: `${color}15`,
+                    color: color,
+                    borderColor: `${color}30`,
+                  }}
+                >
+                  {objection}
+                </span>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex items-center mb-4 p-4 bg-score-good-bg rounded-xl border border-score-good/20">
+            <span className="text-sm font-medium text-score-good">
+              Keine Einwände erhoben
+            </span>
+          </div>
+        )}
 
-      {dropOffPoint && (
-        <p className="text-xs text-[var(--text-secondary)] mt-2">
-          Abbruch bei: <span className="font-medium">{dropOffPoint}</span>
-        </p>
-      )}
+        {dropOffPoint && (
+          <div className="mt-2 p-3 bg-red-500/10 rounded-xl border border-red-500/20 flex flex-col gap-1.5">
+            <span className="text-xs font-semibold text-red-500 uppercase tracking-wider">
+              Abbruchpunkt
+            </span>
+            <span className="text-sm font-medium text-red-400">
+              {dropOffPoint}
+            </span>
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 }

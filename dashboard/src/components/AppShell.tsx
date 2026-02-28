@@ -3,15 +3,19 @@
 import { LeadsProvider, useLeads } from "@/lib/leads-context";
 import Sidebar from "@/components/Sidebar";
 
+import { DynamicBackground } from "./layout/DynamicBackground";
+
 function AppShellInner({ children }: { children: React.ReactNode }) {
   const { isLive } = useLeads();
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden font-sans p-4 gap-4">
+      <DynamicBackground />
       <Sidebar isLive={isLive} />
-      {/* Main content offset by sidebar width + floating margins on desktop */}
-      <main className="flex-1 md:ml-[calc(15rem+1.5rem)] overflow-y-auto">
-        {children}
+      <main className="flex-1 overflow-y-auto rounded-2xl border border-sidebar-border shadow-md bg-background/60 backdrop-blur-sm z-10 relative">
+        <div className="p-6 md:p-8">
+          {children}
+        </div>
       </main>
     </div>
   );

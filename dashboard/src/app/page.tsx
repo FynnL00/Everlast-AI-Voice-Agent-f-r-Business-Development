@@ -9,6 +9,7 @@ import ConversionChart from "@/components/ConversionChart";
 import LeadTable from "@/components/LeadTable";
 import ObjectionChart from "@/components/ObjectionChart";
 import { LayoutDashboard } from "lucide-react";
+import PageHeader from "@/components/ui/PageHeader";
 
 // Select only the fields the dashboard needs (avoid loading large transcripts)
 const DASHBOARD_FIELDS = "id, created_at, caller_name, company, email, phone, company_size, current_stack, pain_point, timeline, score_company_size, score_tech_stack, score_pain_point, score_timeline, total_score, lead_grade, call_id, call_duration_seconds, conversation_summary, sentiment, objections_raised, drop_off_point, appointment_booked, appointment_datetime, status, next_steps";
@@ -159,43 +160,38 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-[var(--muted)]">Dashboard lädt...</div>
+        <div className="text-muted-foreground animate-pulse">Dashboard lädt...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen p-6 max-w-7xl mx-auto">
+    <div className="min-h-screen p-6 md:p-8 max-w-[1600px] mx-auto space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center">
-            <LayoutDashboard size={18} className="text-[var(--accent)]" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="flex items-center gap-2 justify-end">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isLive ? "bg-[var(--success)] animate-pulse" : "bg-[var(--muted)]"
-              }`}
-            />
-            <span className="text-sm text-[var(--muted)]">
-              {isLive ? "Live" : "Offline"}
-            </span>
-          </div>
-          <p className="text-xs text-[var(--muted)] mt-0.5">
-            {leads.length} Leads · Echtzeit-KPIs
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        icon={LayoutDashboard}
+        rightContent={
+          <>
+            <div className="flex items-center gap-2 justify-end mb-1">
+              <span
+                className={`w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] ${isLive ? "bg-status-completed text-status-completed animate-pulse" : "bg-muted-foreground text-muted-foreground"
+                  }`}
+              />
+              <span className="text-sm font-medium text-muted-foreground drop-shadow-sm">
+                {isLive ? "Live" : "Offline"}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground font-medium">
+              {leads.length} Leads · Echtzeit-KPIs
+            </p>
+          </>
+        }
+      />
 
       {/* KPI Cards */}
-      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-5 shadow-[var(--card-shadow)]">
-        <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--muted)] mb-3 block">
+      <div className="glass p-6 rounded-2xl w-full">
+        <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 block">
           MAIN KPIS
         </span>
         <KPICards

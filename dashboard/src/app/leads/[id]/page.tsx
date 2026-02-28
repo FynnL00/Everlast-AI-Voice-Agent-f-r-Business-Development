@@ -20,6 +20,7 @@ import NextStepsCard from "@/components/lead-detail/NextStepsCard";
 
 export default function LeadDetailPage() {
   const params = useParams<{ id: string }>();
+  // ... [useLeads, useState hooks]
   const { fetchLeadDetail, updateLead, generateBriefing } = useLeads();
   const [lead, setLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,10 +85,10 @@ export default function LeadDetailPage() {
       setLead((prev) =>
         prev
           ? {
-              ...prev,
-              briefing,
-              briefing_generated_at: new Date().toISOString(),
-            }
+            ...prev,
+            briefing,
+            briefing_generated_at: new Date().toISOString(),
+          }
           : prev
       );
     }
@@ -110,7 +111,7 @@ export default function LeadDetailPage() {
   }
 
   return (
-    <div className="min-h-screen p-6 max-w-7xl mx-auto">
+    <div className="min-h-screen p-6 md:p-8 max-w-[1400px] mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column */}
         <div className="lg:col-span-2 space-y-6">
@@ -153,22 +154,22 @@ export default function LeadDetailPage() {
 
 function LeadDetailSkeleton() {
   return (
-    <div className="min-h-screen p-6 max-w-7xl mx-auto">
+    <div className="min-h-screen p-6 md:p-8 max-w-[1400px] mx-auto">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column skeleton */}
         <div className="lg:col-span-2 space-y-6">
           {/* Header skeleton */}
           <div>
-            <div className="h-4 w-32 bg-[var(--card-border)] rounded animate-pulse mb-4" />
+            <div className="h-4 w-32 bg-border rounded animate-pulse mb-4" />
             <div className="flex items-center gap-3 mb-2">
-              <div className="h-8 w-48 bg-[var(--card-border)] rounded animate-pulse" />
-              <div className="h-6 w-16 bg-[var(--card-border)] rounded-full animate-pulse" />
-              <div className="h-6 w-20 bg-[var(--card-border)] rounded-full animate-pulse" />
+              <div className="h-8 w-48 bg-border rounded animate-pulse" />
+              <div className="h-6 w-16 bg-border rounded-full animate-pulse" />
+              <div className="h-6 w-20 bg-border rounded-full animate-pulse" />
             </div>
             <div className="flex gap-4">
-              <div className="h-4 w-16 bg-[var(--card-border)] rounded animate-pulse" />
-              <div className="h-4 w-24 bg-[var(--card-border)] rounded animate-pulse" />
-              <div className="h-4 w-20 bg-[var(--card-border)] rounded animate-pulse" />
+              <div className="h-4 w-16 bg-border rounded animate-pulse" />
+              <div className="h-4 w-24 bg-border rounded animate-pulse" />
+              <div className="h-4 w-20 bg-border rounded animate-pulse" />
             </div>
           </div>
 
@@ -176,13 +177,13 @@ function LeadDetailSkeleton() {
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6"
+              className="rounded-xl border border-border bg-card p-6"
             >
-              <div className="h-4 w-28 bg-[var(--card-border)] rounded animate-pulse mb-4" />
+              <div className="h-4 w-28 bg-border rounded animate-pulse mb-4" />
               <div className="space-y-3">
-                <div className="h-4 w-full bg-[var(--card-border)] rounded animate-pulse" />
-                <div className="h-4 w-3/4 bg-[var(--card-border)] rounded animate-pulse" />
-                <div className="h-4 w-1/2 bg-[var(--card-border)] rounded animate-pulse" />
+                <div className="h-4 w-full bg-border rounded animate-pulse" />
+                <div className="h-4 w-3/4 bg-border rounded animate-pulse" />
+                <div className="h-4 w-1/2 bg-border rounded animate-pulse" />
               </div>
             </div>
           ))}
@@ -193,12 +194,12 @@ function LeadDetailSkeleton() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6"
+              className="rounded-xl border border-border bg-card p-6"
             >
-              <div className="h-4 w-36 bg-[var(--card-border)] rounded animate-pulse mb-4" />
+              <div className="h-4 w-36 bg-border rounded animate-pulse mb-4" />
               <div className="space-y-3">
-                <div className="h-3 w-full bg-[var(--card-border)] rounded animate-pulse" />
-                <div className="h-3 w-2/3 bg-[var(--card-border)] rounded animate-pulse" />
+                <div className="h-3 w-full bg-border rounded animate-pulse" />
+                <div className="h-3 w-2/3 bg-border rounded animate-pulse" />
               </div>
             </div>
           ))}

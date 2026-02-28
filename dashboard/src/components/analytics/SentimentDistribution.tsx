@@ -9,7 +9,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import Card from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import type { Lead } from "@/lib/types";
 
 interface SentimentDistributionProps {
@@ -17,9 +17,9 @@ interface SentimentDistributionProps {
 }
 
 const SENTIMENT_CONFIG: Record<string, { label: string; color: string }> = {
-  positiv: { label: "Positiv", color: "#42d77d" },
-  neutral: { label: "Neutral", color: "#f59e0b" },
-  negativ: { label: "Negativ", color: "#ef4444" },
+  positiv: { label: "Positiv", color: "var(--score-good)" },
+  neutral: { label: "Neutral", color: "var(--score-warning)" },
+  negativ: { label: "Negativ", color: "var(--score-danger)" },
 };
 
 interface SentimentEntry {
@@ -38,9 +38,9 @@ function CustomTooltip({
   if (!active || !payload || payload.length === 0) return null;
   const entry = payload[0].payload;
   return (
-    <div className="rounded-lg border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm shadow-lg">
-      <span style={{ color: entry.color }}>{entry.name}</span>
-      <span className="text-[var(--text-secondary)] ml-2">{entry.value} Leads</span>
+    <div className="rounded-xl bg-card border border-border px-4 py-3 shadow-[0_6px_20px_rgba(0,0,0,0.4)] min-w-[160px] backdrop-blur-xl">
+      <span className="font-semibold" style={{ color: entry.color }}>{entry.name}</span>
+      <span className="text-muted-foreground ml-2">{entry.value} Leads</span>
     </div>
   );
 }
@@ -63,44 +63,47 @@ export default function SentimentDistribution({ leads }: SentimentDistributionPr
   const total = useMemo(() => data.reduce((sum, d) => sum + d.value, 0), [data]);
 
   return (
-    <Card>
-      <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-4">
-        Stimmungsverteilung
-      </h3>
-      <div className="h-[260px]">
-        {total === 0 ? (
-          <div className="flex items-center justify-center h-full text-[var(--text-secondary)] text-sm">
-            Keine Sentiment-Daten vorhanden
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="45%"
-                outerRadius={80}
-                dataKey="value"
-                stroke="none"
-                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                labelLine={{ stroke: "#9ca3af" }}
-              >
-                {data.map((entry) => (
-                  <Cell key={entry.name} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip content={<CustomTooltip />} />
-              <Legend
-                verticalAlign="bottom"
-                height={36}
-                formatter={(value: string) => (
-                  <span className="text-xs text-[var(--text-secondary)]">{value}</span>
-                )}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5 w-full h-full">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-semibold">Stimmungsverteilung</CardTitle>
+      </CardHeader>
+      <CardContent className="pb-6">
+        <div className="h-[280px]">
+          {total === 0 ? (
+            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+              Keine Sentiment-Daten vorhanden
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={data}
+                  cx="50%"
+                  cy="45%"
+                  outerRadius={80}
+                  innerRadius={60}
+                  dataKey="value"
+                  stroke="none"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  labelLine={{ stroke: "var(--muted-foreground)" }}
+                >
+                  {data.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+                <Legend
+                  verticalAlign="bottom"
+                  height={36}
+                  formatter={(value: string) => (
+                    <span className="text-xs text-muted-foreground font-medium ml-1">{value}</span>
+                  )}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </CardContent>
     </Card>
   );
 }

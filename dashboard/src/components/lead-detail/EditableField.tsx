@@ -69,18 +69,18 @@ export default function EditableField({
 
   if (isEditing) {
     const sharedClasses =
-      "w-full bg-transparent border border-[var(--card-border)] rounded-lg px-3 py-2 text-sm text-[var(--foreground)] focus:outline-none focus:border-[var(--accent)] transition-colors";
+      "w-full bg-transparent border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:border-ring transition-colors";
 
     return (
       <div className="flex items-start gap-3 py-2">
         {Icon && (
           <Icon
             size={16}
-            className="text-[var(--muted)] mt-2.5 shrink-0"
+            className="text-muted-foreground mt-2.5 shrink-0"
           />
         )}
         <div className="flex-1">
-          <span className="text-xs text-[var(--muted)] mb-1 block">
+          <span className="text-xs text-muted-foreground mb-1 block">
             {label}
           </span>
           {type === "textarea" ? (
@@ -114,24 +114,24 @@ export default function EditableField({
       type="button"
       onClick={() => setIsEditing(true)}
       className={cn(
-        "flex items-start gap-3 py-2 w-full text-left rounded-lg px-1 -mx-1 transition-all duration-150 hover:bg-gray-50 group",
+        "flex items-start gap-3 py-2 w-full text-left rounded-lg px-2 -mx-2 transition-all duration-150 hover:bg-muted/50 group",
         isSaving && "opacity-50"
       )}
     >
       {Icon && (
         <Icon
           size={16}
-          className="text-[var(--muted)] mt-0.5 shrink-0"
+          className="text-muted-foreground mt-0.5 shrink-0"
         />
       )}
       <div className="flex-1 min-w-0">
-        <span className="text-xs text-[var(--muted)] block">{label}</span>
+        <span className="text-xs text-muted-foreground block">{label}</span>
         <span
           className={cn(
             "text-sm block truncate",
             value
-              ? "text-[var(--foreground)]"
-              : "text-[var(--muted)] italic"
+              ? "text-foreground"
+              : "text-muted-foreground italic"
           )}
         >
           {value || "\u2014"}

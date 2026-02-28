@@ -4,12 +4,13 @@ import { useState, useMemo, useEffect } from "react";
 import { useLeads } from "@/lib/leads-context";
 import type { Lead, SortField, SortDirection } from "@/lib/types";
 import PageHeader from "@/components/ui/PageHeader";
-import Badge from "@/components/ui/Badge";
-import Card from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Card, CardContent } from "@/components/ui/Card";
 import LeadSearch from "@/components/leads/LeadSearch";
 import LeadFilters from "@/components/leads/LeadFilters";
 import EnhancedLeadTable from "@/components/leads/EnhancedLeadTable";
 import Pagination from "@/components/leads/Pagination";
+import { Users } from "lucide-react";
 
 const PAGE_SIZE = 25;
 
@@ -92,24 +93,22 @@ export default function LeadsPage() {
   );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="min-h-screen p-6 md:p-8 max-w-[1600px] mx-auto space-y-6">
       <PageHeader
         title="Leads"
-        badge={
-          <Badge
-            label={`${filteredLeads.length} Gesamt`}
-            color="var(--accent)"
-            size="md"
-          />
-        }
+        subtitle="Alle erfassten Leads und ihre Details"
+        icon={Users}
       />
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row gap-4 mb-4 items-center justify-between">
         <LeadSearch
           value={searchQuery}
           onChange={setSearchQuery}
           className="sm:w-80"
         />
+        <div className="text-sm font-medium text-muted-foreground flex items-center">
+          <Badge className="mr-2 bg-primary text-primary-foreground">{filteredLeads.length}</Badge> Gesamt
+        </div>
       </div>
 
       <LeadFilters
@@ -119,19 +118,21 @@ export default function LeadsPage() {
         className="mb-4"
       />
 
-      <Card className="p-0 overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center py-16">
-            <div className="w-6 h-6 border-2 border-[var(--accent)] border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          <EnhancedLeadTable
-            leads={paginatedLeads}
-            sortField={sortField}
-            sortDirection={sortDirection}
-            onSort={handleSort}
-          />
-        )}
+      <Card className="p-0 overflow-hidden w-full backdrop-blur-md bg-card/60">
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : (
+            <EnhancedLeadTable
+              leads={paginatedLeads}
+              sortField={sortField}
+              sortDirection={sortDirection}
+              onSort={handleSort}
+            />
+          )}
+        </CardContent>
       </Card>
 
       <Pagination

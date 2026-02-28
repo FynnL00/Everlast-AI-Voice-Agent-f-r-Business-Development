@@ -1,7 +1,7 @@
 "use client";
 
 import { CalendarCheck, Calendar } from "lucide-react";
-import Card from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { formatFullDate } from "@/lib/utils";
 
 interface AppointmentCardProps {
@@ -16,37 +16,44 @@ export default function AppointmentCard({
   calBookingId,
 }: AppointmentCardProps) {
   return (
-    <Card>
-      <h3 className="text-sm font-medium text-[var(--muted)] mb-4">
-        Termin
-      </h3>
+    <Card className="shadow-sm">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-semibold text-muted-foreground">
+          Termin
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {booked ? (
+          <div className="space-y-4">
+            {/* Green success banner */}
+            <div className="flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-bold bg-score-good-bg text-score-good border border-score-good/20 shadow-sm">
+              <CalendarCheck size={18} className="shrink-0" />
+              Termin erfolgreich gebucht
+            </div>
 
-      {booked ? (
-        <>
-          {/* Green success banner */}
-          <div className="flex items-center gap-2 rounded-lg px-3 py-2 mb-3 text-sm font-medium bg-[var(--success)]/15 text-[var(--success)]">
-            <CalendarCheck size={16} />
-            Termin gebucht
+            <div className="pl-2 border-l-2 border-score-good/30 space-y-1 py-1">
+              {datetime && (
+                <p className="text-base font-semibold text-foreground tracking-tight">
+                  {formatFullDate(datetime)}
+                </p>
+              )}
+
+              {calBookingId && (
+                <p className="text-xs text-muted-foreground font-mono">
+                  ID: {calBookingId}
+                </p>
+              )}
+            </div>
           </div>
-
-          {datetime && (
-            <p className="text-sm text-[var(--foreground)] mb-1">
-              {formatFullDate(datetime)}
-            </p>
-          )}
-
-          {calBookingId && (
-            <p className="text-xs text-[var(--muted)]">
-              Booking-ID: {calBookingId}
-            </p>
-          )}
-        </>
-      ) : (
-        <div className="flex items-center gap-2 text-sm text-[var(--muted)]">
-          <Calendar size={16} />
-          Kein Termin gebucht
-        </div>
-      )}
+        ) : (
+          <div className="flex items-center justify-center p-6 bg-muted/20 border border-dashed border-border/50 rounded-xl text-muted-foreground">
+            <div className="flex flex-col items-center gap-2">
+              <Calendar size={24} className="opacity-50" />
+              <span className="text-sm font-medium">Kein Termin gebucht</span>
+            </div>
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 }

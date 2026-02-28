@@ -2,7 +2,7 @@
 
 import { User, Building, Mail, Phone, Users, Wrench } from "lucide-react";
 import type { Lead, LeadUpdatePayload } from "@/lib/types";
-import Card from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import EditableField from "./EditableField";
 
 interface ContactCardProps {
@@ -12,11 +12,13 @@ interface ContactCardProps {
 
 export default function ContactCard({ lead, onUpdate }: ContactCardProps) {
   return (
-    <Card>
-      <h3 className="text-sm font-medium text-[var(--muted)] mb-4">
-        Kontaktdaten
-      </h3>
-      <div className="space-y-1">
+    <Card className="shadow-sm">
+      <CardHeader className="pb-3 border-b border-border/50">
+        <CardTitle className="text-sm font-semibold text-muted-foreground">
+          Kontaktdaten
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-4 space-y-2">
         <EditableField
           icon={User}
           label="Name"
@@ -55,7 +57,7 @@ export default function ContactCard({ lead, onUpdate }: ContactCardProps) {
           value={lead.current_stack}
           onSave={(v) => onUpdate({ current_stack: v })}
         />
-      </div>
+      </CardContent>
     </Card>
   );
 }

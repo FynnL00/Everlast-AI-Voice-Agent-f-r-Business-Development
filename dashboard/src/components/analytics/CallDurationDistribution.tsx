@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import Card from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import type { Lead } from "@/lib/types";
 
 interface CallDurationDistributionProps {
@@ -43,9 +43,9 @@ function CustomTooltip({
   if (!active || !payload || payload.length === 0) return null;
   const entry = payload[0].payload;
   return (
-    <div className="rounded-lg border border-[var(--card-border)] bg-[var(--card)] px-3 py-2 text-sm shadow-lg">
-      <span className="text-[var(--foreground)]">{entry.label}</span>
-      <span className="text-[var(--text-secondary)] ml-2">{entry.count} Gespräche</span>
+    <div className="rounded-xl bg-card border border-border px-4 py-3 shadow-[0_6px_20px_rgba(0,0,0,0.4)] min-w-[160px] backdrop-blur-xl">
+      <span className="font-semibold text-foreground">{entry.label}</span>
+      <span className="text-muted-foreground ml-2">{entry.count} Gespräche</span>
     </div>
   );
 }
@@ -70,35 +70,39 @@ export default function CallDurationDistribution({ leads }: CallDurationDistribu
   const hasData = data.some((d) => d.count > 0);
 
   return (
-    <Card>
-      <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-4">
-        Gesprächsdauer
-      </h3>
-      <div className="h-[260px]">
-        {!hasData ? (
-          <div className="flex items-center justify-center h-full text-[var(--text-secondary)] text-sm">
-            Keine Gesprächsdauer-Daten vorhanden
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-              <XAxis
-                dataKey="label"
-                tick={{ fill: "#6b7280", fontSize: 12 }}
-                axisLine={{ stroke: "#e5e7eb" }}
-              />
-              <YAxis
-                tick={{ fill: "#6b7280", fontSize: 12 }}
-                axisLine={{ stroke: "#e5e7eb" }}
-                allowDecimals={false}
-              />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
-              <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={36} />
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5 w-full">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base font-semibold">Gesprächsdauer</CardTitle>
+      </CardHeader>
+      <CardContent className="pb-6">
+        <div className="h-[280px]">
+          {!hasData ? (
+            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+              Keine Gesprächsdauer-Daten vorhanden
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data} margin={{ bottom: 5, top: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                <XAxis
+                  dataKey="label"
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+                  axisLine={false}
+                  tickLine={false}
+                  allowDecimals={false}
+                />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: "var(--muted)", opacity: 0.2 }} />
+                <Bar dataKey="count" fill="var(--chart-5)" radius={[6, 6, 0, 0]} barSize={40} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      </CardContent>
     </Card>
   );
 }
