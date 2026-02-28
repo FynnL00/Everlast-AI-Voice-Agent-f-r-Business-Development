@@ -11,7 +11,7 @@ via Cal.com und speichert alles in Supabase. Ein Next.js Dashboard zeigt Live-KP
 | Komponente | Tool | Zugriff |
 |------------|------|---------|
 | Voice-Plattform | Vapi | MCP (`vapi`) |
-| LLM | GPT-4o | via Vapi |
+| LLM | GPT-5-mini via OpenRouter | via Vapi |
 | STT | Deepgram Nova-3 | via Vapi |
 | TTS | ElevenLabs | via Vapi |
 | Orchestrierung | n8n (self-hosted) | MCP (`n8n-mcp`) |
@@ -32,8 +32,8 @@ dashboard/                   # Next.js Dashboard (bereits gebaut, muss deployed 
   src/lib/types.ts           # Kanonisches Lead-Interface (Datenvertrag!)
   src/components/            # KPICards, LeadTable, ConversionChart, etc.
 supabase/
-  migrations/001_initial_schema.sql  # DB-Schema (muss ausgefuehrt werden)
-  migrations/002_improvements.sql    # RLS-Fix, lead_grade Trigger, neue Felder
+  migrations/001_initial_schema.sql  # DB-Schema (bereits ausgefuehrt)
+  migrations/002_improvements.sql    # RLS-Fix, lead_grade Trigger, neue Felder (bereits ausgefuehrt)
 demo/
   demo-scenario.md           # Thomas Weber Demo-Szenario
 ```
@@ -113,7 +113,8 @@ Alle Workflows die Leads schreiben MUESSEN dieses Format einhalten.
 
 ### Post-Call Scoring
 
-Lead-Scoring im Post-Call Workflow soll GPT-4o nutzen (nicht Keyword-Matching).
+Lead-Scoring im Post-Call Workflow soll GPT-5-mini via OpenRouter nutzen (nicht Keyword-Matching).
+HTTP Request an OpenRouter mit `response_format: { type: "json_object" }`.
 Prompt: "Analysiere dieses Transkript und bewerte den Lead nach 4 Kriterien (company_size, tech_stack, pain_point, timeline), je 1-3 Punkte. Antworte als JSON."
 Die qualification-criteria.json dient als Referenz fuer die Scoring-Beschreibungen.
 

@@ -7,48 +7,89 @@
 - **Firma:** WebShop Solutions GmbH (E-Commerce, 80 Mitarbeiter)
 - **Situation:** Nutzt aktuell Zapier, stößt an Limits, hat von n8n gehört
 
-## Gesprächsverlauf (ca. 4-5 Min)
+## Deine exakten Sätze als Thomas
 
-### Phase 1: Begrüßung (0:00 - 0:30)
-- Thomas ruft an: "Hallo, ich habe eine Frage zu n8n..."
-- Lisa begrüßt, stellt sich vor, fragt nach dem Anlass
+### Phase 1: Begrüßung
 
-### Phase 2: Bedarfsermittlung & Qualifizierung (0:30 - 2:30)
-- Thomas erklärt: E-Commerce Firma, 80 Mitarbeiter
-- Nutzt Zapier seit 2 Jahren, wird immer teurer
-- Konkreter Pain: Bestelldaten aus Shopify müssen manuell ins ERP
-- Kostet 3 Mitarbeiter jeweils 2 Stunden pro Tag
-- Timeline: Will innerhalb der nächsten 4 Wochen wechseln
+> Lisa wird sich melden und den DSGVO-Hinweis geben. Warte bis sie fertig ist.
 
-### Phase 3: Mehrwert & Terminangebot (2:30 - 3:30)
-- Lisa fasst zusammen, hebt n8n Vorteile hervor
-- Kein Pay-per-Task = deutliche Ersparnis vs. Zapier
-- Self-Hosting möglich = Datenkontrolle
-- Bietet Demo-Termin an
+**Thomas:** "Ja, das ist in Ordnung."
 
-### Phase 4: Terminbuchung (3:30 - 4:30)
-- Lisa prüft Verfügbarkeit (check_availability)
-- Schlägt 2-3 Slots vor
-- Thomas wählt Mittwoch 14 Uhr
-- Lisa bucht (book_appointment)
-- Bestätigt E-Mail-Adresse
+> Lisa wird fragen, wie sie helfen kann.
 
-### Phase 5: Verabschiedung (4:30 - 5:00)
-- Lisa fasst Termin und nächste Schritte zusammen
-- Freundliche Verabschiedung
+**Thomas:** "Hallo, ja, ich habe von n8n gehört und wollte mich mal erkundigen, ob das was für uns wäre."
+
+---
+
+### Phase 2: Bedarfsermittlung
+
+> Lisa wird nach deiner Branche und Teamgröße fragen.
+
+**Thomas:** "Wir sind ein E-Commerce-Unternehmen, WebShop Solutions GmbH. Wir haben ungefähr 80 Mitarbeiter."
+
+> Lisa wird nach eurem aktuellen Tech-Stack fragen.
+
+**Thomas:** "Wir nutzen seit zwei Jahren Zapier, aber das wird ehrlich gesagt immer teurer. Wir haben inzwischen über 5.000 Tasks im Monat und die Kosten explodieren."
+
+> Lisa wird nach eurem konkreten Problem fragen.
+
+**Thomas:** "Unser größtes Problem: Wir müssen Bestelldaten aus Shopify manuell in unser ERP-System übertragen. Das kostet drei Mitarbeiter jeweils zwei Stunden am Tag. Also sechs Arbeitsstunden jeden Tag nur für Datenübertragung."
+
+> Lisa wird nach dem Zeitrahmen fragen.
+
+**Thomas:** "Das ist dringend. Wir wollen das innerhalb der nächsten vier Wochen umstellen. Das Budget ist auch schon genehmigt."
+
+---
+
+### Phase 3: Einwand (optional, für die Demo)
+
+> Lisa wird den Mehrwert zusammenfassen und einen Termin vorschlagen.
+
+**Thomas:** "Klingt grundsätzlich interessant, aber ich bin mir nicht sicher, ob sich der Wechsel wirklich lohnt. Wir haben ja schon alles in Zapier aufgebaut."
+
+> Lisa wird den Einwand behandeln (Kostenersparnis, keine Migration nötig, etc.). Dann zustimmen:
+
+**Thomas:** "Okay, das klingt überzeugend. Ja, lass uns einen Termin machen."
+
+---
+
+### Phase 4: Terminbuchung
+
+> Lisa wird verfügbare Termine prüfen und Slots vorschlagen.
+
+**Thomas:** "Der zweite Termin passt gut, den nehme ich."
+
+> Lisa wird nach Name, E-Mail und Firma fragen für die Buchung.
+
+**Thomas:** "Thomas Weber, die E-Mail ist t.weber@webshop-solutions.de, und die Firma ist WebShop Solutions GmbH."
+
+> Lisa wird die Buchung bestätigen.
+
+**Thomas:** "Super, danke."
+
+---
+
+### Phase 5: Verabschiedung
+
+> Lisa wird zusammenfassen und sich verabschieden.
+
+**Thomas:** "Vielen Dank, das war sehr hilfreich. Bis dann!"
+
+---
 
 ## Erwartetes Ergebnis
-- **Lead-Score:** A (12/12)
+- **Lead-Score:** A (11-12/12)
 - **Termin:** Gebucht
 - **Qualification:**
   - Company Size: 3 (80 MA = Enterprise)
   - Tech Stack: 3 (Zapier-User, sucht Alternative)
   - Pain Point: 3 (Konkreter Use Case, quantifizierter Zeitaufwand)
-  - Timeline: 3 (Innerhalb 4 Wochen)
+  - Timeline: 3 (Innerhalb 4 Wochen, Budget genehmigt)
 
 ## Tipps für die Aufnahme
 - Ruhige Umgebung, kein Hintergrundlärm
-- Natürlich sprechen, nicht ablesen
-- Kleine Pausen einbauen (wirkt authentischer)
+- Natürlich sprechen, nicht wörtlich ablesen - die Sätze oben sind Richtwerte
+- Kleine Pausen einbauen bevor du antwortest (wirkt authentischer)
+- Lisa braucht manchmal 1-2 Sekunden zum Antworten, einfach warten
+- Wenn Lisa etwas Unerwartetes fragt: einfach als Thomas improvisieren
 - 2-3 Takes aufnehmen, besten auswählen
-- Kurzen Einwand einbauen für Demonstration der Einwandbehandlung
