@@ -83,7 +83,7 @@ export default function SentimentDistribution({ leads }: SentimentDistributionPr
                 dataKey="value"
                 stroke="none"
                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                labelLine={{ stroke: "#8b8fa3" }}
+                labelLine={{ stroke: "#9ca3af" }}
               >
                 {data.map((entry) => (
                   <Cell key={entry.name} fill={entry.color} />

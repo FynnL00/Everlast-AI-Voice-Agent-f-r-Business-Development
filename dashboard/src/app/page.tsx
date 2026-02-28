@@ -8,6 +8,7 @@ import LeadScoreDistribution from "@/components/LeadScoreDistribution";
 import ConversionChart from "@/components/ConversionChart";
 import LeadTable from "@/components/LeadTable";
 import ObjectionChart from "@/components/ObjectionChart";
+import { LayoutDashboard } from "lucide-react";
 
 // Select only the fields the dashboard needs (avoid loading large transcripts)
 const DASHBOARD_FIELDS = "id, created_at, caller_name, company, email, phone, company_size, current_stack, pain_point, timeline, score_company_size, score_tech_stack, score_pain_point, score_timeline, total_score, lead_grade, call_id, call_duration_seconds, conversation_summary, sentiment, objections_raised, drop_off_point, appointment_booked, appointment_datetime, status, next_steps";
@@ -167,26 +168,36 @@ export default function Dashboard() {
     <div className="min-h-screen p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold">n8n Voice Agent Dashboard</h1>
-          <p className="text-sm text-[var(--muted)] mt-1">
-            Echtzeit-KPIs für Lead-Qualifizierung & Terminbuchung
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-[var(--accent)]/10 flex items-center justify-center">
+            <LayoutDashboard size={18} className="text-[var(--accent)]" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span
-            className={`w-2 h-2 rounded-full ${
-              isLive ? "bg-[var(--success)] animate-pulse" : "bg-[var(--muted)]"
-            }`}
-          />
-          <span className="text-sm text-[var(--muted)]">
-            {isLive ? "Live" : "Offline"}
-          </span>
+        <div className="text-right">
+          <div className="flex items-center gap-2 justify-end">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isLive ? "bg-[var(--success)] animate-pulse" : "bg-[var(--muted)]"
+              }`}
+            />
+            <span className="text-sm text-[var(--muted)]">
+              {isLive ? "Live" : "Offline"}
+            </span>
+          </div>
+          <p className="text-xs text-[var(--muted)] mt-0.5">
+            {leads.length} Leads · Echtzeit-KPIs
+          </p>
         </div>
       </div>
 
       {/* KPI Cards */}
-      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-[var(--card-shadow)]">
+      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-5 shadow-[var(--card-shadow)]">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-[var(--muted)] mb-3 block">
+          MAIN KPIS
+        </span>
         <KPICards
           totalCalls={totalCalls}
           conversionRate={conversionRate}

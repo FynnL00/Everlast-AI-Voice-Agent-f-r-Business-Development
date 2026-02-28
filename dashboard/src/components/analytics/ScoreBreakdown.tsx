@@ -78,15 +78,15 @@ export default function ScoreBreakdown({ leads }: ScoreBreakdownProps) {
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart data={data} cx="50%" cy="50%" outerRadius="70%">
-              <PolarGrid stroke="#2a2d4e" />
+              <PolarGrid stroke="#e5e7eb" />
               <PolarAngleAxis
                 dataKey="dimension"
-                tick={{ fill: "#8b8fa3", fontSize: 11 }}
+                tick={{ fill: "#6b7280", fontSize: 11 }}
               />
               <PolarRadiusAxis
                 angle={90}
                 domain={[0, 3]}
-                tick={{ fill: "#8b8fa3", fontSize: 10 }}
+                tick={{ fill: "#6b7280", fontSize: 10 }}
                 tickCount={4}
                 axisLine={false}
               />
@@ -94,8 +94,8 @@ export default function ScoreBreakdown({ leads }: ScoreBreakdownProps) {
               <Radar
                 name="Score"
                 dataKey="value"
-                stroke="#42d77d"
-                fill="#42d77d"
+                stroke="#22c55e"
+                fill="#22c55e"
                 fillOpacity={0.3}
                 strokeWidth={2}
               />

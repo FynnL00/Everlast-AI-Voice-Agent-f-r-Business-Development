@@ -96,16 +96,16 @@ export default function ConversionChart({ data }: ConversionChartProps) {
                 />
               </clipPath>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#232548" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis
               dataKey="date"
-              tick={{ fill: "#8b8fa3", fontSize: 11 }}
-              axisLine={{ stroke: "#232548" }}
+              tick={{ fill: "#6b7280", fontSize: 11 }}
+              axisLine={{ stroke: "#e5e7eb" }}
               tickLine={false}
             />
             <YAxis
               yAxisId="rate"
-              tick={{ fill: "#8b8fa3", fontSize: 11 }}
+              tick={{ fill: "#6b7280", fontSize: 11 }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(v) => `${v}%`}
@@ -114,7 +114,7 @@ export default function ConversionChart({ data }: ConversionChartProps) {
             <YAxis
               yAxisId="calls"
               orientation="right"
-              tick={{ fill: "#8b8fa3", fontSize: 11 }}
+              tick={{ fill: "#6b7280", fontSize: 11 }}
               axisLine={false}
               tickLine={false}
               domain={[0, Math.ceil(maxCalls * 1.2)]}
@@ -138,7 +138,7 @@ export default function ConversionChart({ data }: ConversionChartProps) {
               strokeWidth={2}
               fill="url(#gradientCalls)"
               dot={false}
-              activeDot={{ r: 4, fill: "#3b82f6", stroke: "#1a1d3e", strokeWidth: 2 }}
+              activeDot={{ r: 4, fill: "#3b82f6", stroke: "#ffffff", strokeWidth: 2 }}
               clipPath="url(#reveal-clip)"
               isAnimationActive={true}
               animationDuration={1200}
@@ -152,7 +152,7 @@ export default function ConversionChart({ data }: ConversionChartProps) {
               strokeWidth={2}
               fill="url(#gradientRate)"
               dot={false}
-              activeDot={{ r: 4, fill: "#8b5cf6", stroke: "#1a1d3e", strokeWidth: 2 }}
+              activeDot={{ r: 4, fill: "#8b5cf6", stroke: "#ffffff", strokeWidth: 2 }}
               clipPath="url(#reveal-clip)"
               isAnimationActive={true}
               animationDuration={1400}

@@ -82,18 +82,18 @@ export default function CallDurationDistribution({ leads }: CallDurationDistribu
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} margin={{ bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2d4e" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
               <XAxis
                 dataKey="label"
-                tick={{ fill: "#8b8fa3", fontSize: 12 }}
-                axisLine={{ stroke: "#2a2d4e" }}
+                tick={{ fill: "#6b7280", fontSize: 12 }}
+                axisLine={{ stroke: "#e5e7eb" }}
               />
               <YAxis
-                tick={{ fill: "#8b8fa3", fontSize: 12 }}
-                axisLine={{ stroke: "#2a2d4e" }}
+                tick={{ fill: "#6b7280", fontSize: 12 }}
+                axisLine={{ stroke: "#e5e7eb" }}
                 allowDecimals={false}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
               <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={36} />
             </BarChart>
           </ResponsiveContainer>

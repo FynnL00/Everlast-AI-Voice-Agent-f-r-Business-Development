@@ -23,7 +23,7 @@ export default function ObjectionChart({ data }: ObjectionChartProps) {
                 <span>{item.objection}</span>
                 <span className="text-[var(--muted)]">{pct.toFixed(0)}%</span>
               </div>
-              <div className="h-2 rounded-full bg-white/10">
+              <div className="h-2 rounded-full bg-gray-200">
                 <div
                   className="h-2 rounded-full transition-all duration-500"
                   style={{

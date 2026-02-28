@@ -66,22 +66,22 @@ export default function DropOffAnalysis({ leads }: DropOffAnalysisProps) {
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data} layout="vertical" margin={{ left: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2d4e" horizontal={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" horizontal={false} />
               <XAxis
                 type="number"
-                tick={{ fill: "#8b8fa3", fontSize: 12 }}
-                axisLine={{ stroke: "#2a2d4e" }}
+                tick={{ fill: "#6b7280", fontSize: 12 }}
+                axisLine={{ stroke: "#e5e7eb" }}
                 allowDecimals={false}
               />
               <YAxis
                 type="category"
                 dataKey="phase"
-                tick={{ fill: "#8b8fa3", fontSize: 12 }}
-                axisLine={{ stroke: "#2a2d4e" }}
+                tick={{ fill: "#6b7280", fontSize: 12 }}
+                axisLine={{ stroke: "#e5e7eb" }}
                 width={90}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
-              <Bar dataKey="count" fill="#EA4B71" radius={[0, 4, 4, 0]} barSize={20} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(0,0,0,0.03)" }} />
+              <Bar dataKey="count" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={20} />
             </BarChart>
           </ResponsiveContainer>
         )}

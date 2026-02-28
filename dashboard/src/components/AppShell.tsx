@@ -9,8 +9,8 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <Sidebar isLive={isLive} />
-      {/* Main content offset by sidebar width on desktop */}
-      <main className="flex-1 md:ml-60 overflow-y-auto">
+      {/* Main content offset by sidebar width + floating margins on desktop */}
+      <main className="flex-1 md:ml-[calc(15rem+1.5rem)] overflow-y-auto">
         {children}
       </main>
     </div>

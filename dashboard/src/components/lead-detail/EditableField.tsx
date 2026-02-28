@@ -114,7 +114,7 @@ export default function EditableField({
       type="button"
       onClick={() => setIsEditing(true)}
       className={cn(
-        "flex items-start gap-3 py-2 w-full text-left rounded-lg px-1 -mx-1 transition-all duration-150 hover:bg-white/5 group",
+        "flex items-start gap-3 py-2 w-full text-left rounded-lg px-1 -mx-1 transition-all duration-150 hover:bg-gray-50 group",
         isSaving && "opacity-50"
       )}
     >

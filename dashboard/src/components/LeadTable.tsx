@@ -44,7 +44,7 @@ export default function LeadTable({ leads }: LeadTableProps) {
             {leads.map((lead) => (
               <tr
                 key={lead.id}
-                className="border-b border-[var(--card-border)] last:border-0 hover:bg-white/5 transition-colors group"
+                className="border-b border-[var(--card-border)] last:border-0 hover:bg-gray-50 transition-colors group"
               >
                 <td className="py-3 px-2 font-medium">
                   <Link href={`/leads/${lead.id}`} className="hover:text-[var(--accent)] transition-colors">

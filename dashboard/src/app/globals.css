@@ -1,34 +1,34 @@
 @import "tailwindcss";
 
 :root {
-  /* n8n Brand */
-  --background: #101330;
-  --foreground: #f5f5f5;
-  --card: #1a1d3e;
-  --card-border: #232548;
-  --card-hover: #222556;
-  --accent: #EA4B71;
-  --accent-hover: #d43d63;
-  --accent-light: rgba(234, 75, 113, 0.12);
+  /* Light Theme */
+  --background: #f0f2f5;
+  --foreground: #1a1a2e;
+  --card: #ffffff;
+  --card-border: #e5e7eb;
+  --card-hover: #f9fafb;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-light: rgba(59, 130, 246, 0.1);
   --accent-secondary: #8b5cf6;
-  --success: #42d77d;
+  --success: #22c55e;
   --warning: #f59e0b;
   --danger: #ef4444;
   --info: #3b82f6;
-  --muted: #c0c4d6;
-  --text-secondary: #e0e2ed;
+  --muted: #6b7280;
+  --text-secondary: #6b7280;
   /* Card depth */
-  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.25), 0 0 1px rgba(0, 0, 0, 0.3);
-  --card-shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 0, 0, 0.3);
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
   /* Status */
   --status-new: #5e6278;
   --status-contacted: #3b82f6;
   --status-qualified: #8b5cf6;
   --status-appointment: #f59e0b;
-  --status-converted: #42d77d;
+  --status-converted: #22c55e;
   --status-lost: #ef4444;
   /* Sentiment */
-  --sentiment-positiv: #42d77d;
+  --sentiment-positiv: #22c55e;
   --sentiment-neutral: #f59e0b;
   --sentiment-negativ: #ef4444;
 }
@@ -37,31 +37,4 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-}
-
-/* Animated gradient background */
-@keyframes bg-shift {
-  0%, 100% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(
-    135deg,
-    #101330 0%,
-    #1a1040 25%,
-    #170e38 50%,
-    #101330 75%,
-    #0e1035 100%
-  );
-  background-size: 300% 300%;
-  animation: bg-shift 20s ease-in-out infinite;
 }

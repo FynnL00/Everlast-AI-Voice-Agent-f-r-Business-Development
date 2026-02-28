@@ -21,7 +21,7 @@ export default function TranscriptViewer({ transcript }: TranscriptViewerProps) 
     const regex = new RegExp(`(${escaped})`, "gi");
     return transcript.replace(
       regex,
-      '<mark class="bg-yellow-400/80 text-[var(--background)] rounded-sm px-0.5">$1</mark>'
+      '<mark class="bg-yellow-400/80 text-gray-900 rounded-sm px-0.5">$1</mark>'
     );
   }, [transcript, searchTerm]);
 

@@ -26,15 +26,15 @@ export default function LeadScoreDistribution({
       <div className="h-[200px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#262626" />
-            <XAxis dataKey="grade" stroke="#737373" fontSize={14} />
-            <YAxis stroke="#737373" fontSize={12} allowDecimals={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis dataKey="grade" stroke="#6b7280" fontSize={14} />
+            <YAxis stroke="#6b7280" fontSize={12} allowDecimals={false} />
             <Tooltip
               contentStyle={{
-                background: "#141414",
-                border: "1px solid #262626",
+                background: "#ffffff",
+                border: "1px solid #e5e7eb",
                 borderRadius: "8px",
-                color: "#ededed",
+                color: "#1a1a2e",
               }}
             />
             <Bar dataKey="count" radius={[6, 6, 0, 0]}>
