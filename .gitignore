@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+dashboard/node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build
+dashboard/.next/
+dashboard/out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+
+# RTF source files (not needed in repo)
+*.rtf
+
+# Claude Code / Agent config
+.claude/
+.agent/
+.agents/
+.mcp.json
+skills-lock.json
+.claude-antigravity/

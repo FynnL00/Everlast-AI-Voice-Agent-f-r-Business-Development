@@ -1,0 +1,73 @@
+n8n – Workflow Automation Platform
+===================================
+
+ÜBERBLICK
+n8n ist eine Open-Source Workflow-Automation-Plattform. Der Name wird "n-eight-n" ausgesprochen (nodemation). n8n ermöglicht es Unternehmen, Geschäftsprozesse zu automatisieren – von einfachen Datenübertragungen bis hin zu komplexen Multi-Step-Workflows.
+
+KERNFAKTEN
+- Gegründet: 2019 in Berlin
+- Über 400 Integrationen (Nodes)
+- 50.000+ aktive Nutzer weltweit
+- Open Source mit Fair-Code Lizenz
+- Self-Hosted oder Cloud-Version verfügbar
+- 900+ Community-Workflow-Templates
+- Unterstützt JavaScript und Python Code-Nodes
+
+PREISMODELL
+- Community Edition: Kostenlos, self-hosted
+- n8n Cloud Starter: ab 20€/Monat
+- n8n Cloud Pro: ab 50€/Monat
+- Enterprise: Individuelles Pricing
+- WICHTIG: Keine Kosten pro Workflow-Ausführung (anders als Zapier/Make)
+
+VORTEILE GEGENÜBER WETTBEWERBERN
+
+n8n vs. Zapier:
+- n8n: Keine Kosten pro Task/Aktion – flat pricing
+- n8n: Self-Hosting möglich = volle Datenkontrolle
+- n8n: Code-Nodes für komplexe Logik (JavaScript/Python)
+- n8n: Open Source = keine Vendor Lock-In
+- Zapier kann bei hohem Volumen schnell teuer werden (ab 1.000+ Tasks/Monat)
+
+n8n vs. Make (Integromat):
+- n8n: Intuitiverer Workflow-Builder
+- n8n: Keine Operationslimits
+- n8n: Bessere Error-Handling-Möglichkeiten
+- n8n: Self-Hosting Option
+
+n8n vs. Power Automate:
+- n8n: Plattformunabhängig (nicht an Microsoft gebunden)
+- n8n: Einfachere Bedienung
+- n8n: Größere Integration-Bibliothek außerhalb des Microsoft-Ökosystems
+
+TYPISCHE USE CASES
+1. CRM-Automatisierung: Leads automatisch in CRM übertragen, Follow-ups planen
+2. E-Commerce: Bestellungen synchronisieren, Lagerbestand aktualisieren
+3. Marketing: Social Media Posts planen, Newsletter-Segmentierung
+4. HR: Onboarding-Workflows, Urlaubsanträge automatisieren
+5. DevOps: CI/CD Pipeline Notifications, Server-Monitoring
+6. Finance: Rechnungsverarbeitung, Buchhaltungs-Synchronisation
+7. Customer Support: Ticket-Routing, Auto-Responses, Eskalationen
+
+BELIEBTE INTEGRATIONEN
+- Slack, Microsoft Teams, Discord
+- Google Workspace (Sheets, Calendar, Gmail, Drive)
+- Salesforce, HubSpot, Pipedrive
+- Shopify, WooCommerce, Stripe
+- GitHub, GitLab, Jira
+- PostgreSQL, MySQL, MongoDB
+- OpenAI, Anthropic (Claude), Google AI
+- Twilio, SendGrid, Mailchimp
+
+DEMO-TERMIN INFORMATIONEN
+- Dauer: 30 Minuten
+- Format: Video-Call mit unserem Solutions Team
+- Inhalt: Live-Demo basierend auf Ihrem konkreten Use Case
+- Teilnehmer: Unser Solutions Engineer + Ihre relevanten Teammitglieder
+- Ergebnis: Klarer Plan wie n8n Ihren Prozess automatisieren kann
+
+KONTAKT & SUPPORT
+- Website: n8n.io
+- Community Forum: community.n8n.io
+- Dokumentation: docs.n8n.io
+- Support: Über die Plattform oder per E-Mail

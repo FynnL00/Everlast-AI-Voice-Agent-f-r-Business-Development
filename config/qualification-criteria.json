@@ -1,0 +1,113 @@
+{
+  "version": "1.0",
+  "description": "Lead-Qualifizierungskriterien und Scoring-Logik für den n8n Voice Agent",
+  "criteria": {
+    "company_size": {
+      "label": "Unternehmensgröße",
+      "question": "In welcher Branche sind Sie tätig und wie groß ist Ihr Team?",
+      "scoring": {
+        "3": {
+          "label": "Enterprise",
+          "description": "50+ Mitarbeiter",
+          "indicators": ["50+", "enterprise", "groß", "hundert", "tausend", "konzern", "mittelstand"]
+        },
+        "2": {
+          "label": "SMB",
+          "description": "10-49 Mitarbeiter",
+          "indicators": ["klein", "mittel", "team", "20", "30", "40", "abteilung"]
+        },
+        "1": {
+          "label": "Startup/Solo",
+          "description": "Unter 10 Mitarbeiter",
+          "indicators": ["allein", "freelancer", "startup", "gründer", "solo", "klein"]
+        }
+      }
+    },
+    "tech_stack": {
+      "label": "Aktueller Tech-Stack",
+      "question": "Nutzen Sie aktuell schon Automation-Tools oder machen Sie vieles noch manuell?",
+      "scoring": {
+        "3": {
+          "label": "Power User",
+          "description": "Nutzt bereits Automation-Tools, sucht Upgrade/Alternative",
+          "indicators": ["zapier", "make", "integromat", "automation", "api", "wechseln", "alternative", "zu teuer"]
+        },
+        "2": {
+          "label": "Beginner",
+          "description": "Erste Erfahrung mit Automation",
+          "indicators": ["bisschen", "angefangen", "ausprobiert", "excel", "sheets", "manuell aber"]
+        },
+        "1": {
+          "label": "No Automation",
+          "description": "Keine Automation-Erfahrung",
+          "indicators": ["manuell", "alles händisch", "noch nie", "was ist das"]
+        }
+      }
+    },
+    "pain_point": {
+      "label": "Konkreter Pain Point",
+      "question": "Was wäre der konkrete Prozess, den Sie gerne automatisieren würden?",
+      "scoring": {
+        "3": {
+          "label": "Urgent",
+          "description": "Konkreter, dringender Use Case identifiziert",
+          "indicators": ["konkret", "dringend", "kostet uns", "fehler", "zeitaufwand", "stunden pro woche", "muss automatisiert werden"]
+        },
+        "2": {
+          "label": "Exploring",
+          "description": "Allgemeines Interesse an Automation",
+          "indicators": ["würde gerne", "überlegen", "interesse", "möglich", "schauen"]
+        },
+        "1": {
+          "label": "Browsing",
+          "description": "Nur informierend, kein konkreter Bedarf",
+          "indicators": ["nur informieren", "mal schauen", "neugierig", "gehört davon"]
+        }
+      }
+    },
+    "timeline": {
+      "label": "Timeline & Budget",
+      "question": "Gibt es einen zeitlichen Rahmen, bis wann Sie das umsetzen möchten?",
+      "scoring": {
+        "3": {
+          "label": "Immediate",
+          "description": "Innerhalb 1 Monat, Budget vorhanden",
+          "indicators": ["sofort", "diese woche", "diesen monat", "budget steht", "genehmigt", "dringend"]
+        },
+        "2": {
+          "label": "Planning",
+          "description": "1-3 Monate, Budget unklar",
+          "indicators": ["nächstes quartal", "paar monate", "planen", "evaluieren", "budget klären"]
+        },
+        "1": {
+          "label": "No Timeline",
+          "description": "Kein konkreter Zeitrahmen",
+          "indicators": ["irgendwann", "kein zeitdruck", "mal schauen", "keine eile"]
+        }
+      }
+    }
+  },
+  "grades": {
+    "A": {
+      "min_score": 10,
+      "max_score": 12,
+      "label": "Hot Lead",
+      "action": "Sofort Termin buchen, hohe Priorität",
+      "color": "#22c55e"
+    },
+    "B": {
+      "min_score": 7,
+      "max_score": 9,
+      "label": "Warm Lead",
+      "action": "Mehrwert argumentieren, dann Termin anbieten",
+      "color": "#f59e0b"
+    },
+    "C": {
+      "min_score": 4,
+      "max_score": 6,
+      "label": "Cold Lead",
+      "action": "Info-Material senden, Follow-up planen",
+      "color": "#ef4444"
+    }
+  }
+}
