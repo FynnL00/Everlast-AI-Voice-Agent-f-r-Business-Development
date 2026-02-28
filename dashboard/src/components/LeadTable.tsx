@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import type { Lead } from "@/lib/types";
 import { formatDuration, formatDate, getGradeColor } from "@/lib/utils";
 
@@ -35,16 +37,19 @@ export default function LeadTable({ leads }: LeadTableProps) {
               <th className="text-right py-3 px-2 text-[var(--muted)] font-medium">
                 Zeit
               </th>
+              <th className="w-8 py-3 px-2" />
             </tr>
           </thead>
           <tbody>
             {leads.map((lead) => (
               <tr
                 key={lead.id}
-                className="border-b border-[var(--card-border)] last:border-0 hover:bg-white/5 transition-colors"
+                className="border-b border-[var(--card-border)] last:border-0 hover:bg-white/5 transition-colors group"
               >
                 <td className="py-3 px-2 font-medium">
-                  {lead.caller_name || "Unbekannt"}
+                  <Link href={`/leads/${lead.id}`} className="hover:text-[var(--accent)] transition-colors">
+                    {lead.caller_name || "Unbekannt"}
+                  </Link>
                 </td>
                 <td className="py-3 px-2 text-[var(--muted)]">
                   {lead.company || "-"}
@@ -75,12 +80,17 @@ export default function LeadTable({ leads }: LeadTableProps) {
                 <td className="py-3 px-2 text-right text-[var(--muted)]">
                   {formatDate(lead.created_at)}
                 </td>
+                <td className="py-3 px-2 text-right">
+                  <Link href={`/leads/${lead.id}`} className="text-[var(--muted)] group-hover:text-[var(--accent)] transition-colors">
+                    <ChevronRight size={16} />
+                  </Link>
+                </td>
               </tr>
             ))}
             {leads.length === 0 && (
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   className="py-8 text-center text-[var(--muted)]"
                 >
                   Noch keine Calls. Der Voice Agent wartet auf Anrufe...
