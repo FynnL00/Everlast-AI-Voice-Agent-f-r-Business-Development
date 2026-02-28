@@ -147,8 +147,9 @@ export default function Dashboard() {
         const dayBooked = dayLeads.filter((l) => l.appointment_booked).length;
         const rate = dayLeads.length > 0 ? (dayBooked / dayLeads.length) * 100 : 0;
         return {
-          date: d.toLocaleDateString("de-DE", { weekday: "short", timeZone: "Europe/Berlin" }),
+          date: d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", timeZone: "Europe/Berlin" }),
           rate: Math.round(rate * 10) / 10,
+          calls: dayLeads.length,
         };
       }),
     [leads]
@@ -185,12 +186,14 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Cards */}
-      <KPICards
-        totalCalls={totalCalls}
-        conversionRate={conversionRate}
-        avgDuration={avgDuration}
-        aLeadsToday={aLeadsToday}
-      />
+      <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-4 shadow-[var(--card-shadow)]">
+        <KPICards
+          totalCalls={totalCalls}
+          conversionRate={conversionRate}
+          avgDuration={avgDuration}
+          aLeadsToday={aLeadsToday}
+        />
+      </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">

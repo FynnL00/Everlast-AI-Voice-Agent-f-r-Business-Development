@@ -10,7 +10,7 @@ export default function ObjectionChart({ data }: ObjectionChartProps) {
   const colors = ["#8b5cf6", "#ff6d5a", "#f59e0b", "#22c55e", "#06b6d4"];
 
   return (
-    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6">
+    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-[var(--card-shadow)]">
       <h3 className="text-sm font-medium text-[var(--muted)] mb-4">
         Top Einwände
       </h3>

@@ -14,8 +14,8 @@ export default function PipelineCard({ lead }: PipelineCardProps) {
     <Link href={`/leads/${lead.id}`}>
       <div
         className={cn(
-          "rounded-lg border border-[var(--card-border)] bg-[var(--card)] p-3",
-          "transition-colors duration-150 hover:bg-[var(--card-hover)] cursor-pointer"
+          "rounded-lg border border-[var(--card-border)] bg-[var(--card)] p-3 shadow-[var(--card-shadow)]",
+          "transition-all duration-150 hover:bg-[var(--card-hover)] hover:shadow-[var(--card-shadow-hover)] cursor-pointer"
         )}
       >
         {/* Top row: Name + Grade */}

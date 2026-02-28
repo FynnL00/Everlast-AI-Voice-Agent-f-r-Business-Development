@@ -23,7 +23,7 @@ function KPICard({
   subtitle: string;
 }) {
   return (
-    <Card>
+    <Card accentColor={color}>
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm text-[var(--text-secondary)]">{label}</span>
         <Icon size={20} color={color} />

@@ -1,6 +1,7 @@
 "use client";
 
 import { Phone, CalendarCheck, Clock, Star } from "lucide-react";
+import Card from "@/components/ui/Card";
 
 interface KPICardsProps {
   totalCalls: number;
@@ -23,18 +24,30 @@ function KPICard({
   subtitle?: string;
 }) {
   return (
-    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm text-[var(--muted)]">{label}</span>
-        <Icon size={20} color={color} />
+    <Card accentColor={color}>
+      <div className="flex items-center gap-4">
+        {/* Icon circle */}
+        <div
+          className="shrink-0 flex items-center justify-center w-12 h-12 rounded-full"
+          style={{ backgroundColor: `${color}20` }}
+        >
+          <Icon size={22} color={color} />
+        </div>
+
+        {/* Content */}
+        <div className="min-w-0">
+          <span className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+            {label}
+          </span>
+          <div className="text-3xl font-bold leading-tight" style={{ color }}>
+            {value}
+          </div>
+          {subtitle && (
+            <p className="text-xs text-[var(--muted)] mt-0.5">{subtitle}</p>
+          )}
+        </div>
       </div>
-      <div className="text-3xl font-bold" style={{ color }}>
-        {value}
-      </div>
-      {subtitle && (
-        <p className="text-xs text-[var(--muted)] mt-1">{subtitle}</p>
-      )}
-    </div>
+    </Card>
   );
 }
 

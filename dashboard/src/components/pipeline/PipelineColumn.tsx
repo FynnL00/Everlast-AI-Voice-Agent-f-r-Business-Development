@@ -14,7 +14,7 @@ export default function PipelineColumn({ status, leads }: PipelineColumnProps) {
   const color = STATUS_COLORS[status];
 
   return (
-    <div className="min-w-[250px] flex flex-col rounded-xl border border-[var(--card-border)] bg-[var(--background)] overflow-hidden">
+    <div className="min-w-[250px] flex flex-col rounded-xl border border-[var(--card-border)] bg-[var(--background)] overflow-hidden shadow-[var(--card-shadow)]">
       {/* Colored top border */}
       <div className="h-1 shrink-0" style={{ backgroundColor: color }} />
 

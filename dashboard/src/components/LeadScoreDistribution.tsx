@@ -19,7 +19,7 @@ export default function LeadScoreDistribution({
   data,
 }: LeadScoreDistributionProps) {
   return (
-    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6">
+    <div className="rounded-xl border border-[var(--card-border)] bg-[var(--card)] p-6 shadow-[var(--card-shadow)]">
       <h3 className="text-sm font-medium text-[var(--muted)] mb-4">
         Lead-Score Verteilung
       </h3>
