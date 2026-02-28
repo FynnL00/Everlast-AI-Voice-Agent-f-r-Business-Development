@@ -29,7 +29,65 @@ export interface Lead {
   is_decision_maker: boolean | null;
   status: 'new' | 'contacted' | 'qualified' | 'appointment_booked' | 'converted' | 'lost';
   next_steps: string[] | null;
+  notes: string | null;
+  briefing: string | null;
+  briefing_generated_at: string | null;
 }
+
+export interface LeadFilters {
+  grades: ("A" | "B" | "C")[];
+  statuses: Lead["status"][];
+  sentiments: (NonNullable<Lead["sentiment"]>)[];
+  appointmentBooked: boolean | null;
+  dateRange: { from: string | null; to: string | null };
+}
+
+export interface LeadUpdatePayload {
+  caller_name?: string;
+  company?: string;
+  email?: string;
+  phone?: string;
+  company_size?: string;
+  current_stack?: string;
+  pain_point?: string;
+  timeline?: string;
+  status?: Lead["status"];
+  notes?: string;
+  next_steps?: string[];
+}
+
+export const STATUS_LABELS: Record<Lead["status"], string> = {
+  new: "Neu",
+  contacted: "Kontaktiert",
+  qualified: "Qualifiziert",
+  appointment_booked: "Termin gebucht",
+  converted: "Konvertiert",
+  lost: "Verloren",
+};
+
+export const STATUS_COLORS: Record<Lead["status"], string> = {
+  new: "#5e6278",
+  contacted: "#3b82f6",
+  qualified: "#8b5cf6",
+  appointment_booked: "#f59e0b",
+  converted: "#42d77d",
+  lost: "#ef4444",
+};
+
+export const SENTIMENT_LABELS: Record<NonNullable<Lead["sentiment"]>, string> = {
+  positiv: "Positiv",
+  neutral: "Neutral",
+  negativ: "Negativ",
+};
+
+export const SENTIMENT_COLORS: Record<NonNullable<Lead["sentiment"]>, string> = {
+  positiv: "#42d77d",
+  neutral: "#f59e0b",
+  negativ: "#ef4444",
+};
+
+export type SortField = "caller_name" | "company" | "total_score" | "status" | "sentiment" | "call_duration_seconds" | "appointment_booked" | "created_at";
+export type SortDirection = "asc" | "desc";
 
 export interface KPIData {
   totalCalls: number;

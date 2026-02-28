@@ -1,20 +1,37 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --card: #141414;
-  --card-border: #262626;
-  --accent: #ff6d5a;
+  /* n8n Brand */
+  --background: #101330;
+  --foreground: #f5f5f5;
+  --card: #1a1d3e;
+  --card-border: #2a2d4e;
+  --card-hover: #222556;
+  --accent: #EA4B71;
+  --accent-hover: #d43d63;
+  --accent-light: rgba(234, 75, 113, 0.12);
   --accent-secondary: #8b5cf6;
-  --success: #22c55e;
+  --success: #42d77d;
   --warning: #f59e0b;
   --danger: #ef4444;
-  --muted: #737373;
+  --info: #3b82f6;
+  --muted: #5e6278;
+  --text-secondary: #8b8fa3;
+  /* Status */
+  --status-new: #5e6278;
+  --status-contacted: #3b82f6;
+  --status-qualified: #8b5cf6;
+  --status-appointment: #f59e0b;
+  --status-converted: #42d77d;
+  --status-lost: #ef4444;
+  /* Sentiment */
+  --sentiment-positiv: #42d77d;
+  --sentiment-neutral: #f59e0b;
+  --sentiment-negativ: #ef4444;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
