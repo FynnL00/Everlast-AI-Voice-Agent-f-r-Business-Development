@@ -4,24 +4,26 @@
     "role": "SDR",
     "company": "n8n",
     "language": "de-DE",
-    "first_message": "Hallo, hier ist Lisa von n8n! Schön, dass Sie anrufen. Wie kann ich Ihnen heute helfen?",
+    "first_message": "Hallo, hier ist Lisa von n8n! Kurzer Hinweis vorab: Dieses Gespräch wird zur Qualitätssicherung aufgezeichnet. Ist das für Sie in Ordnung?",
     "voice": {
       "provider": "elevenlabs",
       "voice_id": "VOICE_ID_HERE",
       "model": "eleven_turbo_v2_5",
-      "stability": 0.5,
-      "similarity_boost": 0.75
+      "stability": 0.65,
+      "similarity_boost": 0.75,
+      "style": 0.3,
+      "use_speaker_boost": true
     }
   },
   "llm": {
     "provider": "openai",
     "model": "gpt-4o",
-    "temperature": 0.7,
-    "max_tokens": 150
+    "temperature": 0.55,
+    "max_tokens": 250
   },
   "stt": {
     "provider": "deepgram",
-    "model": "nova-2",
+    "model": "nova-3",
     "language": "de"
   },
   "qualification": {
@@ -45,7 +47,10 @@
     "server_url": "N8N_WEBHOOK_URL",
     "end_of_call_report_url": "N8N_POST_CALL_WEBHOOK_URL",
     "background_sound": "office",
-    "silence_timeout_seconds": 30,
-    "max_duration_seconds": 600
+    "silence_timeout_seconds": 20,
+    "max_duration_seconds": 600,
+    "interruption_threshold": 100,
+    "response_delay_seconds": 0.4,
+    "live_transcripts_enabled": true
   }
 }

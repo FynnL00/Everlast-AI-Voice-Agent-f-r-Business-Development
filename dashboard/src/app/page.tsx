@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import type { Lead } from "@/lib/types";
 import KPICards from "@/components/KPICards";
@@ -8,6 +8,9 @@ import LeadScoreDistribution from "@/components/LeadScoreDistribution";
 import ConversionChart from "@/components/ConversionChart";
 import LeadTable from "@/components/LeadTable";
 import ObjectionChart from "@/components/ObjectionChart";
+
+// Select only the fields the dashboard needs (avoid loading large transcripts)
+const DASHBOARD_FIELDS = "id, created_at, caller_name, company, email, phone, company_size, current_stack, pain_point, timeline, score_company_size, score_tech_stack, score_pain_point, score_timeline, total_score, lead_grade, call_id, call_duration_seconds, conversation_summary, sentiment, objections_raised, drop_off_point, appointment_booked, appointment_datetime, status, next_steps";
 
 export default function Dashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -21,10 +24,13 @@ export default function Dashboard() {
     }
     const { data, error } = await supabase
       .from("leads")
-      .select("*")
+      .select(DASHBOARD_FIELDS)
       .order("created_at", { ascending: false });
 
-    if (!error && data) {
+    if (error) {
+      console.error("Failed to fetch leads:", error.message);
+    }
+    if (data) {
       setLeads(data as Lead[]);
     }
     setLoading(false);
@@ -38,85 +44,115 @@ export default function Dashboard() {
       return;
     }
 
-    // Realtime subscription
+    // Optimistic realtime subscription – handle INSERT and UPDATE separately
     const channel = supabase
       .channel("leads-realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "leads" },
-        () => {
-          fetchLeads();
+        { event: "INSERT", schema: "public", table: "leads" },
+        (payload) => {
+          setLeads((prev) => [payload.new as Lead, ...prev]);
         }
       )
-      .subscribe((status) => {
-        setIsLive(status === "SUBSCRIBED");
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "leads" },
+        (payload) => {
+          setLeads((prev) =>
+            prev.map((lead) =>
+              lead.id === (payload.new as Lead).id
+                ? (payload.new as Lead)
+                : lead
+            )
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "leads" },
+        (payload) => {
+          setLeads((prev) =>
+            prev.filter((lead) => lead.id !== (payload.old as { id: string }).id)
+          );
+        }
+      )
+      .subscribe((status, err) => {
+        if (err) {
+          console.error("Realtime subscription error:", err);
+          setIsLive(false);
+        } else {
+          setIsLive(status === "SUBSCRIBED");
+        }
       });
 
     return () => {
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, [fetchLeads]);
 
-  // Calculate KPIs
-  const totalCalls = leads.length;
-  const bookedCount = leads.filter((l) => l.appointment_booked).length;
-  const conversionRate = totalCalls > 0 ? (bookedCount / totalCalls) * 100 : 0;
+  // Calculate KPIs (memoized to avoid re-computing on every render)
+  const { totalCalls, conversionRate, avgDuration, aLeadsToday } = useMemo(() => {
+    const total = leads.length;
+    const booked = leads.filter((l) => l.appointment_booked).length;
+    const conversion = total > 0 ? (booked / total) * 100 : 0;
+    const duration =
+      total > 0
+        ? leads.reduce((sum, l) => sum + (l.call_duration_seconds || 0), 0) / total
+        : 0;
 
-  const avgDuration =
-    totalCalls > 0
-      ? leads.reduce((sum, l) => sum + (l.call_duration_seconds || 0), 0) /
-        totalCalls
-      : 0;
+    // Use Europe/Berlin timezone for "today" calculation
+    const berlinDate = new Date().toLocaleDateString("sv-SE", {
+      timeZone: "Europe/Berlin",
+    }); // "sv-SE" gives YYYY-MM-DD format
+    const aToday = leads.filter(
+      (l) => l.lead_grade === "A" && l.created_at.startsWith(berlinDate)
+    ).length;
 
-  const today = new Date().toISOString().split("T")[0];
-  const aLeadsToday = leads.filter(
-    (l) => l.lead_grade === "A" && l.created_at.startsWith(today)
-  ).length;
+    return { totalCalls: total, conversionRate: conversion, avgDuration: duration, aLeadsToday: aToday };
+  }, [leads]);
 
-  // Grade distribution
-  const gradeDistribution = [
-    {
-      grade: "A-Lead",
-      count: leads.filter((l) => l.lead_grade === "A").length,
-      color: "#22c55e",
-    },
-    {
-      grade: "B-Lead",
-      count: leads.filter((l) => l.lead_grade === "B").length,
-      color: "#f59e0b",
-    },
-    {
-      grade: "C-Lead",
-      count: leads.filter((l) => l.lead_grade === "C").length,
-      color: "#ef4444",
-    },
-  ];
+  // Grade distribution (memoized)
+  const gradeDistribution = useMemo(
+    () => [
+      { grade: "A-Lead", count: leads.filter((l) => l.lead_grade === "A").length, color: "#22c55e" },
+      { grade: "B-Lead", count: leads.filter((l) => l.lead_grade === "B").length, color: "#f59e0b" },
+      { grade: "C-Lead", count: leads.filter((l) => l.lead_grade === "C").length, color: "#ef4444" },
+    ],
+    [leads]
+  );
 
-  // Objection distribution
-  const objectionCounts: Record<string, number> = {};
-  leads.forEach((l) => {
-    l.objections_raised?.forEach((obj) => {
-      objectionCounts[obj] = (objectionCounts[obj] || 0) + 1;
+  // Objection distribution (memoized)
+  const objectionDistribution = useMemo(() => {
+    const counts: Record<string, number> = {};
+    leads.forEach((l) => {
+      l.objections_raised?.forEach((obj) => {
+        counts[obj] = (counts[obj] || 0) + 1;
+      });
     });
-  });
-  const objectionDistribution = Object.entries(objectionCounts)
-    .map(([objection, count]) => ({ objection, count }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+    return Object.entries(counts)
+      .map(([objection, count]) => ({ objection, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [leads]);
 
-  // Conversion trend (last 7 days)
-  const conversionTrend = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    const dateStr = d.toISOString().split("T")[0];
-    const dayLeads = leads.filter((l) => l.created_at.startsWith(dateStr));
-    const dayBooked = dayLeads.filter((l) => l.appointment_booked).length;
-    const rate = dayLeads.length > 0 ? (dayBooked / dayLeads.length) * 100 : 0;
-    return {
-      date: d.toLocaleDateString("de-DE", { weekday: "short" }),
-      rate: Math.round(rate * 10) / 10,
-    };
-  });
+  // Conversion trend (last 7 days, memoized, timezone-aware)
+  const conversionTrend = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        const dateStr = d.toLocaleDateString("sv-SE", { timeZone: "Europe/Berlin" });
+        const dayLeads = leads.filter((l) => l.created_at.startsWith(dateStr));
+        const dayBooked = dayLeads.filter((l) => l.appointment_booked).length;
+        const rate = dayLeads.length > 0 ? (dayBooked / dayLeads.length) * 100 : 0;
+        return {
+          date: d.toLocaleDateString("de-DE", { weekday: "short", timeZone: "Europe/Berlin" }),
+          rate: Math.round(rate * 10) / 10,
+        };
+      }),
+    [leads]
+  );
 
   if (loading) {
     return (

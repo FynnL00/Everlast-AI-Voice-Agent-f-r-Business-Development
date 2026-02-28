@@ -24,7 +24,10 @@ export interface Lead {
   drop_off_point: string | null;
   appointment_booked: boolean;
   appointment_datetime: string | null;
-  status: string;
+  cal_booking_id: string | null;
+  call_started_at: string | null;
+  is_decision_maker: boolean | null;
+  status: 'new' | 'contacted' | 'qualified' | 'appointment_booked' | 'converted' | 'lost';
   next_steps: string[] | null;
 }
 

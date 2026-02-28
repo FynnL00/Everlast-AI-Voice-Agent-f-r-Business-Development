@@ -83,20 +83,34 @@ graph TB
 
 ### n8n Workflow-Architektur
 
-**Workflow 1: Vapi Tool-Call Handler (Webhook)**
-- Trigger: Vapi Server-URL Webhook
-- Empfängt: `check_availability`, `book_appointment`, `save_lead_info`
-- Routed via Switch-Node basierend auf Function-Name
-- Antwortet synchron an Vapi zurück
+**Workflow 1: Vapi Tool-Call Handler (Separate Webhooks pro Tool-Call)**
+- SEPARATE Webhooks pro Tool-Call (nicht ein einzelner Switch-Webhook)
+- Jeder Webhook hat `responseMode: "responseNode"` für synchrone Antworten an Vapi
+- Jeder Tool bekommt seine eigene Server URL in der Vapi Tool-Definition
+- Webhook A: `POST /vapi-check-availability` → Cal.com Slots abfragen → Formatierte Slots zurück
+- Webhook B: `POST /vapi-book-appointment` → Cal.com Termin buchen → Bestätigung zurück + Supabase UPDATE (appointment_booked, appointment_datetime)
+- Webhook C: `POST /vapi-save-lead` → Supabase UPSERT (ON CONFLICT call_id) → Bestätigung zurück
+- Error-Handling: Bei Cal.com-Fehlern Fallback-Text an Vapi zurückgeben statt Timeout
+- Webhook-Authentifizierung: Header Auth mit `X-Webhook-Secret`
 
 **Workflow 2: Post-Call Processing**
-- Trigger: Vapi `end-of-call-report` Webhook
-- Schritte: Transcript parsen → Lead-Score berechnen → Supabase speichern → Cal.com Termin finalisieren → Bestätigungs-E-Mail → Slack-Notification
+- Trigger: Vapi `end-of-call-report` Webhook (`POST /vapi-end-of-call`)
+- Schritte: Transcript parsen → GPT-4o Lead-Score berechnen (statt Keyword-Matching) → Supabase UPSERT (ON CONFLICT call_id) → Bestätigungs-E-Mail
 
-**Workflow 3: Dashboard Data API (optional)**
-- Trigger: HTTP Request vom Dashboard
-- Aggregiert KPIs aus Supabase
-- Liefert JSON für Dashboard-Widgets
+**Daten-Ownership zwischen Workflow 1 und 2:**
+
+| Feld | Geschrieben von | Methode |
+|------|-----------------|---------|
+| caller_name, company, email, phone | save_lead_info (WF1) | UPSERT |
+| company_size, current_stack, pain_point, timeline | save_lead_info (WF1) | UPSERT |
+| appointment_booked, appointment_datetime, cal_booking_id | book_appointment (WF1) | UPDATE |
+| score_*, lead_grade (auto-computed), transcript, summary, sentiment | Post-Call (WF2) | UPSERT |
+| objections_raised, drop_off_point, status, call_duration_seconds | Post-Call (WF2) | UPSERT |
+
+Alle Workflows nutzen UPSERT (`ON CONFLICT (call_id)`) für Idempotenz.
+
+**Workflow 3: Dashboard Data API (entfällt)**
+- Nicht nötig – Dashboard nutzt Supabase Realtime direkt
 
 ### Latenz-Optimierungsstrategie (Ziel: < 1.5s)
 1. **Vapi First-Sentence-Mode** – Agent spricht sofort, bevor volle Verarbeitung
@@ -168,9 +182,9 @@ flowchart TD
     G -->|Ja| D
     G -->|Nein| Z[Freundliche Verabschiedung]
 
-    D --> H[Q1: Unternehmensgröße & Branche]
+    D --> H[Q1: Konkreter Pain Point / Use Case]
     H --> I[Q2: Aktuelle Automation / Tech-Stack]
-    I --> J[Q3: Konkreter Pain Point / Use Case]
+    I --> J[Q3: Unternehmensgröße & Branche]
     J --> K[Q4: Timeline & Budget]
 
     K --> L{Lead qualifiziert?}
