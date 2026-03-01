@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowUpDown,
   ArrowUp,
@@ -60,6 +60,8 @@ export default function EnhancedLeadTable({
   sortDirection,
   onSort,
 }: EnhancedLeadTableProps) {
+  const router = useRouter();
+
   if (leads.length === 0) {
     return (
       <EmptyState
@@ -106,12 +108,11 @@ export default function EnhancedLeadTable({
         </thead>
         <tbody>
           {leads.map((lead) => (
-            <Link
-              key={lead.id}
-              href={`/leads/${lead.id}`}
-              className="contents"
-            >
-              <tr className="group hover:bg-muted/50 border-b border-border/40 transition-colors duration-200 cursor-pointer">
+              <tr
+                key={lead.id}
+                className="group hover:bg-muted/50 border-b border-border/40 transition-colors duration-200 cursor-pointer"
+                onClick={() => router.push(`/leads/${lead.id}`)}
+              >
                 {/* Name */}
                 <td className="px-4 py-4 align-middle">
                   <div className="font-semibold text-foreground group-hover:text-primary transition-colors">
@@ -194,7 +195,6 @@ export default function EnhancedLeadTable({
                   />
                 </td>
               </tr>
-            </Link>
           ))}
         </tbody>
       </table>

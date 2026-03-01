@@ -69,7 +69,7 @@ export default function ConversionChart({ data }: ConversionChartProps) {
   return (
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-base font-semibold">Score-Entwicklung</CardTitle>
+        <CardTitle className="text-base font-semibold">Entwicklung</CardTitle>
         <CardDescription>Letzte 7 Tage</CardDescription>
       </CardHeader>
       <CardContent className="pb-6">

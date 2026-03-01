@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { Check, X, Loader2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -83,27 +84,49 @@ export default function EditableField({
           <span className="text-xs text-muted-foreground mb-1 block">
             {label}
           </span>
-          {type === "textarea" ? (
-            <textarea
-              ref={inputRef as React.RefObject<HTMLTextAreaElement>}
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={handleSave}
-              onKeyDown={handleKeyDown}
-              className={cn(sharedClasses, "min-h-[80px] resize-y")}
-              rows={3}
-            />
-          ) : (
-            <input
-              ref={inputRef as React.RefObject<HTMLInputElement>}
-              type={type}
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={handleSave}
-              onKeyDown={handleKeyDown}
-              className={sharedClasses}
-            />
-          )}
+          <div className="flex items-end gap-2">
+            <div className="flex-1">
+              {type === "textarea" ? (
+                <textarea
+                  ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className={cn(sharedClasses, "min-h-[80px] resize-y")}
+                  rows={3}
+                />
+              ) : (
+                <input
+                  ref={inputRef as React.RefObject<HTMLInputElement>}
+                  type={type}
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  className={sharedClasses}
+                />
+              )}
+            </div>
+            <div className="flex gap-1 pb-0.5">
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={isSaving}
+                className="p-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                title="Speichern"
+              >
+                {isSaving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+              </button>
+              <button
+                type="button"
+                onClick={handleCancel}
+                disabled={isSaving}
+                className="p-1.5 rounded-md bg-muted text-muted-foreground hover:bg-muted/80 transition-colors disabled:opacity-50"
+                title="Abbrechen"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
