@@ -54,6 +54,17 @@ export const ROLE_LABELS: Record<TeamMember["role"], string> = {
   admin: "Admin",
 };
 
+// --- Objection Categories ---
+export interface ObjectionCategory {
+  id: string;
+  created_at: string;
+  name: string;
+  description: string | null;
+  counter_argument: string | null;
+  is_active: boolean;
+  occurrence_count: number;
+}
+
 // --- Quotes ---
 export interface LeadQuote {
   id: string;

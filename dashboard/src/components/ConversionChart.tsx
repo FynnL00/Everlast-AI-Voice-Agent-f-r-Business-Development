@@ -33,15 +33,15 @@ function CustomTooltip({
 }) {
   if (!active || !payload || payload.length === 0) return null;
   return (
-    <div className="rounded-xl bg-card border border-border px-4 py-3 shadow-[0_6px_20px_rgba(0,0,0,0.4)] min-w-[160px] backdrop-blur-xl">
-      <p className="text-muted-foreground text-sm mb-2">
+    <div className="rounded-lg bg-card border border-border px-3 py-2 shadow-lg min-w-[130px] backdrop-blur-xl text-xs relative z-[100]">
+      <p className="text-muted-foreground mb-1.5">
         Datum: <span className="font-semibold text-foreground">{label}</span>
       </p>
-      <div className="space-y-1">
+      <div className="space-y-0.5">
         {payload.map((entry) => (
-          <div key={entry.dataKey} className="flex items-center gap-2 text-sm">
+          <div key={entry.dataKey} className="flex items-center gap-1.5">
             <span
-              className="w-2.5 h-2.5 rounded-full shrink-0"
+              className="w-2 h-2 rounded-full shrink-0"
               style={{ backgroundColor: entry.color }}
             />
             <span className="text-muted-foreground">
@@ -67,13 +67,13 @@ export default function ConversionChart({ data }: ConversionChartProps) {
   }, []);
 
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full overflow-visible">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold">Entwicklung</CardTitle>
         <CardDescription>Letzte 7 Tage</CardDescription>
       </CardHeader>
-      <CardContent className="pb-6">
-        <div className="h-[280px]">
+      <CardContent className="pb-6 overflow-visible">
+        <div className="h-[280px] overflow-visible">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 5, right: 5, bottom: 0, left: -10 }}>
               <defs>
@@ -120,29 +120,18 @@ export default function ConversionChart({ data }: ConversionChartProps) {
                 domain={[0, Math.ceil(maxCalls * 1.2)]}
                 allowDecimals={false}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: "var(--border)" }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: "var(--border)" }} isAnimationActive={false} allowEscapeViewBox={{ x: true, y: true }} />
               <Legend
                 verticalAlign="top"
-                height={32}
+                align="left"
+                height={48}
+                iconType="circle"
+                iconSize={8}
                 formatter={(value: string) => (
                   <span className="text-xs text-muted-foreground font-medium ml-1">
-                    {value === "calls" ? "Total Calls" : "Conversion"}
+                    {value === "rate" ? "Conversion" : "Total Calls"}
                   </span>
                 )}
-              />
-              <Area
-                yAxisId="calls"
-                type="monotone"
-                dataKey="calls"
-                stroke="var(--chart-1)"
-                strokeWidth={2}
-                fill="url(#gradientCalls)"
-                dot={false}
-                activeDot={{ r: 4, fill: "var(--chart-1)", stroke: "var(--background)", strokeWidth: 2 }}
-                clipPath="url(#reveal-clip)"
-                isAnimationActive={true}
-                animationDuration={1200}
-                animationEasing="ease-out"
               />
               <Area
                 yAxisId="rate"
@@ -156,6 +145,20 @@ export default function ConversionChart({ data }: ConversionChartProps) {
                 clipPath="url(#reveal-clip)"
                 isAnimationActive={true}
                 animationDuration={1400}
+                animationEasing="ease-out"
+              />
+              <Area
+                yAxisId="calls"
+                type="monotone"
+                dataKey="calls"
+                stroke="var(--chart-1)"
+                strokeWidth={2}
+                fill="url(#gradientCalls)"
+                dot={false}
+                activeDot={{ r: 4, fill: "var(--chart-1)", stroke: "var(--background)", strokeWidth: 2 }}
+                clipPath="url(#reveal-clip)"
+                isAnimationActive={true}
+                animationDuration={1200}
                 animationEasing="ease-out"
               />
             </AreaChart>

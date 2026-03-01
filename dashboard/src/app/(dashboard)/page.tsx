@@ -2,15 +2,16 @@
 
 import { useMemo } from "react";
 import { useLeads } from "@/lib/leads-context";
+import { useTeam } from "@/lib/team-context";
 import KPICards from "@/components/KPICards";
 import LeadScoreDistribution from "@/components/LeadScoreDistribution";
 import ConversionChart from "@/components/ConversionChart";
 import LeadTable from "@/components/LeadTable";
 import ObjectionChart from "@/components/ObjectionChart";
+import ObjectionDonutChart from "@/components/ObjectionDonutChart";
 import { LayoutDashboard } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import { normalizeObjection } from "@/lib/utils";
-import { computeSparklineData } from "@/lib/sparkline";
 import AppointmentCalendar from "@/components/dashboard/AppointmentCalendar";
 import AlertBanner from "@/components/dashboard/AlertBanner";
 
@@ -22,19 +23,21 @@ function toBerlinDate(iso: string): string {
 
 export default function Dashboard() {
   const { leads, loading, isLive } = useLeads();
+  const { teamMembers } = useTeam();
+
+  const memberNames = useMemo(() => {
+    const map: Record<string, string> = {};
+    teamMembers.forEach((m) => { map[m.id] = m.name; });
+    return map;
+  }, [teamMembers]);
 
   // Calculate KPIs (memoized to avoid re-computing on every render)
-  const { totalCalls, callsToday, appointmentRate, winRate, avgDuration, aLeadsToday } = useMemo(() => {
+  const { totalCalls, callsToday, conversionRate, avgDuration, positiveSentimentRate } = useMemo(() => {
     const total = leads.length;
 
-    // Appointment rate (formerly "conversion rate")
+    // Conversion rate: leads that booked an appointment / total
     const booked = leads.filter((l) => l.appointment_booked).length;
-    const appointmentRate = total > 0 ? (booked / total) * 100 : 0;
-
-    // Win rate: converted / (converted + lost)
-    const converted = leads.filter(l => l.status === "converted").length;
-    const closedDeals = leads.filter(l => ["converted", "lost"].includes(l.status)).length;
-    const winRate = closedDeals > 0 ? (converted / closedDeals) * 100 : 0;
+    const conversionRate = total > 0 ? (booked / total) * 100 : 0;
 
     // Avg duration — only count leads that actually had a call
     const leadsWithDuration = leads.filter(l => l.call_duration_seconds != null && l.call_duration_seconds > 0);
@@ -46,7 +49,12 @@ export default function Dashboard() {
     const todayLeads = leads.filter(l => toBerlinDate(l.created_at) === berlinToday);
     const aToday = todayLeads.filter(l => l.lead_grade === "A").length;
 
-    return { totalCalls: total, callsToday: todayLeads.length, appointmentRate, winRate, avgDuration: duration, aLeadsToday: aToday };
+    // Positive sentiment rate
+    const leadsWithSentiment = leads.filter(l => l.sentiment);
+    const positiveCount = leadsWithSentiment.filter(l => l.sentiment === "positiv").length;
+    const positiveSentimentRate = leadsWithSentiment.length > 0 ? Math.round((positiveCount / leadsWithSentiment.length) * 100) : 0;
+
+    return { totalCalls: total, callsToday: todayLeads.length, conversionRate, avgDuration: duration, positiveSentimentRate };
   }, [leads]);
 
   // Grade distribution (memoized)
@@ -76,23 +84,6 @@ export default function Dashboard() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
   }, [leads]);
-
-  // Sparkline data for KPICards (7-day trends)
-  const sparklines = useMemo(() => ({
-    calls: computeSparklineData(leads, (dayLeads) => dayLeads.length),
-    winRate: computeSparklineData(leads, (dayLeads) => {
-      const converted = dayLeads.filter((l) => l.status === "converted").length;
-      const closed = dayLeads.filter((l) => ["converted", "lost"].includes(l.status)).length;
-      return closed > 0 ? Math.round((converted / closed) * 100) : 0;
-    }),
-    appointments: computeSparklineData(leads, (dayLeads) => {
-      const booked = dayLeads.filter((l) => l.appointment_booked).length;
-      return dayLeads.length > 0 ? Math.round((booked / dayLeads.length) * 100) : 0;
-    }),
-    aLeads: computeSparklineData(leads, (dayLeads) =>
-      dayLeads.filter((l) => l.lead_grade === "A").length
-    ),
-  }), [leads]);
 
   // Calendar events for AppointmentCalendar
   const calendarEvents = useMemo(() =>
@@ -168,39 +159,40 @@ export default function Dashboard() {
       <AlertBanner leads={leads} />
 
       {/* KPI Cards */}
-      <div className="glass p-6 rounded-2xl w-full">
+      <div className="glass p-6 rounded-2xl w-full transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5">
         <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 block">
           MAIN KPIS
         </span>
         <KPICards
           callsToday={callsToday}
           totalCalls={totalCalls}
-          winRate={winRate}
-          appointmentRate={appointmentRate}
+          conversionRate={conversionRate}
           avgDuration={avgDuration}
-          aLeadsToday={aLeadsToday}
-          sparklines={sparklines}
+          positiveSentimentRate={positiveSentimentRate}
         />
       </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 relative z-10">
           <ConversionChart data={conversionTrend} />
         </div>
         <LeadScoreDistribution data={gradeDistribution} />
       </div>
 
       {/* Appointment Calendar */}
-      <AppointmentCalendar events={calendarEvents} />
+      <AppointmentCalendar events={calendarEvents} memberNames={memberNames} />
 
-      {/* Table + Objections Row */}
+      {/* Top Objections: Donut 1/3, Bar Chart 2/3 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <ObjectionDonutChart data={objectionDistribution} />
         <div className="lg:col-span-2">
-          <LeadTable leads={leads.slice(0, 10)} />
+          <ObjectionChart data={objectionDistribution} />
         </div>
-        <ObjectionChart data={objectionDistribution} />
       </div>
+
+      {/* Lead Table */}
+      <LeadTable leads={leads.slice(0, 10)} />
     </div>
   );
 }

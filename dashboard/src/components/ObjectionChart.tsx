@@ -1,49 +1,31 @@
 "use client";
 
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+import { useEffect, useState } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 
 interface ObjectionChartProps {
   data: { objection: string; count: number }[];
 }
 
-const colors = [
-  "var(--chart-1)",
-  "var(--chart-2)",
-  "var(--chart-3)",
-  "var(--chart-4)",
-  "var(--chart-5)",
+const barColors = [
+  { from: "var(--chart-1)", to: "var(--chart-1)" },
+  { from: "var(--chart-2)", to: "var(--chart-2)" },
+  { from: "var(--chart-3)", to: "var(--chart-3)" },
+  { from: "var(--chart-4)", to: "var(--chart-4)" },
+  { from: "var(--chart-5)", to: "var(--chart-5)" },
 ];
 
-function CustomTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: { payload: { objection: string; count: number } }[];
-}) {
-  if (!active || !payload || payload.length === 0) return null;
-  const entry = payload[0].payload;
-  return (
-    <div className="rounded-xl bg-card border border-border px-4 py-3 shadow-[0_6px_20px_rgba(0,0,0,0.4)] min-w-[160px] backdrop-blur-xl">
-      <span className="font-semibold text-foreground">{entry.objection}</span>
-      <span className="text-muted-foreground ml-2">{entry.count}x</span>
-    </div>
-  );
-}
-
 export default function ObjectionChart({ data }: ObjectionChartProps) {
+  const [revealed, setRevealed] = useState(false);
+  const maxCount = Math.max(...data.map((d) => d.count), 1);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setRevealed(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5 w-full h-full">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold">Top Einwände</CardTitle>
       </CardHeader>
@@ -53,57 +35,70 @@ export default function ObjectionChart({ data }: ObjectionChartProps) {
             Noch keine Daten vorhanden
           </p>
         ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={data} layout="vertical" margin={{ left: 80 }}>
-              <defs>
-                {colors.map((color, i) => (
-                  <linearGradient
-                    key={i}
-                    id={`objGrad${i}`}
-                    x1="0"
-                    y1="0"
-                    x2="1"
-                    y2="0"
+          <div className="space-y-3">
+            {data.map((item, i) => {
+              const pct = (item.count / maxCount) * 100;
+              const color = barColors[i % barColors.length];
+              return (
+                <div
+                  key={item.objection}
+                  className="group/row flex items-center gap-3"
+                  style={{
+                    opacity: revealed ? 1 : 0,
+                    transform: revealed ? "translateX(0)" : "translateX(-12px)",
+                    transition: `opacity 0.5s ease ${i * 100}ms, transform 0.5s ease ${i * 100}ms`,
+                  }}
+                >
+                  {/* Rank badge */}
+                  <span
+                    className="shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white/90"
+                    style={{ backgroundColor: color.from, opacity: 0.85 }}
                   >
-                    <stop offset="0%" stopColor={color} stopOpacity={0.8} />
-                    <stop offset="100%" stopColor={color} stopOpacity={0.4} />
-                  </linearGradient>
-                ))}
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="var(--border)"
-                horizontal={false}
-              />
-              <XAxis
-                type="number"
-                tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
-                axisLine={false}
-                tickLine={false}
-                allowDecimals={false}
-              />
-              <YAxis
-                type="category"
-                dataKey="objection"
-                width={75}
-                tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip
-                content={<CustomTooltip />}
-                cursor={{ fill: "var(--muted)", opacity: 0.2 }}
-              />
-              <Bar dataKey="count" radius={[0, 4, 4, 0]}>
-                {data.map((_, i) => (
-                  <Cell
-                    key={i}
-                    fill={`url(#objGrad${i % colors.length})`}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+                    {i + 1}
+                  </span>
+
+                  {/* Label */}
+                  <span className="relative shrink-0 w-40 group/label cursor-default">
+                    <span className="block text-sm text-foreground font-medium truncate">
+                      {item.objection}
+                    </span>
+                    <span className="pointer-events-none opacity-0 group-hover/label:opacity-100 transition-opacity duration-150 absolute left-0 bottom-full mb-1.5 z-50 rounded-lg bg-card border border-border px-3 py-2 shadow-lg backdrop-blur-xl text-xs text-foreground font-normal whitespace-normal w-max max-w-[280px]">
+                      {item.objection}
+                    </span>
+                  </span>
+
+                  {/* Progress bar track */}
+                  <div className="flex-1 h-8 rounded-lg bg-muted/50 relative overflow-hidden">
+                    <div
+                      className="absolute inset-y-0 left-0 rounded-lg"
+                      style={{
+                        width: revealed ? `${pct}%` : "0%",
+                        background: `linear-gradient(90deg, ${color.from}33, ${color.from}66)`,
+                        transition: `width 0.8s cubic-bezier(0.22, 1, 0.36, 1) ${i * 100 + 200}ms`,
+                      }}
+                    />
+                    {/* Bright leading edge */}
+                    <div
+                      className="absolute inset-y-0 rounded-lg"
+                      style={{
+                        width: revealed ? `${pct}%` : "0%",
+                        borderRight: `3px solid ${color.from}`,
+                        transition: `width 0.8s cubic-bezier(0.22, 1, 0.36, 1) ${i * 100 + 200}ms`,
+                      }}
+                    />
+                  </div>
+
+                  {/* Count */}
+                  <span
+                    className="shrink-0 w-10 text-right text-sm font-bold tabular-nums"
+                    style={{ color: color.from }}
+                  >
+                    {item.count}x
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         )}
       </CardContent>
     </Card>

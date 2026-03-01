@@ -91,14 +91,13 @@ export default function LeadsPage() {
   const kpiSummary = useMemo(() => {
     const total = filteredLeads.length;
     const withAppointment = filteredLeads.filter((l) => l.appointment_booked).length;
-    const scored = filteredLeads.filter((l) => l.total_score !== null && l.total_score !== undefined);
-    const avgScore = scored.length > 0
-      ? (scored.reduce((sum, l) => sum + (l.total_score ?? 0), 0) / scored.length).toFixed(1)
-      : "-";
+    const aLeads = filteredLeads.filter((l) => l.lead_grade === "A").length;
+    const bLeads = filteredLeads.filter((l) => l.lead_grade === "B").length;
+    const cLeads = filteredLeads.filter((l) => l.lead_grade === "C").length;
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const thisWeek = filteredLeads.filter((l) => new Date(l.created_at) >= weekAgo).length;
-    return { total, withAppointment, avgScore, thisWeek };
+    return { total, withAppointment, aLeads, bLeads, cLeads, thisWeek };
   }, [filteredLeads]);
 
   const totalPages = Math.ceil(sortedLeads.length / PAGE_SIZE);
@@ -149,7 +148,9 @@ export default function LeadsPage() {
           <span className="text-border">|</span>
           <span className="text-foreground font-bold">{kpiSummary.withAppointment}</span> mit Termin
           <span className="text-border">|</span>
-          <span>Ø Score</span> <span className="text-foreground font-bold">{kpiSummary.avgScore}</span>
+          <span className="text-green-500 font-bold">{kpiSummary.aLeads}</span><span> A</span>
+          <span className="text-amber-500 font-bold">{kpiSummary.bLeads}</span><span> B</span>
+          <span className="text-red-400 font-bold">{kpiSummary.cLeads}</span><span> C</span>
           <span className="text-border">|</span>
           <span className="text-foreground font-bold">{kpiSummary.thisWeek}</span> diese Woche
         </div>

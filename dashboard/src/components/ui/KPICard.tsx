@@ -1,7 +1,6 @@
 "use client";
 
 import { AnimatedNumber } from "@/components/ui/animated-number";
-import { LineChart, Line, ResponsiveContainer } from "recharts";
 
 export interface KPICardProps {
   label: string;
@@ -25,13 +24,12 @@ export function KPICard({
   colorClass,
   bgClass,
   subtitle,
-  sparklineData,
 }: KPICardProps) {
   const ariaValue = numericValue !== undefined ? `${numericValue}${suffix}` : value ?? "-";
 
   return (
     <div
-      className="flex items-center p-4 rounded-2xl bg-sidebar-accent/50 border border-border relative group hover:bg-sidebar-accent transition-colors gap-4"
+      className="flex items-center p-4 rounded-2xl bg-sidebar-accent/50 border border-border relative group hover:bg-sidebar-accent hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 transition-all duration-200 gap-4"
       role="status"
       aria-label={`${label}: ${ariaValue}`}
     >
@@ -53,22 +51,6 @@ export function KPICard({
           <span className="text-[10px] text-muted-foreground mt-0.5 tracking-tight truncate">
             {subtitle}
           </span>
-        )}
-        {sparklineData && sparklineData.length > 0 && (
-          <div className="mt-1 h-8 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={sparklineData.map((v, i) => ({ v, i }))}>
-                <Line
-                  type="monotone"
-                  dataKey="v"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                  dot={false}
-                  isAnimationActive={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
         )}
       </div>
     </div>

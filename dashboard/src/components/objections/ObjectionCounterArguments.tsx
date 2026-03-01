@@ -4,46 +4,15 @@ import { useState, useMemo } from "react";
 import { Lightbulb, ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { normalizeObjection } from "@/lib/utils";
+import { useObjectionCategories } from "@/lib/objection-categories-context";
 import type { Lead } from "@/lib/types";
 
 interface ObjectionCounterArgumentsProps {
   leads: Lead[];
 }
 
-interface CounterArgument {
-  objection: string;
-  response: string;
-}
-
-const COUNTER_ARGUMENTS: CounterArgument[] = [
-  {
-    objection: "Kein Budget",
-    response:
-      "Fragen Sie nach dem ROI: \"Wie viel Zeit verbringt Ihr Team aktuell mit manuellen Prozessen? n8n kann diese Zeit um 80% reduzieren.\"",
-  },
-  {
-    objection: "Keine Zeit",
-    response:
-      "Betonen Sie den schnellen Start: \"Die meisten Teams sind in unter einer Woche produktiv. Wir begleiten Sie beim Onboarding.\"",
-  },
-  {
-    objection: "Nutze bereits Zapier",
-    response:
-      "Heben Sie Vorteile hervor: \"n8n bietet Self-Hosting, keine Datenlimits und komplexere Workflows bei niedrigeren Kosten.\"",
-  },
-  {
-    objection: "Muss Team fragen",
-    response:
-      "Bieten Sie Unterstützung: \"Gerne bereite ich eine Zusammenfassung für Ihr Team vor. Wann wäre ein gemeinsamer Termin möglich?\"",
-  },
-  {
-    objection: "Zu komplex",
-    response:
-      "Zeigen Sie Einfachheit: \"Unsere visuelle Oberfläche macht Automatisierung zugänglich \u2013 ohne Programmierkenntnisse.\"",
-  },
-];
-
 export default function ObjectionCounterArguments({ leads }: ObjectionCounterArgumentsProps) {
+  const { categories, loading } = useObjectionCategories();
   const [openIndices, setOpenIndices] = useState<Set<number>>(new Set([0]));
 
   const objectionCounts = useMemo(() => {
@@ -73,6 +42,16 @@ export default function ObjectionCounterArguments({ leads }: ObjectionCounterArg
     });
   };
 
+  if (loading) {
+    return (
+      <Card className="w-full">
+        <CardContent className="py-8 text-center text-sm text-muted-foreground">
+          Gegenargumente laden...
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5 w-full">
       <CardHeader className="pb-2">
@@ -83,13 +62,13 @@ export default function ObjectionCounterArguments({ leads }: ObjectionCounterArg
       </CardHeader>
       <CardContent className="pb-6">
         <div className="space-y-2">
-          {COUNTER_ARGUMENTS.map((item, index) => {
+          {categories.map((item, index) => {
             const isOpen = openIndices.has(index);
-            const count = objectionCounts[item.objection] || 0;
+            const count = objectionCounts[normalizeObjection(item.name)] || 0;
 
             return (
               <div
-                key={item.objection}
+                key={item.id}
                 className="border border-border rounded-xl overflow-hidden transition-colors hover:border-foreground/20"
               >
                 <button
@@ -98,7 +77,7 @@ export default function ObjectionCounterArguments({ leads }: ObjectionCounterArg
                   className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-sidebar-accent/50 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="font-semibold text-sm text-foreground">{item.objection}</span>
+                    <span className="font-semibold text-sm text-foreground">{item.name}</span>
                     {count > 0 && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary shrink-0">
                         {count}x
@@ -114,13 +93,18 @@ export default function ObjectionCounterArguments({ leads }: ObjectionCounterArg
                 {isOpen && (
                   <div className="px-4 pb-4 pt-1">
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      {item.response}
+                      {item.counter_argument ?? "Kein Gegenargument hinterlegt. Kategorie wurde automatisch erkannt."}
                     </p>
                   </div>
                 )}
               </div>
             );
           })}
+          {categories.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Noch keine Einwand-Kategorien vorhanden.
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>

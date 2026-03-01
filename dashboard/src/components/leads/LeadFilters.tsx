@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 import type { LeadFilters as LeadFiltersType, Lead } from "@/lib/types";
 import { STATUS_LABELS, SENTIMENT_LABELS } from "@/lib/types";
 import { useTeam } from "@/lib/team-context";
-import TeamMemberSelect from "@/components/ui/team-member-select";
 
 interface LeadFiltersProps {
   filters: LeadFiltersType;
@@ -198,15 +197,16 @@ export default function LeadFilters({ filters, onChange, leadCount, className }:
       </select>
 
       {/* Team member filter */}
-      <div className="w-40">
-        <TeamMemberSelect
-          value={filters.assignedTo ?? null}
-          onChange={(id) => onChange({ ...filters, assignedTo: id })}
-          teamMembers={teamMembers}
-          placeholder="Alle Mitarbeiter"
-          size="sm"
-        />
-      </div>
+      <select
+        value={filters.assignedTo ?? ""}
+        onChange={(e) => onChange({ ...filters, assignedTo: e.target.value || null })}
+        className={selectClasses}
+      >
+        <option value="">Alle Mitarbeiter</option>
+        {teamMembers.filter((m) => m.is_active).map((m) => (
+          <option key={m.id} value={m.id}>{m.name}</option>
+        ))}
+      </select>
 
       {/* Appointment toggle */}
       <button

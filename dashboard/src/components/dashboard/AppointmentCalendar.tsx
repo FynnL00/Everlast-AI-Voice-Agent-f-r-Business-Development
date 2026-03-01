@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 
 interface CalendarEvent {
@@ -13,6 +14,7 @@ interface CalendarEvent {
 
 interface AppointmentCalendarProps {
   events: CalendarEvent[];
+  memberNames?: Record<string, string>;
 }
 
 function getGradeStyle(grade: string | null): {
@@ -79,7 +81,43 @@ function getWeekDays(): { date: Date; label: string; key: string; isToday: boole
 
 export default function AppointmentCalendar({
   events,
+  memberNames = {},
 }: AppointmentCalendarProps) {
+  const [open, setOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<string | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState(0);
+
+  useEffect(() => {
+    if (open && contentRef.current) {
+      setHeight(contentRef.current.scrollHeight);
+    } else {
+      setHeight(0);
+    }
+  }, [open, selectedMember]);
+
+  const UNASSIGNED = "__unassigned__";
+
+  const { members, hasUnassigned } = useMemo(() => {
+    const set = new Set<string>();
+    let hasUnassigned = false;
+    events.forEach((ev) => {
+      if (ev.assignedTo) set.add(ev.assignedTo);
+      else hasUnassigned = true;
+    });
+    return { members: Array.from(set).sort(), hasUnassigned };
+  }, [events]);
+
+  const filteredEvents = useMemo(
+    () =>
+      selectedMember === UNASSIGNED
+        ? events.filter((ev) => !ev.assignedTo)
+        : selectedMember
+          ? events.filter((ev) => ev.assignedTo === selectedMember)
+          : events,
+    [events, selectedMember]
+  );
+
   const weekDays = useMemo(() => getWeekDays(), []);
 
   const eventsByDay = useMemo(() => {
@@ -87,7 +125,7 @@ export default function AppointmentCalendar({
       string,
       (CalendarEvent & { minuteOfDay: number })[]
     >();
-    events.forEach((ev) => {
+    filteredEvents.forEach((ev) => {
       const d = new Date(ev.datetime);
       const berlinStr = d.toLocaleDateString("en-CA", {
         timeZone: "Europe/Berlin",
@@ -101,7 +139,7 @@ export default function AppointmentCalendar({
       map.get(berlinStr)!.push({ ...ev, minuteOfDay });
     });
     return map;
-  }, [events]);
+  }, [filteredEvents]);
 
   const totalThisWeek = useMemo(() => {
     const keys = new Set(weekDays.map((d) => d.key));
@@ -116,87 +154,149 @@ export default function AppointmentCalendar({
 
   return (
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5 w-full">
-      <CardHeader className="pb-2 flex flex-row items-center justify-between">
+      <CardHeader
+        className="!flex-row !items-center !justify-between !py-4 cursor-pointer select-none"
+        onClick={() => setOpen((v) => !v)}
+      >
         <CardTitle className="text-base font-semibold">
           Termine diese Woche
         </CardTitle>
-        <span className="text-xs text-muted-foreground font-medium">
-          {totalThisWeek} Termin{totalThisWeek !== 1 ? "e" : ""}
-        </span>
-      </CardHeader>
-      <CardContent className="pb-4">
-        <div className="overflow-x-auto -mx-2 px-2">
-          <div
-            className="grid min-w-[700px]"
-            style={{
-              gridTemplateColumns: "60px repeat(7, 1fr)",
-              gridTemplateRows: `auto repeat(${HOURS.length}, 28px)`,
-            }}
-          >
-            {/* Header row */}
-            <div className="sticky top-0 z-10" />
-            {weekDays.map((day) => (
-              <div
-                key={day.key}
-                className={`text-center text-[11px] font-semibold py-1.5 border-b border-border sticky top-0 z-10 ${
-                  day.isToday
-                    ? "text-primary bg-primary/5 rounded-t-lg"
-                    : "text-muted-foreground"
-                }`}
-              >
-                {day.label}
-              </div>
-            ))}
-
-            {/* Time slots */}
-            {HOURS.map((minutes, rowIdx) => (
-              <>
-                <div
-                  key={`time-${minutes}`}
-                  className="text-[10px] text-muted-foreground font-mono pr-2 text-right leading-[28px] border-r border-border"
-                  style={{ gridRow: rowIdx + 2 }}
-                >
-                  {minutes % 60 === 0 ? formatTime(minutes) : ""}
-                </div>
-                {weekDays.map((day, colIdx) => {
-                  const dayEvents = eventsByDay.get(day.key) ?? [];
-                  const slotEvents = dayEvents.filter(
-                    (ev) =>
-                      ev.minuteOfDay >= minutes &&
-                      ev.minuteOfDay < minutes + 30
-                  );
-                  return (
-                    <div
-                      key={`${day.key}-${minutes}`}
-                      className={`relative border-b border-r border-border/50 ${
-                        day.isToday ? "bg-primary/[0.02]" : ""
-                      } ${minutes % 60 === 0 ? "border-b-border" : ""}`}
-                      style={{
-                        gridRow: rowIdx + 2,
-                        gridColumn: colIdx + 2,
-                      }}
-                    >
-                      {slotEvents.map((ev) => {
-                        const style = getGradeStyle(ev.grade);
-                        return (
-                          <a
-                            key={ev.id}
-                            href={`/leads/${ev.id}`}
-                            className={`absolute inset-x-0.5 top-0.5 bottom-0.5 rounded-md px-1 text-[9px] leading-tight truncate border ${style.bg} ${style.border} ${style.text} hover:opacity-80 transition-opacity flex items-center cursor-pointer`}
-                            title={ev.title}
-                          >
-                            <span className="truncate">{ev.title}</span>
-                          </a>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </>
-            ))}
-          </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground font-medium">
+            {totalThisWeek} Termin{totalThisWeek !== 1 ? "e" : ""}
+          </span>
+          <ChevronDown
+            className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+              open ? "rotate-180" : ""
+            }`}
+          />
         </div>
-      </CardContent>
+      </CardHeader>
+      <div
+        className="overflow-hidden transition-[max-height] duration-300 ease-in-out"
+        style={{ maxHeight: open ? `${height}px` : "0px" }}
+      >
+        <div ref={contentRef}>
+          <div className="border-t border-border" />
+          <CardContent
+            className="pb-4 pt-3"
+            style={{ boxShadow: "inset 0 6px 10px -4px rgba(0,0,0,0.1), inset 6px 0 10px -4px rgba(0,0,0,0.06), inset -6px 0 10px -4px rgba(0,0,0,0.06), inset 0 -6px 10px -4px rgba(0,0,0,0.06)" }}
+          >
+            {(members.length > 0 || hasUnassigned) && (
+              <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+                <span className="text-[11px] text-muted-foreground mr-1">Mitarbeiter:</span>
+                <button
+                  onClick={() => setSelectedMember(null)}
+                  className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                    selectedMember === null
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  Alle
+                </button>
+                {members.map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setSelectedMember(selectedMember === m ? null : m)}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                      selectedMember === m
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    {memberNames[m] ?? m}
+                  </button>
+                ))}
+                {hasUnassigned && (
+                  <button
+                    onClick={() => setSelectedMember(selectedMember === UNASSIGNED ? null : UNASSIGNED)}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-medium italic transition-colors ${
+                      selectedMember === UNASSIGNED
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    Nicht zugewiesen
+                  </button>
+                )}
+              </div>
+            )}
+            <div
+              className="overflow-x-auto -mx-2 px-2 rounded-lg border border-border/60"
+            >
+              <div
+                className="grid min-w-[700px]"
+                style={{
+                  gridTemplateColumns: "60px repeat(7, 1fr)",
+                  gridTemplateRows: `auto repeat(${HOURS.length}, 28px)`,
+                }}
+              >
+                {/* Header row */}
+                <div className="sticky top-0 z-10" />
+                {weekDays.map((day) => (
+                  <div
+                    key={day.key}
+                    className={`text-center text-[11px] font-semibold py-1.5 border-b border-border sticky top-0 z-10 ${
+                      day.isToday
+                        ? "text-primary bg-primary/5 rounded-t-lg"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {day.label}
+                  </div>
+                ))}
+
+                {/* Time slots */}
+                {HOURS.map((minutes, rowIdx) => (
+                  <Fragment key={`row-${minutes}`}>
+                    <div
+                      className="text-[10px] text-muted-foreground font-mono pr-2 text-right leading-[28px] border-r border-border"
+                      style={{ gridRow: rowIdx + 2 }}
+                    >
+                      {minutes % 60 === 0 ? formatTime(minutes) : ""}
+                    </div>
+                    {weekDays.map((day, colIdx) => {
+                      const dayEvents = eventsByDay.get(day.key) ?? [];
+                      const slotEvents = dayEvents.filter(
+                        (ev) =>
+                          ev.minuteOfDay >= minutes &&
+                          ev.minuteOfDay < minutes + 30
+                      );
+                      return (
+                        <div
+                          key={`${day.key}-${minutes}`}
+                          className={`relative border-b border-r border-border/50 ${
+                            day.isToday ? "bg-primary/[0.02]" : ""
+                          } ${minutes % 60 === 0 ? "border-b-border" : ""}`}
+                          style={{
+                            gridRow: rowIdx + 2,
+                            gridColumn: colIdx + 2,
+                          }}
+                        >
+                          {slotEvents.map((ev) => {
+                            const style = getGradeStyle(ev.grade);
+                            return (
+                              <a
+                                key={ev.id}
+                                href={`/leads/${ev.id}`}
+                                className={`absolute inset-x-0.5 top-0.5 bottom-0.5 rounded-md px-1 text-[9px] leading-tight truncate border ${style.bg} ${style.border} ${style.text} hover:opacity-80 transition-opacity flex items-center cursor-pointer`}
+                                title={ev.title}
+                              >
+                                <span className="truncate">{ev.title}</span>
+                              </a>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </Fragment>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        </div>
+      </div>
     </Card>
   );
 }

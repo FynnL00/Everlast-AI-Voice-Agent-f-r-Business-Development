@@ -45,7 +45,7 @@ export function formatFullDate(dateString: string): string {
 }
 
 export function normalizeObjection(obj: string): string {
-  return obj.trim().replace(/\s+/g, " ").toLowerCase().replace(/^./, c => c.toUpperCase());
+  return obj.trim().replace(/\s+/g, " ").toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
 }
 
 export function getSentimentColor(sentiment: string | null | undefined): string {
