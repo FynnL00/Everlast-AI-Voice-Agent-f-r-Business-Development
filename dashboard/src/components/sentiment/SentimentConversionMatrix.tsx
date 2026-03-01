@@ -19,7 +19,7 @@ interface SentimentConversionMatrixProps {
   leads: Lead[];
 }
 
-const STATUSES: Lead["status"][] = ["new", "contacted", "qualified", "appointment_booked", "converted", "lost"];
+const STATUSES: Lead["status"][] = ["new", "contacted", "qualified", "appointment_booked", "converted", "lost", "not_reached", "rejected"];
 
 function CustomTooltip({
   active,

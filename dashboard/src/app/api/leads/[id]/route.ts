@@ -25,6 +25,8 @@ const VALID_STATUSES = new Set([
   "appointment_booked",
   "converted",
   "lost",
+  "not_reached",
+  "rejected",
 ]);
 
 function sanitize(value: unknown): string {

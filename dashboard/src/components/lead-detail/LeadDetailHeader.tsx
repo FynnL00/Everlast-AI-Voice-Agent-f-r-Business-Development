@@ -55,7 +55,7 @@ export default function LeadDetailHeader({ lead }: LeadDetailHeaderProps) {
         )}
         <div className="flex items-center gap-1.5 bg-sidebar-accent/50 px-2 py-1 rounded-md border border-border">
           <Calendar size={14} className="text-muted-foreground" />
-          <span>{formatDate(lead.created_at)}</span>
+          <span>Angerufen am {formatDate(lead.created_at)}</span>
         </div>
         <div className="flex items-center gap-1.5 bg-sidebar-accent/50 px-2 py-1 rounded-md border border-border">
           <Shield

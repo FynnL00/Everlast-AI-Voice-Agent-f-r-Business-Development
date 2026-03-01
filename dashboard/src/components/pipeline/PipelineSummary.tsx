@@ -5,7 +5,7 @@ import { useLeads } from "@/lib/leads-context";
 import type { Lead } from "@/lib/types";
 import { STATUS_LABELS } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
-import { TrendingDown } from "lucide-react";
+import { TrendingDown, PhoneOff, XCircle } from "lucide-react";
 
 const FUNNEL_STAGES: Lead["status"][] = [
   "new",
@@ -27,7 +27,7 @@ export default function PipelineSummary() {
   const { filteredLeads } = useLeads();
   const [hovered, setHovered] = useState<number | null>(null);
 
-  const { stages, lostCount } = useMemo(() => {
+  const { stages, lostCount, notReachedCount, rejectedCount } = useMemo(() => {
     const counts: Record<Lead["status"], number> = {
       new: 0,
       contacted: 0,
@@ -35,6 +35,8 @@ export default function PipelineSummary() {
       appointment_booked: 0,
       converted: 0,
       lost: 0,
+      not_reached: 0,
+      rejected: 0,
     };
     for (const lead of filteredLeads) counts[lead.status]++;
 
@@ -67,6 +69,8 @@ export default function PipelineSummary() {
         };
       }),
       lostCount: counts.lost,
+      notReachedCount: counts.not_reached,
+      rejectedCount: counts.rejected,
     };
   }, [filteredLeads]);
 
@@ -217,23 +221,53 @@ export default function PipelineSummary() {
           </svg>
         </div>
 
-        {lostCount > 0 && (
-          <div className="flex items-center gap-4 mt-2 pt-4 border-t border-border/50">
-            <span className="w-20 shrink-0 text-xs font-medium text-muted-foreground text-right">
-              Verloren
-            </span>
-            <div className="flex items-center gap-2.5 bg-red-500/10 px-3 py-1.5 rounded-md border border-red-500/20">
-              <TrendingDown size={14} className="text-red-400" />
-              <span className="text-sm font-bold text-red-400">
-                {lostCount}
-              </span>
-              {filteredLeads.length > 0 && (
-                <span className="text-xs font-medium text-red-400/70 ml-1">
-                  ({Math.round((lostCount / filteredLeads.length) * 100)}%
-                  Verlustrate)
+        {(lostCount > 0 || notReachedCount > 0 || rejectedCount > 0) && (
+          <div className="flex items-center gap-4 mt-2 pt-4 border-t border-border/50 flex-wrap">
+            {lostCount > 0 && (
+              <>
+                <span className="w-20 shrink-0 text-xs font-medium text-muted-foreground text-right">
+                  Verloren
                 </span>
-              )}
-            </div>
+                <div className="flex items-center gap-2.5 bg-red-500/10 px-3 py-1.5 rounded-md border border-red-500/20">
+                  <TrendingDown size={14} className="text-red-400" />
+                  <span className="text-sm font-bold text-red-400">
+                    {lostCount}
+                  </span>
+                  {filteredLeads.length > 0 && (
+                    <span className="text-xs font-medium text-red-400/70 ml-1">
+                      ({Math.round((lostCount / filteredLeads.length) * 100)}%
+                      Verlustrate)
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
+            {notReachedCount > 0 && (
+              <>
+                <span className="w-20 shrink-0 text-xs font-medium text-muted-foreground text-right">
+                  Nicht erreicht
+                </span>
+                <div className="flex items-center gap-2.5 bg-orange-500/10 px-3 py-1.5 rounded-md border border-orange-500/20">
+                  <PhoneOff size={14} className="text-orange-400" />
+                  <span className="text-sm font-bold text-orange-400">
+                    {notReachedCount}
+                  </span>
+                </div>
+              </>
+            )}
+            {rejectedCount > 0 && (
+              <>
+                <span className="w-20 shrink-0 text-xs font-medium text-muted-foreground text-right">
+                  Abgelehnt
+                </span>
+                <div className="flex items-center gap-2.5 bg-red-500/10 px-3 py-1.5 rounded-md border border-red-500/20">
+                  <XCircle size={14} className="text-red-400" />
+                  <span className="text-sm font-bold text-red-400">
+                    {rejectedCount}
+                  </span>
+                </div>
+              </>
+            )}
           </div>
         )}
       </CardContent>

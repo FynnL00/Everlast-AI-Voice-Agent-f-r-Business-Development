@@ -28,7 +28,7 @@ export interface Lead {
   cal_booking_id: string | null;
   call_started_at: string | null;
   is_decision_maker: boolean | null;
-  status: 'new' | 'contacted' | 'qualified' | 'appointment_booked' | 'converted' | 'lost';
+  status: 'new' | 'contacted' | 'qualified' | 'appointment_booked' | 'converted' | 'lost' | 'not_reached' | 'rejected';
   next_steps: string[] | null;
   notes: string | null;
   briefing: string | null;
@@ -121,6 +121,8 @@ export const STATUS_LABELS: Record<Lead["status"], string> = {
   appointment_booked: "Termin gebucht",
   converted: "Konvertiert",
   lost: "Verloren",
+  not_reached: "Nicht erreicht",
+  rejected: "Abgelehnt",
 };
 
 export const STATUS_COLORS: Record<Lead["status"], string> = {
@@ -130,6 +132,8 @@ export const STATUS_COLORS: Record<Lead["status"], string> = {
   appointment_booked: "var(--score-warning)",
   converted: "var(--score-good)",
   lost: "var(--score-danger)",
+  not_reached: "var(--chart-3)",
+  rejected: "var(--destructive)",
 };
 
 export const SENTIMENT_LABELS: Record<NonNullable<Lead["sentiment"]>, string> = {

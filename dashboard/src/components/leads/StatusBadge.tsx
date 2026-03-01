@@ -7,6 +7,8 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   appointment_booked: { label: "Termin gebucht", color: "var(--score-warning)" },
   converted: { label: "Konvertiert", color: "var(--score-good)" },
   lost: { label: "Verloren", color: "var(--score-danger)" },
+  not_reached: { label: "Nicht erreicht", color: "var(--chart-3)" },
+  rejected: { label: "Abgelehnt", color: "var(--destructive)" },
 };
 
 interface StatusBadgeProps {

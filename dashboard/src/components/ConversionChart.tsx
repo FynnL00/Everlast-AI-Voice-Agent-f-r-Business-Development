@@ -15,10 +15,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/
 
 interface ConversionChartProps {
   data: { date: string; rate: number; calls: number }[];
+  subtitle?: string;
 }
 
 const DATAKEY_LABELS: Record<string, string> = {
-  calls: "Total Calls",
+  calls: "Calls",
   rate: "Conversion",
 };
 
@@ -57,23 +58,30 @@ function CustomTooltip({
   );
 }
 
-export default function ConversionChart({ data }: ConversionChartProps) {
+export default function ConversionChart({ data, subtitle }: ConversionChartProps) {
   const maxCalls = Math.max(...data.map((d) => d.calls), 1);
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setRevealed(true), 100);
+    setRevealed(false);
+    const timer = setTimeout(() => setRevealed(true), 50);
     return () => clearTimeout(timer);
-  }, []);
+  }, [data, subtitle]);
 
   return (
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full overflow-visible">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold">Entwicklung</CardTitle>
-        <CardDescription>Letzte 7 Tage</CardDescription>
+        <CardDescription>{subtitle ?? "Letzte 7 Tage"}</CardDescription>
       </CardHeader>
       <CardContent className="pb-6 overflow-visible">
-        <div className="h-[280px] overflow-visible">
+        <div
+          className="h-[280px] overflow-visible"
+          style={{
+            clipPath: revealed ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)",
+            transition: "clip-path 2.4s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}
+        >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={data} margin={{ top: 5, right: 5, bottom: 0, left: -10 }}>
               <defs>
@@ -85,16 +93,6 @@ export default function ConversionChart({ data }: ConversionChartProps) {
                   <stop offset="0%" stopColor="var(--chart-2)" stopOpacity={0.25} />
                   <stop offset="100%" stopColor="var(--chart-2)" stopOpacity={0.02} />
                 </linearGradient>
-                {/* Clip mask for left-to-right reveal */}
-                <clipPath id="reveal-clip">
-                  <rect
-                    x="0"
-                    y="0"
-                    width={revealed ? "100%" : "0%"}
-                    height="100%"
-                    style={{ transition: "width 1.2s cubic-bezier(0.22, 1, 0.36, 1)" }}
-                  />
-                </clipPath>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
               <XAxis
@@ -130,7 +128,7 @@ export default function ConversionChart({ data }: ConversionChartProps) {
                 wrapperStyle={{ paddingLeft: 14 }}
                 formatter={(value: string) => (
                   <span className="text-xs text-muted-foreground font-medium ml-1">
-                    {value === "rate" ? "Conversion" : "Total Calls"}
+                    {value === "rate" ? "Conversion" : "Calls"}
                   </span>
                 )}
               />
@@ -143,10 +141,7 @@ export default function ConversionChart({ data }: ConversionChartProps) {
                 fill="url(#gradientRate)"
                 dot={false}
                 activeDot={{ r: 4, fill: "var(--chart-2)", stroke: "var(--background)", strokeWidth: 2 }}
-                clipPath="url(#reveal-clip)"
-                isAnimationActive={true}
-                animationDuration={1400}
-                animationEasing="ease-out"
+                isAnimationActive={false}
               />
               <Area
                 yAxisId="calls"
@@ -157,10 +152,7 @@ export default function ConversionChart({ data }: ConversionChartProps) {
                 fill="url(#gradientCalls)"
                 dot={false}
                 activeDot={{ r: 4, fill: "var(--chart-1)", stroke: "var(--background)", strokeWidth: 2 }}
-                clipPath="url(#reveal-clip)"
-                isAnimationActive={true}
-                animationDuration={1200}
-                animationEasing="ease-out"
+                isAnimationActive={false}
               />
             </AreaChart>
           </ResponsiveContainer>

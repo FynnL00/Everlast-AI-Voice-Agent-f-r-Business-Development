@@ -9,10 +9,11 @@ import {
   Sector,
   Tooltip,
 } from "recharts";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/Card";
 
 interface ObjectionDonutChartProps {
   data: { objection: string; count: number }[];
+  subtitle?: string;
 }
 
 /* Gradient pairs: [highlight, shadow] — hex for SVG compat */
@@ -77,6 +78,7 @@ function CustomTooltip({
 
 export default function ObjectionDonutChart({
   data,
+  subtitle,
 }: ObjectionDonutChartProps) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
@@ -103,8 +105,9 @@ export default function ObjectionDonutChart({
   if (data.length === 0) {
     return (
       <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full">
-        <CardHeader className="pb-2">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-base font-semibold">Einwände</CardTitle>
+          <CardDescription>{subtitle ?? "Gesamt"}</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-sm py-8 text-center">
@@ -117,8 +120,9 @@ export default function ObjectionDonutChart({
 
   return (
     <Card className={`transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full overflow-visible relative ${activeIndex !== null ? "z-50" : "z-0"}`}>
-      <CardHeader className="pb-2">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold">Einwände</CardTitle>
+        <CardDescription>{subtitle ?? "Gesamt"}</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center overflow-visible">
         {/* Donut */}

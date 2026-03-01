@@ -16,17 +16,20 @@ import { Custom3DBar } from "@/components/dashboard/Custom3DBar";
 
 interface LeadScoreDistributionProps {
   data: { grade: string; count: number; color: string }[];
+  subtitle?: string;
 }
 
 export default function LeadScoreDistribution({
   data,
+  subtitle,
 }: LeadScoreDistributionProps) {
   // Map provided colors conceptually or just use standard chart tokens:
   // Since grade has a specific color semantics we keep the prop, but format it carefully.
   return (
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full">
-      <CardHeader className="pb-2">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold">Lead-Score Verteilung</CardTitle>
+        <CardDescription>{subtitle ?? "Gesamt"}</CardDescription>
       </CardHeader>
       <CardContent className="pb-6">
         <div className="h-[280px]">

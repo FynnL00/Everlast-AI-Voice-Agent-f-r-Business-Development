@@ -10,10 +10,8 @@ import {
   BarChart3,
   Menu,
   X,
-  Search,
   User,
   ChevronRight,
-  Command,
   Sun,
   Moon,
   AlertTriangle,
@@ -114,25 +112,6 @@ export default function Sidebar({ isLive = false }: SidebarProps) {
             <div className="text-xs text-muted-foreground truncate">
               Sales Dashboard
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="px-4 pb-3">
-        <div className="relative group">
-          <Search
-            size={14}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-sidebar-primary"
-          />
-          <input
-            type="text"
-            placeholder="Suche..."
-            className="w-full pl-9 pr-12 py-2.5 text-sm rounded-lg bg-background/50 border border-sidebar-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-sidebar-ring/50 focus:border-sidebar-ring transition-all placeholder:transition-opacity focus:placeholder:opacity-0"
-          />
-          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5 text-muted-foreground">
-            <Command size={11} />
-            <span className="text-[10px] font-medium">K</span>
           </div>
         </div>
       </div>

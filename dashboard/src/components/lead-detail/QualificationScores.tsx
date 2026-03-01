@@ -1,8 +1,10 @@
 "use client";
 
+import { Info } from "lucide-react";
 import type { Lead } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { getGradeColor } from "@/lib/utils";
 
 interface QualificationScoresProps {
@@ -12,9 +14,10 @@ interface QualificationScoresProps {
 interface ScoreBarProps {
   label: string;
   score: number | null;
+  detail: string | null;
 }
 
-function ScoreBar({ label, score }: ScoreBarProps) {
+function ScoreBar({ label, score, detail }: ScoreBarProps) {
   if (score == null) {
     return (
       <div className="mb-4">
@@ -23,6 +26,11 @@ function ScoreBar({ label, score }: ScoreBarProps) {
           <span className="text-sm text-muted-foreground">&mdash;</span>
         </div>
         <div className="h-1.5 rounded-full bg-border/50" />
+        {detail && (
+          <p className="text-xs text-muted-foreground mt-1.5 truncate" title={detail}>
+            {detail}
+          </p>
+        )}
       </div>
     );
   }
@@ -53,6 +61,11 @@ function ScoreBar({ label, score }: ScoreBarProps) {
           }}
         />
       </div>
+      {detail && (
+        <p className="text-xs text-muted-foreground mt-1.5 truncate" title={detail}>
+          {detail}
+        </p>
+      )}
     </div>
   );
 }
@@ -61,17 +74,38 @@ export default function QualificationScores({ lead }: QualificationScoresProps) 
   const totalScore = lead.total_score;
 
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-sm relative">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="absolute top-2.5 right-3.5 text-muted-foreground/40 hover:text-muted-foreground transition-colors cursor-help z-10"
+            aria-label="Info: Qualifizierungs-Scores"
+            tabIndex={0}
+          >
+            <Info className="h-3.5 w-3.5" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-64 p-3">
+          <p className="font-semibold text-card-foreground text-sm mb-1">Qualifizierungs-Scores</p>
+          <p className="text-xs text-card-foreground/80 leading-relaxed">
+            Jeder Lead wird nach dem Gespräch automatisch per KI in 4 Kategorien bewertet (je 1–3 Punkte).
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-2 font-mono">
+            A-Lead: 10–12 · B-Lead: 7–9 · C-Lead: 4–6
+          </p>
+        </TooltipContent>
+      </Tooltip>
       <CardHeader className="pb-3 border-b border-border/50 mb-4">
         <CardTitle className="text-sm font-semibold text-muted-foreground">
           Qualifizierungs-Scores
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ScoreBar label="Unternehmensgröße" score={lead.score_company_size} />
-        <ScoreBar label="Tech-Stack" score={lead.score_tech_stack} />
-        <ScoreBar label="Pain Point" score={lead.score_pain_point} />
-        <ScoreBar label="Timeline" score={lead.score_timeline} />
+        <ScoreBar label="Unternehmensgröße" score={lead.score_company_size} detail={lead.company_size} />
+        <ScoreBar label="Tech-Stack" score={lead.score_tech_stack} detail={lead.current_stack} />
+        <ScoreBar label="Pain Point" score={lead.score_pain_point} detail={lead.pain_point} />
+        <ScoreBar label="Timeline" score={lead.score_timeline} detail={lead.timeline} />
 
         {/* Total */}
         <div className="flex items-center justify-between pt-4 mt-2 border-t border-border/50 bg-muted/10 -mx-6 px-6 -mb-6 pb-6 rounded-b-2xl">

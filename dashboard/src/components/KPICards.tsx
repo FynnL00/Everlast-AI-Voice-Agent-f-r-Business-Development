@@ -4,16 +4,18 @@ import { Phone, TrendingUp, Clock, SmilePlus } from "lucide-react";
 import { KPICard } from "@/components/ui/KPICard";
 
 interface KPICardsProps {
-  callsToday: number;
-  totalCalls: number;
+  callsInRange: number;
+  callLabel: string;
+  callSubtitle?: string;
   conversionRate: number;
   avgDuration: number;
   positiveSentimentRate: number;
 }
 
 export default function KPICards({
-  callsToday,
-  totalCalls,
+  callsInRange,
+  callLabel,
+  callSubtitle,
   conversionRate,
   avgDuration,
   positiveSentimentRate,
@@ -24,14 +26,14 @@ export default function KPICards({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <KPICard
-        label="Anrufe heute"
-        numericValue={callsToday}
+        label={callLabel}
+        numericValue={callsInRange}
         suffix=""
         icon={Phone}
         colorClass="text-purple-400"
         bgClass="bg-purple-500/10"
-        subtitle={`Gesamt: ${totalCalls}`}
-        tooltip="Anzahl eingehender Anrufe seit Mitternacht (Berliner Zeit)."
+        subtitle={callSubtitle}
+        tooltip="Anzahl eingehender Anrufe im gewählten Zeitraum."
       />
       <KPICard
         label="Conversion-Rate"

@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/Card";
 import type { Lead } from "@/lib/types";
 
 interface DropOffAnalysisProps {
   leads: Lead[];
+  subtitle?: string;
 }
 
 interface DropOffEntry {
@@ -23,7 +24,7 @@ const PHASE_COLORS = [
   { bar: "#8b5cf6", glow: "#8b5cf650", badge: "#8b5cf6", bg: "#8b5cf610" },
 ];
 
-export default function DropOffAnalysis({ leads }: DropOffAnalysisProps) {
+export default function DropOffAnalysis({ leads, subtitle }: DropOffAnalysisProps) {
   const [revealed, setRevealed] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -60,11 +61,14 @@ export default function DropOffAnalysis({ leads }: DropOffAnalysisProps) {
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-base font-semibold">Gesprächsabbrüche</CardTitle>
-        {totalDropOffs > 0 && (
-          <span className="text-xs text-muted-foreground font-medium tabular-nums">
-            {totalDropOffs} gesamt
-          </span>
-        )}
+        <div className="flex items-center gap-3">
+          {totalDropOffs > 0 && (
+            <span className="text-xs text-muted-foreground font-medium tabular-nums">
+              {totalDropOffs} gesamt
+            </span>
+          )}
+          <CardDescription>{subtitle ?? "Gesamt"}</CardDescription>
+        </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">
         {data.length === 0 ? (

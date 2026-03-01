@@ -25,6 +25,8 @@ const PIPELINE_STAGES: Lead["status"][] = [
   "appointment_booked",
   "converted",
   "lost",
+  "not_reached",
+  "rejected",
 ];
 
 export default function PipelineBoard() {
@@ -47,6 +49,8 @@ export default function PipelineBoard() {
       appointment_booked: [],
       converted: [],
       lost: [],
+      not_reached: [],
+      rejected: [],
     };
     for (const lead of filteredLeads) {
       if (map[lead.status]) {

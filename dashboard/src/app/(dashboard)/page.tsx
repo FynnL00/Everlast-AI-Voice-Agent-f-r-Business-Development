@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useLeads } from "@/lib/leads-context";
 import { useTeam } from "@/lib/team-context";
 import KPICards from "@/components/KPICards";
@@ -11,9 +11,18 @@ import ObjectionDonutChart from "@/components/ObjectionDonutChart";
 import DropOffAnalysis from "@/components/analytics/DropOffAnalysis";
 import { LayoutDashboard } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
-import { normalizeObjection } from "@/lib/utils";
+import { cn, normalizeObjection } from "@/lib/utils";
 import AppointmentCalendar from "@/components/dashboard/AppointmentCalendar";
 import AlertBanner from "@/components/dashboard/AlertBanner";
+
+type TimeRange = "today" | "7d" | "30d" | "total";
+
+const TIME_RANGE_LABELS: Record<TimeRange, string> = {
+  today: "Heute",
+  "7d": "7 Tage",
+  "30d": "30 Tage",
+  total: "Total",
+};
 
 /** Convert a UTC timestamp to a YYYY-MM-DD string in Europe/Berlin timezone */
 const berlinFormatter = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" });
@@ -22,8 +31,9 @@ function toBerlinDate(iso: string): string {
 }
 
 export default function Dashboard() {
-  const { leads, loading, isLive } = useLeads();
+  const { leads, loading } = useLeads();
   const { teamMembers } = useTeam();
+  const [timeRange, setTimeRange] = useState<TimeRange>("total");
 
   const memberNames = useMemo(() => {
     const map: Record<string, string> = {};
@@ -31,46 +41,56 @@ export default function Dashboard() {
     return map;
   }, [teamMembers]);
 
-  // Calculate KPIs (memoized to avoid re-computing on every render)
-  const { totalCalls, callsToday, conversionRate, avgDuration, positiveSentimentRate } = useMemo(() => {
-    const total = leads.length;
+  // Filter leads by selected time range
+  const timeFilteredLeads = useMemo(() => {
+    if (timeRange === "total") return leads;
+    const now = new Date();
+    if (timeRange === "today") {
+      const berlinToday = toBerlinDate(now.toISOString());
+      return leads.filter(l => toBerlinDate(l.created_at) === berlinToday);
+    }
+    const days = timeRange === "7d" ? 7 : 30;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    cutoff.setHours(0, 0, 0, 0);
+    return leads.filter(l => new Date(l.created_at) >= cutoff);
+  }, [leads, timeRange]);
 
-    // Conversion rate: leads that booked an appointment / total
-    const booked = leads.filter((l) => l.appointment_booked).length;
+  // Calculate KPIs from time-filtered leads
+  const { callsInRange, conversionRate, avgDuration, positiveSentimentRate } = useMemo(() => {
+    const total = timeFilteredLeads.length;
+
+    const booked = timeFilteredLeads.filter((l) => l.appointment_booked).length;
     const conversionRate = total > 0 ? (booked / total) * 100 : 0;
 
-    // Avg duration — only count leads that actually had a call
-    const leadsWithDuration = leads.filter(l => l.call_duration_seconds != null && l.call_duration_seconds > 0);
+    const leadsWithDuration = timeFilteredLeads.filter(l => l.call_duration_seconds != null && l.call_duration_seconds > 0);
     const duration = leadsWithDuration.length > 0
       ? leadsWithDuration.reduce((sum, l) => sum + l.call_duration_seconds!, 0) / leadsWithDuration.length : 0;
 
-    // Use Europe/Berlin timezone for "today" calculation
-    const berlinToday = toBerlinDate(new Date().toISOString());
-    const todayLeads = leads.filter(l => toBerlinDate(l.created_at) === berlinToday);
-    const aToday = todayLeads.filter(l => l.lead_grade === "A").length;
-
-    // Positive sentiment rate
-    const leadsWithSentiment = leads.filter(l => l.sentiment);
+    const leadsWithSentiment = timeFilteredLeads.filter(l => l.sentiment);
     const positiveCount = leadsWithSentiment.filter(l => l.sentiment === "positiv").length;
     const positiveSentimentRate = leadsWithSentiment.length > 0 ? Math.round((positiveCount / leadsWithSentiment.length) * 100) : 0;
 
-    return { totalCalls: total, callsToday: todayLeads.length, conversionRate, avgDuration: duration, positiveSentimentRate };
-  }, [leads]);
+    return { callsInRange: total, conversionRate, avgDuration: duration, positiveSentimentRate };
+  }, [timeFilteredLeads]);
+
+  // KPI label
+  const kpiCallLabel = "Anrufe";
 
   // Grade distribution (memoized)
   const gradeDistribution = useMemo(
     () => [
-      { grade: "A-Lead", count: leads.filter((l) => l.lead_grade === "A").length, color: "var(--score-good)" },
-      { grade: "B-Lead", count: leads.filter((l) => l.lead_grade === "B").length, color: "var(--score-warning)" },
-      { grade: "C-Lead", count: leads.filter((l) => l.lead_grade === "C").length, color: "var(--score-danger)" },
+      { grade: "A-Lead", count: timeFilteredLeads.filter((l) => l.lead_grade === "A").length, color: "var(--score-good)" },
+      { grade: "B-Lead", count: timeFilteredLeads.filter((l) => l.lead_grade === "B").length, color: "var(--score-warning)" },
+      { grade: "C-Lead", count: timeFilteredLeads.filter((l) => l.lead_grade === "C").length, color: "var(--score-danger)" },
     ],
-    [leads]
+    [timeFilteredLeads]
   );
 
   // Objection distribution with normalization (memoized)
   const objectionDistribution = useMemo(() => {
     const counts: Record<string, { display: string; count: number }> = {};
-    leads.forEach((l) => {
+    timeFilteredLeads.forEach((l) => {
       l.objections_raised?.forEach((obj) => {
         const key = normalizeObjection(obj);
         if (!counts[key]) {
@@ -83,9 +103,9 @@ export default function Dashboard() {
       .map(({ display, count }) => ({ objection: display, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
-  }, [leads]);
+  }, [timeFilteredLeads]);
 
-  // Calendar events for AppointmentCalendar
+  // Calendar events for AppointmentCalendar (always show all)
   const calendarEvents = useMemo(() =>
     leads
       .filter((l) => l.appointment_booked && l.appointment_datetime)
@@ -99,18 +119,19 @@ export default function Dashboard() {
     [leads]
   );
 
-  // Conversion trend (last 7 days, memoized, timezone-aware on both sides)
+  // Conversion trend — dynamic day count based on time range
+  const trendDays = timeRange === "today" ? 1 : timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : 7;
   const conversionTrend = useMemo(() => {
     const leadsByDate = new Map<string, typeof leads>();
-    leads.forEach(l => {
+    timeFilteredLeads.forEach(l => {
       const key = toBerlinDate(l.created_at);
       if (!leadsByDate.has(key)) leadsByDate.set(key, []);
       leadsByDate.get(key)!.push(l);
     });
 
-    return Array.from({ length: 7 }, (_, i) => {
+    return Array.from({ length: trendDays }, (_, i) => {
       const d = new Date();
-      d.setDate(d.getDate() - (6 - i));
+      d.setDate(d.getDate() - (trendDays - 1 - i));
       const dateStr = toBerlinDate(d.toISOString());
       const dayLeads = leadsByDate.get(dateStr) ?? [];
       const dayBooked = dayLeads.filter((l) => l.appointment_booked).length;
@@ -121,7 +142,12 @@ export default function Dashboard() {
         calls: dayLeads.length,
       };
     });
-  }, [leads]);
+  }, [timeFilteredLeads, trendDays]);
+
+  const chartSubtitle = timeRange === "today" ? "Heute"
+    : timeRange === "7d" ? "Letzte 7 Tage"
+    : timeRange === "30d" ? "Letzte 30 Tage"
+    : "Gesamt";
 
   if (loading) {
     return (
@@ -138,20 +164,25 @@ export default function Dashboard() {
         title="Dashboard"
         icon={LayoutDashboard}
         rightContent={
-          <>
-            <div className="flex items-center gap-2 justify-end mb-1">
-              <span
-                className={`w-2 h-2 rounded-full shadow-[0_0_8px_currentColor] ${isLive ? "bg-status-completed text-status-completed animate-pulse" : "bg-muted-foreground text-muted-foreground"
-                  }`}
-              />
-              <span className="text-sm font-medium text-muted-foreground drop-shadow-sm">
-                {isLive ? "Live" : "Offline"}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground font-medium">
-              {leads.length} Leads · Echtzeit-KPIs
-            </p>
-          </>
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/50 border border-border/50">
+            {(["today", "7d", "30d", "total"] as const).map((range) => {
+              const isActive = timeRange === range;
+              return (
+                <button
+                  key={range}
+                  onClick={() => setTimeRange(range)}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200",
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  {TIME_RANGE_LABELS[range]}
+                </button>
+              );
+            })}
+          </div>
         }
       />
 
@@ -164,8 +195,8 @@ export default function Dashboard() {
           MAIN KPIS
         </span>
         <KPICards
-          callsToday={callsToday}
-          totalCalls={totalCalls}
+          callsInRange={callsInRange}
+          callLabel={kpiCallLabel}
           conversionRate={conversionRate}
           avgDuration={avgDuration}
           positiveSentimentRate={positiveSentimentRate}
@@ -175,9 +206,9 @@ export default function Dashboard() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 relative z-10">
-          <ConversionChart data={conversionTrend} />
+          <ConversionChart data={conversionTrend} subtitle={chartSubtitle} />
         </div>
-        <LeadScoreDistribution data={gradeDistribution} />
+        <LeadScoreDistribution data={gradeDistribution} subtitle={chartSubtitle} />
       </div>
 
       {/* Appointment Calendar */}
@@ -185,9 +216,9 @@ export default function Dashboard() {
 
       {/* Top Objections: Donut 1/3, Bar Chart 2/3 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <ObjectionDonutChart data={objectionDistribution} />
+        <ObjectionDonutChart data={objectionDistribution} subtitle={chartSubtitle} />
         <div className="lg:col-span-2">
-          <DropOffAnalysis leads={leads} />
+          <DropOffAnalysis leads={timeFilteredLeads} subtitle={chartSubtitle} />
         </div>
       </div>
 
