@@ -127,6 +127,7 @@ export default function ConversionChart({ data }: ConversionChartProps) {
                 height={48}
                 iconType="circle"
                 iconSize={8}
+                wrapperStyle={{ paddingLeft: 14 }}
                 formatter={(value: string) => (
                   <span className="text-xs text-muted-foreground font-medium ml-1">
                     {value === "rate" ? "Conversion" : "Total Calls"}

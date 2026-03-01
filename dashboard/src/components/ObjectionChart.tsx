@@ -25,7 +25,7 @@ export default function ObjectionChart({ data }: ObjectionChartProps) {
   }, []);
 
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full overflow-visible">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold">Top Einwände</CardTitle>
       </CardHeader>
@@ -62,7 +62,7 @@ export default function ObjectionChart({ data }: ObjectionChartProps) {
                     <span className="block text-sm text-foreground font-medium truncate">
                       {item.objection}
                     </span>
-                    <span className="pointer-events-none opacity-0 group-hover/label:opacity-100 transition-opacity duration-150 absolute left-0 bottom-full mb-1.5 z-50 rounded-lg bg-card border border-border px-3 py-2 shadow-lg backdrop-blur-xl text-xs text-foreground font-normal whitespace-normal w-max max-w-[280px]">
+                    <span className="pointer-events-none opacity-0 group-hover/label:opacity-100 transition-opacity duration-150 absolute left-0 bottom-full mb-1.5 z-[9999] rounded-lg bg-card border border-border px-3 py-2 shadow-lg backdrop-blur-xl text-xs text-foreground font-normal whitespace-normal w-max max-w-[280px]">
                       {item.objection}
                     </span>
                   </span>

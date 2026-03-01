@@ -7,8 +7,8 @@ import KPICards from "@/components/KPICards";
 import LeadScoreDistribution from "@/components/LeadScoreDistribution";
 import ConversionChart from "@/components/ConversionChart";
 import LeadTable from "@/components/LeadTable";
-import ObjectionChart from "@/components/ObjectionChart";
 import ObjectionDonutChart from "@/components/ObjectionDonutChart";
+import DropOffAnalysis from "@/components/analytics/DropOffAnalysis";
 import { LayoutDashboard } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import { normalizeObjection } from "@/lib/utils";
@@ -187,7 +187,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <ObjectionDonutChart data={objectionDistribution} />
         <div className="lg:col-span-2">
-          <ObjectionChart data={objectionDistribution} />
+          <DropOffAnalysis leads={leads} />
         </div>
       </div>
 

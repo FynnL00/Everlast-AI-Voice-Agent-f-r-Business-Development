@@ -1,17 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  LabelList,
-} from "recharts";
+import { useMemo, useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
 import type { Lead } from "@/lib/types";
 
@@ -23,121 +12,180 @@ interface DropOffEntry {
   phase: string;
   count: number;
   percentage: number;
-  barSize: number;
 }
 
-function CustomTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean;
-  payload?: { payload: DropOffEntry }[];
-}) {
-  if (!active || !payload || payload.length === 0) return null;
-  const entry = payload[0].payload;
-  return (
-    <div className="rounded-xl bg-card border border-border px-4 py-3 shadow-[0_6px_20px_rgba(0,0,0,0.4)] min-w-[160px] backdrop-blur-xl">
-      <span className="font-semibold text-foreground">{entry.phase}</span>
-      <span className="text-muted-foreground ml-2">{entry.count} Abbrüche ({entry.percentage}%)</span>
-    </div>
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function renderBarLabel(props: any) {
-  const { x, y, width, height, value } = props;
-  if (!value) return null;
-  return (
-    <text
-      x={(x as number) + (width as number) + 8}
-      y={(y as number) + (height as number) / 2}
-      fill="var(--muted-foreground)"
-      fontSize={11}
-      fontWeight={600}
-      dominantBaseline="central"
-    >
-      {value}
-    </text>
-  );
-}
-
-// Funnel bar sizes: decreasing widths to create funnel effect
-const FUNNEL_SIZES = [28, 24, 20, 16, 14, 12, 10, 8];
-const FUNNEL_OPACITIES = [0.95, 0.85, 0.75, 0.65, 0.55, 0.5, 0.45, 0.4];
+const PHASE_COLORS = [
+  { bar: "#ef4444", glow: "#ef444450", badge: "#ef4444", bg: "#ef444410" },
+  { bar: "#f97316", glow: "#f9731650", badge: "#f97316", bg: "#f9731610" },
+  { bar: "#eab308", glow: "#eab30850", badge: "#eab308", bg: "#eab30810" },
+  { bar: "#22c55e", glow: "#22c55e50", badge: "#22c55e", bg: "#22c55e10" },
+  { bar: "#3b82f6", glow: "#3b82f650", badge: "#3b82f6", bg: "#3b82f610" },
+  { bar: "#8b5cf6", glow: "#8b5cf650", badge: "#8b5cf6", bg: "#8b5cf610" },
+];
 
 export default function DropOffAnalysis({ leads }: DropOffAnalysisProps) {
-  const data = useMemo<DropOffEntry[]>(() => {
+  const [revealed, setRevealed] = useState(false);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setRevealed(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const { data, totalDropOffs } = useMemo(() => {
     const counts: Record<string, number> = {};
     leads.forEach((l) => {
       if (l.drop_off_point) {
-        const phase = l.drop_off_point;
-        counts[phase] = (counts[phase] || 0) + 1;
+        counts[l.drop_off_point] = (counts[l.drop_off_point] || 0) + 1;
       }
     });
+
     const sorted = Object.entries(counts)
       .map(([phase, count]) => ({ phase, count }))
       .sort((a, b) => b.count - a.count);
 
-    const maxCount = sorted.length > 0 ? sorted[0].count : 1;
-    return sorted.map((entry, i) => ({
+    const total = sorted.reduce((sum, e) => sum + e.count, 0);
+
+    const entries: DropOffEntry[] = sorted.map((entry) => ({
       ...entry,
-      percentage: Math.round((entry.count / maxCount) * 100),
-      barSize: FUNNEL_SIZES[Math.min(i, FUNNEL_SIZES.length - 1)],
+      percentage: total > 0 ? Math.round((entry.count / total) * 100) : 0,
     }));
+
+    return { data: entries, totalDropOffs: total };
   }, [leads]);
 
+  const maxCount = data.length > 0 ? data[0].count : 1;
+
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5 w-full h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-semibold">Drop-off Analyse</CardTitle>
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full flex flex-col">
+      <CardHeader className="flex flex-row items-center justify-between pb-3">
+        <CardTitle className="text-base font-semibold">Gesprächsabbrüche</CardTitle>
+        {totalDropOffs > 0 && (
+          <span className="text-xs text-muted-foreground font-medium tabular-nums">
+            {totalDropOffs} gesamt
+          </span>
+        )}
       </CardHeader>
-      <CardContent className="pb-6">
-        <div className="h-[280px]">
-          {data.length === 0 ? (
-            <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
-              Keine Drop-off-Daten vorhanden
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} layout="vertical" margin={{ left: 20, right: 50 }}>
-                <defs>
-                  {data.map((_, i) => (
-                    <linearGradient key={i} id={`gradDropOff${i}`} x1="0" y1="0" x2="1" y2="0">
-                      <stop offset="0%" stopColor="var(--chart-3)" stopOpacity={FUNNEL_OPACITIES[Math.min(i, FUNNEL_OPACITIES.length - 1)]} />
-                      <stop offset="100%" stopColor="var(--chart-3)" stopOpacity={FUNNEL_OPACITIES[Math.min(i, FUNNEL_OPACITIES.length - 1)] * 0.4} />
-                    </linearGradient>
-                  ))}
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-                <XAxis
-                  type="number"
-                  tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                  allowDecimals={false}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="phase"
-                  tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={90}
-                />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: "var(--muted)", opacity: 0.2 }} />
-                <Bar dataKey="count" radius={[0, 6, 6, 0]}>
-                  {data.map((entry, index) => (
-                    <Cell
-                      key={entry.phase}
-                      fill={`url(#gradDropOff${index})`}
-                    />
-                  ))}
-                  <LabelList dataKey="count" content={renderBarLabel} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
+      <CardContent className="flex-1 flex flex-col">
+        {data.length === 0 ? (
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-muted-foreground text-sm">Noch keine Daten vorhanden</p>
+          </div>
+        ) : (
+          <div className="flex-1 flex flex-col justify-evenly gap-1">
+            {data.map((item, i) => {
+              const pct = (item.count / maxCount) * 100;
+              const color = PHASE_COLORS[i % PHASE_COLORS.length];
+              const isHovered = hoveredIndex === i;
+
+              return (
+                <div
+                  key={item.phase}
+                  className="group/row"
+                  onMouseEnter={() => setHoveredIndex(i)}
+                  onMouseLeave={() => setHoveredIndex(null)}
+                  style={{
+                    opacity: revealed ? 1 : 0,
+                    transform: revealed ? "translateY(0)" : "translateY(10px)",
+                    transition: `opacity 0.5s ease ${i * 100}ms, transform 0.5s ease ${i * 100}ms`,
+                  }}
+                >
+                  <div
+                    className="flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-200 cursor-default"
+                    style={{
+                      backgroundColor: isHovered ? color.bg : "transparent",
+                    }}
+                  >
+                    {/* Rank badge - larger */}
+                    <span
+                      className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white transition-all duration-200"
+                      style={{
+                        backgroundColor: color.badge,
+                        transform: isHovered ? "scale(1.08)" : "scale(1)",
+                        boxShadow: isHovered
+                          ? `0 4px 16px ${color.glow}`
+                          : `0 2px 8px ${color.glow}`,
+                      }}
+                    >
+                      {i + 1}
+                    </span>
+
+                    {/* Phase name + percentage subtitle */}
+                    <div className="shrink-0 w-32">
+                      <span className="block text-sm text-foreground font-semibold">
+                        {item.phase}
+                      </span>
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        {item.percentage}% aller Abbrüche
+                      </span>
+                    </div>
+
+                    {/* Bar track - taller */}
+                    <div className="flex-1 h-10 rounded-xl bg-muted/30 relative overflow-hidden">
+                      {/* Gradient fill */}
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-xl"
+                        style={{
+                          width: revealed ? `${pct}%` : "0%",
+                          background: `linear-gradient(90deg, ${color.bar}18, ${color.bar}${isHovered ? "50" : "38"})`,
+                          transition: `width 1s cubic-bezier(0.22, 1, 0.36, 1) ${i * 100 + 200}ms, background 0.2s ease`,
+                        }}
+                      />
+                      {/* Leading edge */}
+                      <div
+                        className="absolute inset-y-2 rounded-full"
+                        style={{
+                          width: revealed ? `${pct}%` : "0%",
+                          borderRight: `3px solid ${color.bar}`,
+                          filter: isHovered ? `drop-shadow(0 0 8px ${color.glow})` : "none",
+                          transition: `width 1s cubic-bezier(0.22, 1, 0.36, 1) ${i * 100 + 200}ms, filter 0.2s ease`,
+                        }}
+                      />
+                      {/* Inner count label - only if bar is wide enough */}
+                      {pct >= 40 && (
+                        <div
+                          className="absolute inset-0 flex items-center px-4"
+                          style={{
+                            opacity: revealed ? 1 : 0,
+                            transition: `opacity 0.4s ease ${i * 100 + 800}ms`,
+                          }}
+                        >
+                          <span
+                            className="text-xs font-semibold tabular-nums"
+                            style={{ color: `${color.bar}cc` }}
+                          >
+                            {item.count} {item.count === 1 ? "Abbruch" : "Abbrüche"}
+                          </span>
+                        </div>
+                      )}
+                      {/* Shimmer on hover */}
+                      {isHovered && (
+                        <div
+                          className="absolute inset-0 rounded-xl"
+                          style={{
+                            background: `linear-gradient(90deg, transparent 0%, ${color.bar}0a 50%, transparent 100%)`,
+                            animation: "shimmer 1.5s ease-in-out infinite",
+                          }}
+                        />
+                      )}
+                    </div>
+
+                    {/* Big count */}
+                    <span
+                      className="shrink-0 text-2xl font-bold tabular-nums transition-all duration-200"
+                      style={{
+                        color: color.bar,
+                        textShadow: isHovered ? `0 0 16px ${color.glow}` : "none",
+                      }}
+                    >
+                      {item.count}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
