@@ -4,6 +4,8 @@ import { X, CalendarCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LeadFilters as LeadFiltersType, Lead } from "@/lib/types";
 import { STATUS_LABELS, SENTIMENT_LABELS } from "@/lib/types";
+import { useTeam } from "@/lib/team-context";
+import TeamMemberSelect from "@/components/ui/team-member-select";
 
 interface LeadFiltersProps {
   filters: LeadFiltersType;
@@ -44,12 +46,15 @@ function hasActiveFilters(filters: LeadFiltersType): boolean {
     filters.statuses.length > 0 ||
     filters.sentiments.length > 0 ||
     filters.appointmentBooked !== null ||
+    filters.assignedTo !== null ||
     filters.dateRange.from !== null ||
     filters.dateRange.to !== null
   );
 }
 
 export default function LeadFilters({ filters, onChange, leadCount, className }: LeadFiltersProps) {
+  const { teamMembers } = useTeam();
+
   const toggleGrade = (grade: "A" | "B" | "C") => {
     const grades = filters.grades.includes(grade)
       ? filters.grades.filter((g) => g !== grade)
@@ -98,6 +103,7 @@ export default function LeadFilters({ filters, onChange, leadCount, className }:
       statuses: [],
       sentiments: [],
       appointmentBooked: null,
+      assignedTo: null,
       dateRange: { from: null, to: null },
     });
   };
@@ -170,6 +176,17 @@ export default function LeadFilters({ filters, onChange, leadCount, className }:
           </option>
         ))}
       </select>
+
+      {/* Team member filter */}
+      <div className="w-40">
+        <TeamMemberSelect
+          value={filters.assignedTo ?? null}
+          onChange={(id) => onChange({ ...filters, assignedTo: id })}
+          teamMembers={teamMembers}
+          placeholder="Alle Mitarbeiter"
+          size="sm"
+        />
+      </div>
 
       {/* Appointment toggle */}
       <button

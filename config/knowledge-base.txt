@@ -66,6 +66,44 @@ DEMO-TERMIN INFORMATIONEN
 - Teilnehmer: Unser Solutions Engineer + Ihre relevanten Teammitglieder
 - Ergebnis: Klarer Plan wie n8n Ihren Prozess automatisieren kann
 
+MEHRWERT-ARGUMENTE (passend zum Use Case einsetzen, nicht alle auf einmal)
+- Open Source und Self-Hosted: Volle Kontrolle über Daten und Infrastruktur
+- Über 400 Integrationen, verbindet praktisch jedes Tool
+- Fair Pricing: Keine Kosten pro Aktion/Task wie bei Zapier, deutlich günstiger bei hohem Volumen
+- JavaScript und Python Code-Nodes für komplexe Logik
+- Intuitive Drag-and-Drop Oberfläche
+- Über 50.000 aktive Nutzer und 900 Workflow-Templates
+
+EINWANDBEHANDLUNG (Methode: Acknowledge – Clarify – Evidence)
+Immer: Erst bestätigen, dann nachfragen, dann mit Mehrwert antworten. Kurz halten!
+
+"Zu teuer / kein Budget":
+→ "Das verstehe ich. Ist es eher eine Frage des Timings oder des Preismodells?"
+→ Bei Preismodell: "n8n rechnet sich oft schon im ersten Monat – gerade bei höherem Volumen. Im Demo können wir Ihren konkreten Case durchrechnen."
+→ Bei Timing: "Kein Problem – soll ich Ihnen unsere Fallstudien schicken und wir sprechen in ein paar Wochen nochmal?"
+
+"Keine Zeit gerade":
+→ "Kein Problem! Wir bieten auch kurze fünfzehn-Minuten Sessions an. Oder ich schlage einen Termin in zwei Wochen vor – wann passt es besser?"
+
+"Nutzen bereits Zapier/Make":
+→ "Super, dann kennen Sie das Prinzip ja! Sind Sie hauptsächlich wegen der Kosten am Schauen, oder geht es eher um Features?"
+→ Dann passend argumentieren (Pricing-Vorteil oder Self-Hosting/Code-Nodes).
+
+"Muss mein Team fragen":
+→ "Absolut verständlich! Soll ich einen Demo-Termin für Sie und Ihr Team gemeinsam buchen? Dann können alle Fragen direkt beantwortet werden."
+
+"Wir machen das selbst mit Scripts":
+→ "Spannend – das ist tatsächlich unser idealer Kunde! n8n ist für Entwickler gebaut. Irgendwann wird die Wartung der Scripts aufwändig. Im Demo zeigen wir, wie man beides kombinieren kann."
+
+"Muss erst intern evaluieren":
+→ "Natürlich – der Demo-Termin eignet sich perfekt als Evaluationsgrundlage. Unser Solutions Team beantwortet alle technischen Fragen. Soll ich das einrichten?"
+
+"Datenschutz / DSGVO Bedenken":
+→ "Absolut, Datenschutz ist gerade in Deutschland zentral. Genau deswegen bieten wir Self-Hosting an – Ihre Daten verlassen nie Ihren Server. Im Demo können wir das genauer besprechen."
+
+"Schicken Sie mir erstmal was zu":
+→ "Natürlich! Unter n8n punkt io finden Sie alles. Soll ich Ihnen die wichtigsten Seiten per Mail schicken? Dafür bräuchte ich kurz Ihre E-Mail-Adresse."
+
 KONTAKT & SUPPORT
 - Website: n8n.io
 - Community Forum: community.n8n.io

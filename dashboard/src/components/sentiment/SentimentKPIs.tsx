@@ -1,0 +1,130 @@
+"use client";
+
+import { useMemo } from "react";
+import { Smile, Meh, Frown, TrendingUp, TrendingDown } from "lucide-react";
+import { AnimatedNumber } from "@/components/ui/animated-number";
+import type { Lead } from "@/lib/types";
+
+interface SentimentKPIsProps {
+  leads: Lead[];
+}
+
+function KPICard({
+  label,
+  value,
+  numericValue,
+  suffix = "",
+  icon: Icon,
+  colorClass,
+  bgClass,
+  subtitle,
+}: {
+  label: string;
+  value?: string;
+  numericValue?: number;
+  suffix?: string;
+  icon: React.ElementType;
+  colorClass: string;
+  bgClass: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="flex items-center p-4 rounded-2xl bg-sidebar-accent/50 border border-border relative group hover:bg-sidebar-accent transition-colors gap-4">
+      <div className={`p-3 rounded-full shrink-0 ${bgClass} ${colorClass}`}>
+        <Icon className="h-6 w-6" />
+      </div>
+      <div className="flex flex-col min-w-0">
+        <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-0.5">{label}</span>
+        <span className="text-2xl font-bold tabular-nums text-foreground">
+          {numericValue !== undefined ? (
+            <AnimatedNumber value={numericValue} suffix={suffix} />
+          ) : (
+            value ?? "-"
+          )}
+        </span>
+        <span className="text-[10px] text-muted-foreground mt-0.5 tracking-tight truncate">{subtitle}</span>
+      </div>
+    </div>
+  );
+}
+
+export default function SentimentKPIs({ leads }: SentimentKPIsProps) {
+  const kpis = useMemo(() => {
+    const withSentiment = leads.filter((l) => l.sentiment !== null);
+    const total = withSentiment.length;
+
+    const positive = withSentiment.filter((l) => l.sentiment === "positiv").length;
+    const neutral = withSentiment.filter((l) => l.sentiment === "neutral").length;
+    const negative = withSentiment.filter((l) => l.sentiment === "negativ").length;
+
+    const positivePct = total > 0 ? Math.round((positive / total) * 100) : 0;
+    const neutralPct = total > 0 ? Math.round((neutral / total) * 100) : 0;
+    const negativePct = total > 0 ? Math.round((negative / total) * 100) : 0;
+
+    // Trend: compare last 7 days vs. the 7 days before that
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const fourteenDaysAgo = new Date(now);
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+    const recentLeads = withSentiment.filter((l) => new Date(l.created_at) >= sevenDaysAgo);
+    const previousLeads = withSentiment.filter(
+      (l) => new Date(l.created_at) >= fourteenDaysAgo && new Date(l.created_at) < sevenDaysAgo
+    );
+
+    const recentPositivePct =
+      recentLeads.length > 0
+        ? (recentLeads.filter((l) => l.sentiment === "positiv").length / recentLeads.length) * 100
+        : 0;
+    const previousPositivePct =
+      previousLeads.length > 0
+        ? (previousLeads.filter((l) => l.sentiment === "positiv").length / previousLeads.length) * 100
+        : 0;
+
+    const trendImproving = recentPositivePct >= previousPositivePct;
+    const trendDelta = Math.round(recentPositivePct - previousPositivePct);
+
+    return { positivePct, neutralPct, negativePct, trendImproving, trendDelta };
+  }, [leads]);
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <KPICard
+        label="Positiv-Rate"
+        numericValue={kpis.positivePct}
+        suffix="%"
+        icon={Smile}
+        colorClass="text-green-400"
+        bgClass="bg-green-500/10"
+        subtitle="Anteil positives Sentiment"
+      />
+      <KPICard
+        label="Neutral-Rate"
+        numericValue={kpis.neutralPct}
+        suffix="%"
+        icon={Meh}
+        colorClass="text-amber-400"
+        bgClass="bg-amber-500/10"
+        subtitle="Anteil neutrales Sentiment"
+      />
+      <KPICard
+        label="Negativ-Rate"
+        numericValue={kpis.negativePct}
+        suffix="%"
+        icon={Frown}
+        colorClass="text-red-400"
+        bgClass="bg-red-500/10"
+        subtitle="Anteil negatives Sentiment"
+      />
+      <KPICard
+        label="Trend"
+        value={`${kpis.trendDelta >= 0 ? "+" : ""}${kpis.trendDelta}%`}
+        icon={kpis.trendImproving ? TrendingUp : TrendingDown}
+        colorClass={kpis.trendImproving ? "text-green-400" : "text-red-400"}
+        bgClass={kpis.trendImproving ? "bg-green-500/10" : "bg-red-500/10"}
+        subtitle="Letzte 7 Tage vs. davor"
+      />
+    </div>
+  );
+}

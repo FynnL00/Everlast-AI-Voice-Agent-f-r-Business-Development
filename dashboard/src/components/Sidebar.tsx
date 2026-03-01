@@ -16,6 +16,11 @@ import {
   Command,
   Sun,
   Moon,
+  MessageSquareWarning,
+  SmilePlus,
+  Quote,
+  AlertTriangle,
+  UserCog,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -46,7 +51,22 @@ const NAV_SECTIONS: NavSection[] = [
   },
   {
     label: "ANALYSE",
-    items: [{ href: "/analytics", label: "Analytik", icon: BarChart3 }],
+    items: [
+      { href: "/analytics", label: "Analytik", icon: BarChart3 },
+      { href: "/objections", label: "Einwände", icon: MessageSquareWarning },
+      { href: "/sentiment", label: "Sentiment", icon: SmilePlus },
+    ],
+  },
+  {
+    label: "TOOLS",
+    items: [
+      { href: "/quotes", label: "Zitate", icon: Quote },
+      { href: "/alerts", label: "Frühwarnsystem", icon: AlertTriangle },
+    ],
+  },
+  {
+    label: "TEAM",
+    items: [{ href: "/team", label: "Team-Verwaltung", icon: UserCog }],
   },
 ];
 
@@ -59,7 +79,6 @@ export default function Sidebar({ isLive = false }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-
   // useEffect only runs on the client, so now we can safely show the UI
   useEffect(() => {
     setMounted(true);
@@ -90,7 +109,7 @@ export default function Sidebar({ isLive = false }: SidebarProps) {
       </div>
 
       {/* Search */}
-      <div className="px-4 pb-6">
+      <div className="px-4 pb-3">
         <div className="relative group">
           <Search
             size={14}

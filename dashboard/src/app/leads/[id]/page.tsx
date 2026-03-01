@@ -15,6 +15,7 @@ import TranscriptViewer from "@/components/lead-detail/TranscriptViewer";
 import StatusTimeline from "@/components/lead-detail/StatusTimeline";
 import QualificationScores from "@/components/lead-detail/QualificationScores";
 import AppointmentCard from "@/components/lead-detail/AppointmentCard";
+import TeamAssignmentCard from "@/components/lead-detail/TeamAssignmentCard";
 import BriefingCard from "@/components/lead-detail/BriefingCard";
 import NextStepsCard from "@/components/lead-detail/NextStepsCard";
 
@@ -79,6 +80,13 @@ export default function LeadDetailPage() {
     [handleUpdate]
   );
 
+  const handleAssign = useCallback(
+    async (teamMemberId: string | null) => {
+      await handleUpdate({ assigned_to: teamMemberId });
+    },
+    [handleUpdate]
+  );
+
   const handleGenerateBriefing = useCallback(async () => {
     const briefing = await generateBriefing(params.id);
     if (briefing) {
@@ -112,10 +120,13 @@ export default function LeadDetailPage() {
 
   return (
     <div className="min-h-screen p-6 md:p-8 max-w-[1400px] mx-auto">
+      <div className="mb-6">
+        <LeadDetailHeader lead={lead} />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column */}
         <div className="lg:col-span-2 space-y-6">
-          <LeadDetailHeader lead={lead} />
           <ContactCard lead={lead} onUpdate={handleUpdate} />
           <ConversationSummary
             summary={lead.conversation_summary}
@@ -141,6 +152,10 @@ export default function LeadDetailPage() {
             datetime={lead.appointment_datetime}
             calBookingId={lead.cal_booking_id}
           />
+          <TeamAssignmentCard
+            assignedTo={lead.assigned_to}
+            onAssign={handleAssign}
+          />
           <BriefingCard lead={lead} onGenerate={handleGenerateBriefing} />
           <NextStepsCard
             steps={lead.next_steps}
@@ -155,24 +170,24 @@ export default function LeadDetailPage() {
 function LeadDetailSkeleton() {
   return (
     <div className="min-h-screen p-6 md:p-8 max-w-[1400px] mx-auto">
+      {/* Header skeleton */}
+      <div className="mb-6">
+        <div className="h-4 w-32 bg-border rounded animate-pulse mb-4" />
+        <div className="flex items-center gap-3 mb-2">
+          <div className="h-8 w-48 bg-border rounded animate-pulse" />
+          <div className="h-6 w-16 bg-border rounded-full animate-pulse" />
+          <div className="h-6 w-20 bg-border rounded-full animate-pulse" />
+        </div>
+        <div className="flex gap-4">
+          <div className="h-4 w-16 bg-border rounded animate-pulse" />
+          <div className="h-4 w-24 bg-border rounded animate-pulse" />
+          <div className="h-4 w-20 bg-border rounded animate-pulse" />
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column skeleton */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Header skeleton */}
-          <div>
-            <div className="h-4 w-32 bg-border rounded animate-pulse mb-4" />
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-8 w-48 bg-border rounded animate-pulse" />
-              <div className="h-6 w-16 bg-border rounded-full animate-pulse" />
-              <div className="h-6 w-20 bg-border rounded-full animate-pulse" />
-            </div>
-            <div className="flex gap-4">
-              <div className="h-4 w-16 bg-border rounded animate-pulse" />
-              <div className="h-4 w-24 bg-border rounded animate-pulse" />
-              <div className="h-4 w-20 bg-border rounded animate-pulse" />
-            </div>
-          </div>
-
           {/* Cards skeleton */}
           {[1, 2, 3, 4].map((i) => (
             <div

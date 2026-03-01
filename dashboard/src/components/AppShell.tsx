@@ -1,8 +1,8 @@
 "use client";
 
 import { LeadsProvider, useLeads } from "@/lib/leads-context";
+import { TeamProvider } from "@/lib/team-context";
 import Sidebar from "@/components/Sidebar";
-
 import { DynamicBackground } from "./layout/DynamicBackground";
 
 function AppShellInner({ children }: { children: React.ReactNode }) {
@@ -23,8 +23,10 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <LeadsProvider>
-      <AppShellInner>{children}</AppShellInner>
-    </LeadsProvider>
+    <TeamProvider>
+      <LeadsProvider>
+        <AppShellInner>{children}</AppShellInner>
+      </LeadsProvider>
+    </TeamProvider>
   );
 }

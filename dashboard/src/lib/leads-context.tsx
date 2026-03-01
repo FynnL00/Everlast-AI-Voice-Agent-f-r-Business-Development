@@ -14,7 +14,7 @@ import type { Lead, LeadFilters } from "@/lib/types";
 
 // Fields fetched for the list view (no transcript for performance)
 const CONTEXT_FIELDS =
-  "id, created_at, caller_name, company, email, phone, company_size, current_stack, pain_point, timeline, score_company_size, score_tech_stack, score_pain_point, score_timeline, total_score, lead_grade, call_id, call_duration_seconds, conversation_summary, sentiment, objections_raised, drop_off_point, appointment_booked, appointment_datetime, is_decision_maker, status, next_steps, notes, briefing, briefing_generated_at";
+  "id, created_at, caller_name, company, email, phone, company_size, current_stack, pain_point, timeline, score_company_size, score_tech_stack, score_pain_point, score_timeline, total_score, lead_grade, call_id, call_duration_seconds, conversation_summary, sentiment, objections_raised, drop_off_point, appointment_booked, appointment_datetime, is_decision_maker, status, next_steps, notes, briefing, briefing_generated_at, assigned_to";
 
 const DEFAULT_FILTERS: LeadFilters = {
   grades: [],
@@ -22,6 +22,7 @@ const DEFAULT_FILTERS: LeadFilters = {
   sentiments: [],
   appointmentBooked: null,
   dateRange: { from: null, to: null },
+  assignedTo: null,
 };
 
 interface LeadsContextValue {
@@ -218,6 +219,11 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
   // ---- Client-side filtering + search ----
   const filteredLeads = useMemo(() => {
     let result = leads;
+
+    // Team member filter (from LeadFilters)
+    if (filters.assignedTo) {
+      result = result.filter((l) => l.assigned_to === filters.assignedTo);
+    }
 
     // Grade filter
     if (filters.grades.length > 0) {

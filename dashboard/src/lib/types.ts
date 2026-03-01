@@ -32,6 +32,49 @@ export interface Lead {
   notes: string | null;
   briefing: string | null;
   briefing_generated_at: string | null;
+  assigned_to: string | null;
+}
+
+// --- Team Management ---
+export interface TeamMember {
+  id: string;
+  created_at: string;
+  name: string;
+  email: string;
+  role: 'sales_rep' | 'manager' | 'admin';
+  avatar_url: string | null;
+  is_active: boolean;
+}
+
+export const ROLE_LABELS: Record<TeamMember["role"], string> = {
+  sales_rep: "Sales Rep",
+  manager: "Manager",
+  admin: "Admin",
+};
+
+// --- Quotes ---
+export interface LeadQuote {
+  id: string;
+  created_at: string;
+  lead_id: string;
+  quote_text: string;
+  speaker: 'agent' | 'caller' | null;
+  topic: string | null;
+  sentiment: 'positiv' | 'neutral' | 'negativ' | null;
+  context: string | null;
+  // Joined from leads for display
+  lead_name?: string;
+  lead_company?: string;
+}
+
+// --- Early Warning ---
+export interface AlertItem {
+  id: string;
+  lead: Lead;
+  riskLevel: 'high' | 'medium' | 'low';
+  reasons: string[];
+  daysSinceLastActivity: number;
+  suggestedAction: string;
 }
 
 export interface LeadFilters {
@@ -40,6 +83,7 @@ export interface LeadFilters {
   sentiments: (NonNullable<Lead["sentiment"]>)[];
   appointmentBooked: boolean | null;
   dateRange: { from: string | null; to: string | null };
+  assignedTo: string | null;
 }
 
 export interface LeadUpdatePayload {
@@ -54,6 +98,7 @@ export interface LeadUpdatePayload {
   status?: Lead["status"];
   notes?: string;
   next_steps?: string[];
+  assigned_to?: string | null;
 }
 
 export const STATUS_LABELS: Record<Lead["status"], string> = {

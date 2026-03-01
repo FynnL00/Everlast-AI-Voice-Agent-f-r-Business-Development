@@ -13,6 +13,7 @@ const ALLOWED_FIELDS = new Set([
   "status",
   "notes",
   "next_steps",
+  "assigned_to",
 ]);
 
 const VALID_STATUSES = new Set([
