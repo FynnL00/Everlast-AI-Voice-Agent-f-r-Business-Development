@@ -8,6 +8,7 @@ import PageHeader from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/button";
 import TeamKPIs from "@/components/team/TeamKPIs";
+import TeamPerformanceChart from "@/components/team/TeamPerformanceChart";
 import TeamMemberGrid from "@/components/team/TeamMemberGrid";
 import AddTeamMemberDialog from "@/components/team/AddTeamMemberDialog";
 import EditTeamMemberDialog from "@/components/team/EditTeamMemberDialog";
@@ -57,6 +58,9 @@ export default function TeamPage() {
 
       {/* KPI Row */}
       <TeamKPIs teamMembers={teamMembers} leads={leads} />
+
+      {/* Performance Chart */}
+      <TeamPerformanceChart teamMembers={teamMembers} leads={leads} />
 
       {/* Team Member Grid */}
       {teamMembers.length === 0 ? (

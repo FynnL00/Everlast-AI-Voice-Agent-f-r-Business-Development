@@ -10,7 +10,12 @@ function sanitize(value: unknown): string {
   return value.replace(/<[^>]*>/g, "").slice(0, 500);
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const session = request.cookies.get("dashboard_session");
+  if (!session) {
+    return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
+  }
+
   if (!isSupabaseAdminConfigured()) {
     return NextResponse.json(
       { error: "Supabase server client not configured" },
@@ -24,13 +29,19 @@ export async function GET() {
     .order("name", { ascending: true });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("API Error:", error);
+    return NextResponse.json({ error: "Ein Fehler ist aufgetreten" }, { status: 500 });
   }
 
   return NextResponse.json(data);
 }
 
 export async function POST(request: NextRequest) {
+  const session = request.cookies.get("dashboard_session");
+  if (!session) {
+    return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
+  }
+
   if (!isSupabaseAdminConfigured()) {
     return NextResponse.json(
       { error: "Supabase server client not configured" },
@@ -102,7 +113,8 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       );
     }
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("API Error:", error);
+    return NextResponse.json({ error: "Ein Fehler ist aufgetreten" }, { status: 500 });
   }
 
   return NextResponse.json(data, { status: 201 });

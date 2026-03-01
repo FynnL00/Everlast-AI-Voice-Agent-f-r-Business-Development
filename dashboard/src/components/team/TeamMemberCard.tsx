@@ -5,6 +5,7 @@ import { Pencil, UserMinus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/button";
+import { LineChart, Line, ResponsiveContainer } from "recharts";
 import type { TeamMember } from "@/lib/types";
 import { ROLE_LABELS } from "@/lib/types";
 
@@ -14,6 +15,7 @@ interface TeamMemberCardProps {
     assignedLeads: number;
     aLeads: number;
     conversionRate: number;
+    sparkline?: number[];
   };
   onEdit: () => void;
   onRemove: () => void;
@@ -40,6 +42,11 @@ export default function TeamMemberCard({
   onRemove,
 }: TeamMemberCardProps) {
   const initials = useMemo(() => getInitials(member.name), [member.name]);
+  const sparklineData = useMemo(
+    () => (stats.sparkline ?? []).map((v, i) => ({ v, i })),
+    [stats.sparkline]
+  );
+  const hasSparklineActivity = sparklineData.some((d) => d.v > 0);
 
   return (
     <Card className="flex flex-col">
@@ -64,6 +71,25 @@ export default function TeamMemberCard({
             </Badge>
           </div>
         </div>
+
+        {/* 7-day lead sparkline */}
+        {hasSparklineActivity && (
+          <div className="h-8 w-full mb-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={sparklineData}>
+                <Line
+                  type="monotone"
+                  dataKey="v"
+                  stroke="var(--primary)"
+                  strokeWidth={1.5}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+            <span className="text-[9px] text-muted-foreground">7-Tage-Trend</span>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 py-3 border-t border-border">

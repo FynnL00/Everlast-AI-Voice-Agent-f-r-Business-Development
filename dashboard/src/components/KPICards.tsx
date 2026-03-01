@@ -1,77 +1,66 @@
 "use client";
 
-import { Phone, CalendarCheck, Clock, Star } from "lucide-react";
-import { AnimatedNumber } from "@/components/ui/animated-number";
+import { Phone, TrendingUp, CalendarCheck, Clock, Star } from "lucide-react";
+import { KPICard } from "@/components/ui/KPICard";
 
 interface KPICardsProps {
+  callsToday: number;
   totalCalls: number;
-  conversionRate: number;
+  winRate: number;
+  appointmentRate: number;
   avgDuration: number;
   aLeadsToday: number;
-}
-
-function KPICard({
-  label,
-  value,
-  numericValue,
-  suffix = "",
-  icon: Icon,
-  colorClass,
-  bgClass,
-}: {
-  label: string;
-  value?: string;
-  numericValue?: number;
-  suffix?: string;
-  icon: React.ElementType;
-  colorClass: string;
-  bgClass: string;
-}) {
-  return (
-    <div className="flex items-center p-4 rounded-2xl bg-sidebar-accent/50 border border-border relative group hover:bg-sidebar-accent transition-colors gap-4">
-      <div className={`p-3 rounded-full shrink-0 ${bgClass} ${colorClass}`}>
-        <Icon className="h-6 w-6" />
-      </div>
-      <div className="flex flex-col min-w-0">
-        <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{label}</span>
-        <span className="text-2xl font-bold tabular-nums text-foreground">
-          {numericValue !== undefined ? (
-            <AnimatedNumber value={numericValue} suffix={suffix} />
-          ) : (
-            value
-          )}
-        </span>
-      </div>
-    </div>
-  );
+  sparklines?: {
+    calls?: number[];
+    winRate?: number[];
+    appointments?: number[];
+    aLeads?: number[];
+  };
 }
 
 export default function KPICards({
+  callsToday,
   totalCalls,
-  conversionRate,
+  winRate,
+  appointmentRate,
   avgDuration,
   aLeadsToday,
+  sparklines,
 }: KPICardsProps) {
   const mins = Math.floor(avgDuration / 60);
   const secs = Math.round(avgDuration % 60);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
       <KPICard
-        label="Total Calls"
-        numericValue={totalCalls}
+        label="Anrufe heute"
+        numericValue={callsToday}
         suffix=""
         icon={Phone}
         colorClass="text-purple-400"
         bgClass="bg-purple-500/10"
+        subtitle={`Gesamt: ${totalCalls}`}
+        sparklineData={sparklines?.calls}
       />
       <KPICard
-        label="Conversion Rate"
-        numericValue={conversionRate}
+        label="Win Rate"
+        numericValue={winRate}
         suffix="%"
-        icon={CalendarCheck}
+        icon={TrendingUp}
         colorClass="text-green-400"
         bgClass="bg-green-500/10"
+        subtitle="Gewonnen / Abgeschlossen"
+        sparklineData={sparklines?.winRate}
+      />
+      <KPICard
+        label="Termin-Quote"
+        numericValue={appointmentRate}
+        suffix="%"
+        icon={CalendarCheck}
+        colorClass="text-blue-400"
+        bgClass="bg-blue-500/10"
+        subtitle="Gebuchte Termine / Anrufe"
+        sparklineData={sparklines?.appointments}
       />
       <KPICard
         label="Gesprächsdauer"
@@ -79,6 +68,7 @@ export default function KPICards({
         icon={Clock}
         colorClass="text-amber-400"
         bgClass="bg-amber-500/10"
+        subtitle="Durchschnittlich"
       />
       <KPICard
         label="A-Leads heute"
@@ -87,6 +77,7 @@ export default function KPICards({
         icon={Star}
         colorClass="text-red-400"
         bgClass="bg-red-500/10"
+        sparklineData={sparklines?.aLeads}
       />
     </div>
   );

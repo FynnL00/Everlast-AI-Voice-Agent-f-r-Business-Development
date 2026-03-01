@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseAdminConfigured } from "@/lib/supabase-server";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 function sanitize(value: string): string {
   return value.replace(/<[^>]*>/g, "").slice(0, 500);
 }
 
 export async function GET(request: NextRequest) {
+  const session = request.cookies.get("dashboard_session");
+  if (!session) {
+    return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
+  }
+
   if (!isSupabaseAdminConfigured()) {
     return NextResponse.json(
       { error: "Supabase server client not configured" },
@@ -46,7 +53,10 @@ export async function GET(request: NextRequest) {
   }
 
   if (leadId) {
-    query = query.eq("lead_id", sanitize(leadId));
+    if (!UUID_REGEX.test(leadId)) {
+      return NextResponse.json({ error: "Ungültige ID" }, { status: 400 });
+    }
+    query = query.eq("lead_id", leadId);
   }
 
   if (search) {
@@ -60,7 +70,8 @@ export async function GET(request: NextRequest) {
   const { data, error, count } = await query;
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("API Error:", error);
+    return NextResponse.json({ error: "Ein Fehler ist aufgetreten" }, { status: 500 });
   }
 
   // Transform joined data to flatten lead info

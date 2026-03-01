@@ -351,16 +351,16 @@
 
   0%,
   100% {
-    fill: #3b82f6;
+    fill: var(--chart-1);
   }
 
   50% {
-    fill: #a855f7;
+    fill: var(--chart-5);
   }
 }
 
 .radar-dot-animate {
-  fill: #3b82f6;
+  fill: var(--chart-1);
   animation: radar-dot-color 4s ease-in-out infinite;
 }
 

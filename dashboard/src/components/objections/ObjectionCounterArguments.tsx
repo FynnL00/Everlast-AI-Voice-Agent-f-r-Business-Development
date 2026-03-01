@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Lightbulb, ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { normalizeObjection } from "@/lib/utils";
 import type { Lead } from "@/lib/types";
 
 interface ObjectionCounterArgumentsProps {
@@ -41,10 +42,6 @@ const COUNTER_ARGUMENTS: CounterArgument[] = [
       "Zeigen Sie Einfachheit: \"Unsere visuelle Oberfläche macht Automatisierung zugänglich \u2013 ohne Programmierkenntnisse.\"",
   },
 ];
-
-function normalizeObjection(obj: string): string {
-  return obj.trim().replace(/\s+/g, " ").toLowerCase().replace(/^./, (c) => c.toUpperCase());
-}
 
 export default function ObjectionCounterArguments({ leads }: ObjectionCounterArgumentsProps) {
   const [openIndices, setOpenIndices] = useState<Set<number>>(new Set([0]));

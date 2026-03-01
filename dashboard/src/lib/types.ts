@@ -1,6 +1,7 @@
 export interface Lead {
   id: string;
   created_at: string;
+  updated_at?: string;
   caller_name: string | null;
   company: string | null;
   email: string | null;
@@ -39,6 +40,7 @@ export interface Lead {
 export interface TeamMember {
   id: string;
   created_at: string;
+  updated_at?: string;
   name: string;
   email: string;
   role: 'sales_rep' | 'manager' | 'admin';
@@ -111,12 +113,12 @@ export const STATUS_LABELS: Record<Lead["status"], string> = {
 };
 
 export const STATUS_COLORS: Record<Lead["status"], string> = {
-  new: "#5e6278",
-  contacted: "#3b82f6",
-  qualified: "#8b5cf6",
-  appointment_booked: "#f59e0b",
-  converted: "#42d77d",
-  lost: "#ef4444",
+  new: "var(--muted-foreground)",
+  contacted: "var(--chart-1)",
+  qualified: "var(--chart-5)",
+  appointment_booked: "var(--score-warning)",
+  converted: "var(--score-good)",
+  lost: "var(--score-danger)",
 };
 
 export const SENTIMENT_LABELS: Record<NonNullable<Lead["sentiment"]>, string> = {
@@ -126,9 +128,9 @@ export const SENTIMENT_LABELS: Record<NonNullable<Lead["sentiment"]>, string> = 
 };
 
 export const SENTIMENT_COLORS: Record<NonNullable<Lead["sentiment"]>, string> = {
-  positiv: "#42d77d",
-  neutral: "#f59e0b",
-  negativ: "#ef4444",
+  positiv: "var(--score-good)",
+  neutral: "var(--score-warning)",
+  negativ: "var(--score-danger)",
 };
 
 export type SortField = "caller_name" | "company" | "total_score" | "status" | "sentiment" | "call_duration_seconds" | "appointment_booked" | "created_at";
@@ -136,7 +138,9 @@ export type SortDirection = "asc" | "desc";
 
 export interface KPIData {
   totalCalls: number;
-  conversionRate: number;
+  callsToday: number;
+  winRate: number;
+  appointmentRate: number;
   avgDuration: number;
   aLeadsToday: number;
   gradeDistribution: { grade: string; count: number; color: string }[];

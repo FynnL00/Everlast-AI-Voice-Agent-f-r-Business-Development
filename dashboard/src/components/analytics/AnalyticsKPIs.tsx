@@ -3,65 +3,28 @@
 import { useMemo } from "react";
 import { Shield, Target, Smile, CalendarCheck } from "lucide-react";
 import type { Lead } from "@/lib/types";
-import { AnimatedNumber } from "@/components/ui/animated-number";
+import { KPICard } from "@/components/ui/KPICard";
 
 interface AnalyticsKPIsProps {
   leads: Lead[];
-}
-
-function KPICard({
-  label,
-  value,
-  numericValue,
-  suffix = "",
-  icon: Icon,
-  colorClass,
-  bgClass,
-  subtitle,
-}: {
-  label: string;
-  value?: string;
-  numericValue?: number;
-  suffix?: string;
-  icon: React.ElementType;
-  colorClass: string;
-  bgClass: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="flex items-center p-4 rounded-2xl bg-sidebar-accent/50 border border-border relative group hover:bg-sidebar-accent transition-colors gap-4">
-      <div className={`p-3 rounded-full shrink-0 ${bgClass} ${colorClass}`}>
-        <Icon className="h-6 w-6" />
-      </div>
-      <div className="flex flex-col min-w-0">
-        <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-0.5">{label}</span>
-        <span className="text-2xl font-bold tabular-nums text-foreground">
-          {numericValue !== undefined ? (
-            <AnimatedNumber value={numericValue} suffix={suffix} />
-          ) : (
-            value
-          )}
-        </span>
-        <span className="text-[10px] text-muted-foreground mt-0.5 tracking-tight truncate">{subtitle}</span>
-      </div>
-    </div>
-  );
 }
 
 export default function AnalyticsKPIs({ leads }: AnalyticsKPIsProps) {
   const kpis = useMemo(() => {
     const total = leads.length;
 
-    // Decision-maker percentage
+    // Decision-maker percentage (only count leads where we know the answer)
     const decisionMakers = leads.filter((l) => l.is_decision_maker === true).length;
-    const decisionMakerPct = total > 0 ? (decisionMakers / total) * 100 : 0;
+    const knowns = leads.filter(l => l.is_decision_maker !== null).length;
+    const decisionMakerPct = knowns > 0 ? (decisionMakers / knowns) * 100 : 0;
 
-    // Average total_score (only leads that have a score)
-    const leadsWithScore = leads.filter((l) => l.total_score !== null && l.total_score !== undefined);
-    const avgScore =
-      leadsWithScore.length > 0
-        ? leadsWithScore.reduce((sum, l) => sum + (l.total_score ?? 0), 0) / leadsWithScore.length
-        : 0;
+    // Average total_score (only leads that have at least one individual score set)
+    const leadsWithScore = leads.filter(l =>
+      l.score_company_size !== null || l.score_tech_stack !== null ||
+      l.score_pain_point !== null || l.score_timeline !== null
+    );
+    const avgScore = leadsWithScore.length > 0
+      ? leadsWithScore.reduce((sum, l) => sum + (l.total_score ?? 0), 0) / leadsWithScore.length : 0;
 
     // Positive sentiment rate
     const leadsWithSentiment = leads.filter((l) => l.sentiment !== null);

@@ -1,92 +1,51 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, ShieldCheck } from "lucide-react";
+import {
+  AlertTriangle,
+  ShieldCheck,
+  ShieldAlert,
+  Clock,
+  UserX,
+} from "lucide-react";
 import { useLeads } from "@/lib/leads-context";
+import { useAlerts } from "@/lib/hooks/useAlerts";
 import PageHeader from "@/components/ui/PageHeader";
 import { EmptyState } from "@/components/ui/EmptyState";
-import AlertSummary from "@/components/alerts/AlertSummary";
+import { KPICard } from "@/components/ui/KPICard";
 import AlertSeverityTabs from "@/components/alerts/AlertSeverityTabs";
 import AlertList from "@/components/alerts/AlertList";
-import type { Lead, AlertItem } from "@/lib/types";
-
-function computeAlerts(leads: Lead[]): AlertItem[] {
-  return leads
-    .map((lead) => {
-      const reasons: string[] = [];
-      const now = Date.now();
-      const lastActivity = new Date(lead.created_at).getTime();
-      const daysSince = Math.floor(
-        (now - lastActivity) / (1000 * 60 * 60 * 24)
-      );
-
-      // Regel 1: Negatives Sentiment
-      if (lead.sentiment === "negativ")
-        reasons.push("Negatives Gesprächssentiment");
-
-      // Regel 2: Keine nächsten Schritte
-      if (!lead.next_steps || lead.next_steps.length === 0)
-        reasons.push("Keine nächsten Schritte definiert");
-
-      // Regel 3: Qualifiziert aber kein Termin seit 3+ Tagen
-      if (
-        lead.status === "qualified" &&
-        !lead.appointment_booked &&
-        daysSince >= 3
-      )
-        reasons.push(`Qualifiziert ohne Termin seit ${daysSince} Tagen`);
-
-      // Regel 4: Inaktiv seit 5+ Tagen
-      if (daysSince >= 5 && !["converted", "lost"].includes(lead.status))
-        reasons.push(`Keine Aktivität seit ${daysSince} Tagen`);
-
-      // Regel 5: Nicht zugewiesen
-      if (!lead.assigned_to) reasons.push("Kein Teammitglied zugewiesen");
-
-      // Regel 6: A-Lead noch nicht qualifiziert
-      if (
-        (lead.total_score ?? 0) >= 10 &&
-        ["new", "contacted"].includes(lead.status)
-      )
-        reasons.push("A-Lead noch nicht qualifiziert");
-
-      if (reasons.length === 0) return null;
-
-      const riskLevel: AlertItem["riskLevel"] =
-        reasons.length >= 3 ? "high" : reasons.length >= 2 ? "medium" : "low";
-
-      return {
-        id: lead.id,
-        lead,
-        riskLevel,
-        reasons,
-        daysSinceLastActivity: daysSince,
-        suggestedAction:
-          reasons.length >= 3
-            ? "Sofort kontaktieren"
-            : reasons.length >= 2
-              ? "Zeitnah prüfen"
-              : "Beobachten",
-      };
-    })
-    .filter((a): a is AlertItem => a !== null)
-    .sort((a, b) => {
-      const order = { high: 0, medium: 1, low: 2 };
-      return order[a.riskLevel] - order[b.riskLevel];
-    });
-}
+import RiskDonutChart from "@/components/alerts/RiskDonutChart";
 
 export default function AlertsPage() {
   const { leads, loading } = useLeads();
+  const alerts = useAlerts(leads);
   const [activeSeverity, setActiveSeverity] = useState("all");
-
-  const alerts = useMemo(() => computeAlerts(leads), [leads]);
 
   const counts = useMemo(() => {
     const high = alerts.filter((a) => a.riskLevel === "high").length;
     const medium = alerts.filter((a) => a.riskLevel === "medium").length;
     const low = alerts.filter((a) => a.riskLevel === "low").length;
     return { all: alerts.length, high, medium, low };
+  }, [alerts]);
+
+  const kpis = useMemo(() => {
+    const avgInactiveDays =
+      alerts.length > 0
+        ? Math.round(
+            alerts.reduce((sum, a) => sum + a.daysSinceLastActivity, 0) /
+              alerts.length
+          )
+        : 0;
+
+    const unassignedCount = alerts.filter(
+      (a) => a.reasons.some((r) => r.includes("zugewiesen"))
+    ).length;
+
+    const unassignedPct =
+      alerts.length > 0 ? Math.round((unassignedCount / alerts.length) * 100) : 0;
+
+    return { avgInactiveDays, unassignedPct };
   }, [alerts]);
 
   const filteredAlerts = useMemo(() => {
@@ -120,8 +79,42 @@ export default function AlertsPage() {
         />
       ) : (
         <>
-          {/* Summary badges */}
-          <AlertSummary alerts={alerts} />
+          {/* KPI Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <KPICard
+              label="Warnungen"
+              numericValue={counts.all}
+              icon={AlertTriangle}
+              colorClass="text-amber-400"
+              bgClass="bg-amber-500/10"
+              subtitle="Leads mit Handlungsbedarf"
+            />
+            <KPICard
+              label="Hohes Risiko"
+              numericValue={counts.high}
+              icon={ShieldAlert}
+              colorClass="text-red-400"
+              bgClass="bg-red-500/10"
+              subtitle="Sofort kontaktieren"
+            />
+            <KPICard
+              label="Ø Inaktive Tage"
+              numericValue={kpis.avgInactiveDays}
+              icon={Clock}
+              colorClass="text-blue-400"
+              bgClass="bg-blue-500/10"
+              subtitle="Durchschnitt aller Alerts"
+            />
+            <KPICard
+              label="Nicht zugewiesen"
+              numericValue={kpis.unassignedPct}
+              suffix="%"
+              icon={UserX}
+              colorClass="text-purple-400"
+              bgClass="bg-purple-500/10"
+              subtitle="der gewarnten Leads"
+            />
+          </div>
 
           {/* Severity tabs */}
           <AlertSeverityTabs
@@ -130,8 +123,15 @@ export default function AlertsPage() {
             counts={counts}
           />
 
-          {/* Alert list */}
-          <AlertList alerts={filteredAlerts} />
+          {/* Donut chart + Alert list grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1">
+              <RiskDonutChart alerts={alerts} />
+            </div>
+            <div className="lg:col-span-2">
+              <AlertList alerts={filteredAlerts} />
+            </div>
+          </div>
         </>
       )}
     </div>

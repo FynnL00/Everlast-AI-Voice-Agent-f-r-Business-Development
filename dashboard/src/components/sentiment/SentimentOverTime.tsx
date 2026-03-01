@@ -61,7 +61,7 @@ export default function SentimentOverTime({ leads }: SentimentOverTimeProps) {
     for (let i = 29; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const key = d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+      const key = d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", timeZone: "Europe/Berlin" });
       dailyData[key] = { positiv: 0, neutral: 0, negativ: 0 };
     }
 
@@ -71,7 +71,7 @@ export default function SentimentOverTime({ leads }: SentimentOverTimeProps) {
       const createdAt = new Date(l.created_at);
       if (createdAt < thirtyDaysAgo) return;
 
-      const key = createdAt.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+      const key = createdAt.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", timeZone: "Europe/Berlin" });
       if (dailyData[key] && l.sentiment in dailyData[key]) {
         dailyData[key][l.sentiment]++;
       }

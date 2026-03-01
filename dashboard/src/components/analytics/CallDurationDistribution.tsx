@@ -83,6 +83,12 @@ export default function CallDurationDistribution({ leads }: CallDurationDistribu
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ bottom: 5, top: 10 }}>
+                <defs>
+                  <linearGradient id="gradDuration" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--chart-5)" stopOpacity={0.8} />
+                    <stop offset="100%" stopColor="var(--chart-5)" stopOpacity={0.3} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis
                   dataKey="label"
@@ -97,7 +103,7 @@ export default function CallDurationDistribution({ leads }: CallDurationDistribu
                   allowDecimals={false}
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: "var(--muted)", opacity: 0.2 }} />
-                <Bar dataKey="count" fill="var(--chart-5)" radius={[6, 6, 0, 0]} barSize={40} />
+                <Bar dataKey="count" fill="url(#gradDuration)" radius={[6, 6, 0, 0]} barSize={40} />
               </BarChart>
             </ResponsiveContainer>
           )}

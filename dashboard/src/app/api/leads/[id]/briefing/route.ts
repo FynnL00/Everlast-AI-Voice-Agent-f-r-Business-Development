@@ -1,14 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseAdminConfigured } from "@/lib/supabase-server";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
 
+function sanitizeForPrompt(value: string): string {
+  return value
+    .slice(0, 500)
+    .replace(/<[^>]*>/g, "")
+    .replace(/[\x00-\x1F\x7F]/g, "")
+    .replace(/[<>]/g, "");
+}
+
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = request.cookies.get("dashboard_session");
+  if (!session) {
+    return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
+  }
+
   const { id } = await params;
+
+  if (!UUID_REGEX.test(id)) {
+    return NextResponse.json({ error: "Ungültige ID" }, { status: 400 });
+  }
 
   if (!isSupabaseAdminConfigured()) {
     return NextResponse.json(
@@ -26,8 +44,9 @@ export async function GET(
       .single();
 
     if (fetchError || !lead) {
+      console.error("API Error:", fetchError);
       return NextResponse.json(
-        { error: fetchError?.message || "Lead not found" },
+        { error: "Lead nicht gefunden" },
         { status: 404 }
       );
     }
@@ -43,25 +62,26 @@ export async function GET(
     // Build the prompt from lead data
     const openrouterApiKey = process.env.OPENROUTER_API_KEY;
     if (!openrouterApiKey) {
+      console.error("OPENROUTER_API_KEY env var not set");
       return NextResponse.json(
-        { error: "OpenRouter API key not configured" },
+        { error: "Server-Konfigurationsfehler" },
         { status: 500 }
       );
     }
 
     const leadContext = [
       lead.conversation_summary
-        ? `Zusammenfassung: ${lead.conversation_summary}`
+        ? `Zusammenfassung: ${sanitizeForPrompt(lead.conversation_summary)}`
         : null,
-      lead.company ? `Firma: ${lead.company}` : null,
-      lead.company_size ? `Groesse: ${lead.company_size}` : null,
-      lead.pain_point ? `Hauptproblem: ${lead.pain_point}` : null,
-      lead.current_stack ? `Aktueller Tech-Stack: ${lead.current_stack}` : null,
-      lead.timeline ? `Zeitrahmen: ${lead.timeline}` : null,
+      lead.company ? `Firma: ${sanitizeForPrompt(lead.company)}` : null,
+      lead.company_size ? `Groesse: ${sanitizeForPrompt(lead.company_size)}` : null,
+      lead.pain_point ? `Hauptproblem: ${sanitizeForPrompt(lead.pain_point)}` : null,
+      lead.current_stack ? `Aktueller Tech-Stack: ${sanitizeForPrompt(lead.current_stack)}` : null,
+      lead.timeline ? `Zeitrahmen: ${sanitizeForPrompt(lead.timeline)}` : null,
       lead.objections_raised && lead.objections_raised.length > 0
-        ? `Einwaende: ${lead.objections_raised.join(", ")}`
+        ? `Einwaende: ${sanitizeForPrompt(lead.objections_raised.join(", "))}`
         : null,
-      lead.sentiment ? `Stimmung: ${lead.sentiment}` : null,
+      lead.sentiment ? `Stimmung: ${sanitizeForPrompt(lead.sentiment)}` : null,
       lead.is_decision_maker !== null
         ? `Entscheidungstraeger: ${lead.is_decision_maker ? "Ja" : "Nein"}`
         : null,
@@ -78,8 +98,8 @@ export async function GET(
         ? `Score Zeitrahmen: ${lead.score_timeline}/3`
         : null,
       lead.total_score ? `Gesamtscore: ${lead.total_score}/12` : null,
-      lead.lead_grade ? `Lead-Grade: ${lead.lead_grade}` : null,
-      lead.transcript ? `Transcript (Auszug): ${lead.transcript.slice(0, 3000)}` : null,
+      lead.lead_grade ? `Lead-Grade: ${sanitizeForPrompt(lead.lead_grade)}` : null,
+      lead.transcript ? `Transcript (Auszug): ${sanitizeForPrompt(lead.transcript.slice(0, 3000))}` : null,
     ]
       .filter(Boolean)
       .join("\n");
@@ -121,7 +141,7 @@ Maximal 300 Woerter. Auf Deutsch.`;
       const errText = await response.text();
       console.error("OpenRouter API error:", response.status, errText);
       return NextResponse.json(
-        { error: `OpenRouter API returned ${response.status}` },
+        { error: "Briefing-Generierung fehlgeschlagen" },
         { status: 502 }
       );
     }
@@ -147,10 +167,7 @@ Maximal 300 Woerter. Auf Deutsch.`;
   } catch (err) {
     console.error("Briefing generation failed:", err);
     return NextResponse.json(
-      {
-        error:
-          err instanceof Error ? err.message : "Internal server error",
-      },
+      { error: "Ein Fehler ist aufgetreten" },
       { status: 500 }
     );
   }

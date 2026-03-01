@@ -12,6 +12,7 @@ import {
   Legend,
 } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { normalizeObjection } from "@/lib/utils";
 import type { Lead } from "@/lib/types";
 
 interface ObjectionConversionCorrelationProps {
@@ -22,10 +23,6 @@ interface CorrelationEntry {
   objection: string;
   konvertiert: number;
   verloren: number;
-}
-
-function normalizeObjection(obj: string): string {
-  return obj.trim().replace(/\s+/g, " ").toLowerCase().replace(/^./, (c) => c.toUpperCase());
 }
 
 function CustomTooltip({
@@ -143,8 +140,8 @@ export default function ObjectionConversionCorrelation({ leads }: ObjectionConve
                     <span className="text-xs text-muted-foreground font-medium ml-1">{value}</span>
                   )}
                 />
-                <Bar dataKey="konvertiert" fill="#42d77d" radius={[4, 4, 0, 0]} barSize={18} />
-                <Bar dataKey="verloren" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={18} />
+                <Bar dataKey="konvertiert" fill="var(--score-good)" radius={[4, 4, 0, 0]} barSize={18} />
+                <Bar dataKey="verloren" fill="var(--score-danger)" radius={[4, 4, 0, 0]} barSize={18} />
               </BarChart>
             </ResponsiveContainer>
           )}

@@ -24,10 +24,10 @@ export function formatDate(dateString: string): string {
 }
 
 export function getGradeColor(grade: string | null | undefined): string {
-  if (grade === "A") return "#22c55e"; // var(--score-good) roughly
-  if (grade === "B") return "#f59e0b"; // var(--score-warning) roughly
-  if (grade === "C") return "#ef4444"; // var(--score-danger) roughly
-  return "#6b7280"; // var(--muted-foreground) roughly
+  if (grade === "A") return "var(--score-good)";
+  if (grade === "B") return "var(--score-warning)";
+  if (grade === "C") return "var(--score-danger)";
+  return "var(--muted-foreground)";
 }
 
 export function formatFullDate(dateString: string): string {
@@ -42,6 +42,10 @@ export function formatFullDate(dateString: string): string {
     minute: "2-digit",
     timeZone: "Europe/Berlin",
   });
+}
+
+export function normalizeObjection(obj: string): string {
+  return obj.trim().replace(/\s+/g, " ").toLowerCase().replace(/^./, c => c.toUpperCase());
 }
 
 export function getSentimentColor(sentiment: string | null | undefined): string {

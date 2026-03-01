@@ -79,6 +79,19 @@ export default function ScoreBreakdown({ leads }: ScoreBreakdownProps) {
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={data} cx="50%" cy="50%" outerRadius="70%">
+                <defs>
+                  <linearGradient id="gradRadar" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--score-good)" stopOpacity={0.5} />
+                    <stop offset="100%" stopColor="var(--score-good)" stopOpacity={0.1} />
+                  </linearGradient>
+                  <filter id="radarGlow">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feMerge>
+                      <feMergeNode in="blur" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
                 <PolarGrid stroke="var(--border)" />
                 <PolarAngleAxis
                   dataKey="dimension"
@@ -96,9 +109,10 @@ export default function ScoreBreakdown({ leads }: ScoreBreakdownProps) {
                   name="Score"
                   dataKey="value"
                   stroke="var(--score-good)"
-                  fill="var(--score-good)"
-                  fillOpacity={0.3}
+                  fill="url(#gradRadar)"
+                  fillOpacity={1}
                   strokeWidth={2}
+                  style={{ filter: "url(#radarGlow)" }}
                 />
               </RadarChart>
             </ResponsiveContainer>

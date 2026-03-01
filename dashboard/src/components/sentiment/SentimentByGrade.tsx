@@ -87,6 +87,20 @@ export default function SentimentByGrade({ leads }: SentimentByGradeProps) {
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={data} margin={{ top: 5, right: 20, bottom: 0, left: -10 }}>
+                <defs>
+                  <linearGradient id="gradSentPositiv" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={SENTIMENT_COLORS.positiv} stopOpacity={0.8} />
+                    <stop offset="100%" stopColor={SENTIMENT_COLORS.positiv} stopOpacity={0.3} />
+                  </linearGradient>
+                  <linearGradient id="gradSentNeutral" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={SENTIMENT_COLORS.neutral} stopOpacity={0.8} />
+                    <stop offset="100%" stopColor={SENTIMENT_COLORS.neutral} stopOpacity={0.3} />
+                  </linearGradient>
+                  <linearGradient id="gradSentNegativ" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={SENTIMENT_COLORS.negativ} stopOpacity={0.8} />
+                    <stop offset="100%" stopColor={SENTIMENT_COLORS.negativ} stopOpacity={0.3} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                 <XAxis
                   dataKey="grade"
@@ -108,9 +122,9 @@ export default function SentimentByGrade({ leads }: SentimentByGradeProps) {
                     <span className="text-xs text-muted-foreground font-medium ml-1">{value}</span>
                   )}
                 />
-                <Bar dataKey="Positiv" fill={SENTIMENT_COLORS.positiv} radius={[4, 4, 0, 0]} barSize={20} />
-                <Bar dataKey="Neutral" fill={SENTIMENT_COLORS.neutral} radius={[4, 4, 0, 0]} barSize={20} />
-                <Bar dataKey="Negativ" fill={SENTIMENT_COLORS.negativ} radius={[4, 4, 0, 0]} barSize={20} />
+                <Bar dataKey="Positiv" fill="url(#gradSentPositiv)" radius={[4, 4, 0, 0]} barSize={20} />
+                <Bar dataKey="Neutral" fill="url(#gradSentNeutral)" radius={[4, 4, 0, 0]} barSize={20} />
+                <Bar dataKey="Negativ" fill="url(#gradSentNegativ)" radius={[4, 4, 0, 0]} barSize={20} />
               </BarChart>
             </ResponsiveContainer>
           )}

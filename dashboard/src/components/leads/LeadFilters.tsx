@@ -15,9 +15,9 @@ interface LeadFiltersProps {
 }
 
 const GRADE_OPTIONS: { value: "A" | "B" | "C"; color: string }[] = [
-  { value: "A", color: "#42d77d" },
-  { value: "B", color: "#f59e0b" },
-  { value: "C", color: "#ef4444" },
+  { value: "A", color: "var(--score-good)" },
+  { value: "B", color: "var(--score-warning)" },
+  { value: "C", color: "var(--score-danger)" },
 ];
 
 const STATUS_OPTIONS: { value: Lead["status"]; label: string }[] = (
@@ -52,8 +52,28 @@ function hasActiveFilters(filters: LeadFiltersType): boolean {
   );
 }
 
+function toDateInputValue(isoString: string | null): string {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  return d.toISOString().slice(0, 10);
+}
+
 export default function LeadFilters({ filters, onChange, leadCount, className }: LeadFiltersProps) {
   const { teamMembers } = useTeam();
+
+  const customDateFrom = toDateInputValue(filters.dateRange.from);
+  const customDateTo = toDateInputValue(filters.dateRange.to);
+  const isCustomDateRange = filters.dateRange.to !== null;
+
+  const handleCustomDateChange = (from: string, to: string) => {
+    onChange({
+      ...filters,
+      dateRange: {
+        from: from ? new Date(from + "T00:00:00").toISOString() : null,
+        to: to ? new Date(to + "T23:59:59").toISOString() : null,
+      },
+    });
+  };
 
   const toggleGrade = (grade: "A" | "B" | "C") => {
     const grades = filters.grades.includes(grade)
@@ -139,7 +159,7 @@ export default function LeadFilters({ filters, onChange, leadCount, className }:
               )}
               style={
                 active
-                  ? { backgroundColor: opt.color, color: "#ffffff" }
+                  ? { backgroundColor: opt.color, color: "white" }
                   : undefined
               }
             >
@@ -214,7 +234,7 @@ export default function LeadFilters({ filters, onChange, leadCount, className }:
             onClick={() => setDatePreset(preset.value)}
             className={cn(
               "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-150",
-              activePreset === preset.value
+              activePreset === preset.value && !isCustomDateRange
                 ? "bg-primary border-primary text-primary-foreground"
                 : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
@@ -222,6 +242,32 @@ export default function LeadFilters({ filters, onChange, leadCount, className }:
             {preset.label}
           </button>
         ))}
+      </div>
+
+      {/* Custom date range inputs */}
+      <div className="flex items-center gap-1.5">
+        <label className="text-xs text-muted-foreground font-medium shrink-0">Von</label>
+        <input
+          type="date"
+          value={customDateFrom}
+          onChange={(e) => handleCustomDateChange(e.target.value, customDateTo)}
+          className={cn(
+            "bg-card border border-border rounded-lg px-2 py-1.5 text-xs text-foreground",
+            "focus:outline-none focus:ring-2 focus:ring-ring/50",
+            "w-[130px]"
+          )}
+        />
+        <label className="text-xs text-muted-foreground font-medium shrink-0">Bis</label>
+        <input
+          type="date"
+          value={customDateTo}
+          onChange={(e) => handleCustomDateChange(customDateFrom, e.target.value)}
+          className={cn(
+            "bg-card border border-border rounded-lg px-2 py-1.5 text-xs text-foreground",
+            "focus:outline-none focus:ring-2 focus:ring-ring/50",
+            "w-[130px]"
+          )}
+        />
       </div>
 
       {/* Reset filters */}

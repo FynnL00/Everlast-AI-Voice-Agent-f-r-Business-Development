@@ -53,7 +53,10 @@ export default function AlertCard({ alert }: AlertCardProps) {
   };
 
   return (
-    <Card className={cn("border-l-4", config.borderColor)}>
+    <Card
+      className={cn("border-l-4", config.borderColor)}
+      aria-label={`Warnung für ${alert.lead.caller_name ?? "Unbekannt"}, Risiko: ${config.label}`}
+    >
       <CardContent className="pt-4 pb-4">
         <div className="flex items-start gap-3">
           {/* Severity icon */}

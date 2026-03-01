@@ -6,14 +6,10 @@ function colorToId(color: string): string {
 }
 
 const PRESET_GRADIENTS: Record<string, { side: [string, string]; top: [string, string] }> = {
-    "#34d399": { side: ["#047857", "#6ee7b7"], top: ["#34d399", "#10b981"] },
     "var(--score-good)": { side: ["#047857", "#6ee7b7"], top: ["#34d399", "#10b981"] },
-    "#facc15": { side: ["#ca8a04", "#fde047"], top: ["#facc15", "#eab308"] },
     "var(--score-warning)": { side: ["#ca8a04", "#fde047"], top: ["#facc15", "#eab308"] },
-    "#f87171": { side: ["#b91c1c", "#fca5a5"], top: ["#f87171", "#ef4444"] },
     "var(--score-danger)": { side: ["#b91c1c", "#fca5a5"], top: ["#f87171", "#ef4444"] },
-    // Add default fallbacks for common colors to avoid transparent
-    "var(--primary)": { side: ["hsl(var(--primary))", "hsl(var(--primary))"], top: ["hsl(var(--primary))", "hsl(var(--primary))"] }
+    "var(--primary)": { side: ["hsl(var(--primary))", "hsl(var(--primary))"], top: ["hsl(var(--primary))", "hsl(var(--primary))"] },
 };
 
 function getCorner(baseAngle: number, offsetDeg: number, radius: number, centerX: number, centerY: number) {

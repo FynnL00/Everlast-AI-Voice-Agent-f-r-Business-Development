@@ -2,54 +2,12 @@
 
 import { useMemo } from "react";
 import { MessageSquareWarning, TrendingUp, AlertTriangle, BarChart3 } from "lucide-react";
-import { AnimatedNumber } from "@/components/ui/animated-number";
+import { normalizeObjection } from "@/lib/utils";
 import type { Lead } from "@/lib/types";
+import { KPICard } from "@/components/ui/KPICard";
 
 interface ObjectionsKPIsProps {
   leads: Lead[];
-}
-
-function KPICard({
-  label,
-  value,
-  numericValue,
-  suffix = "",
-  icon: Icon,
-  colorClass,
-  bgClass,
-  subtitle,
-}: {
-  label: string;
-  value?: string;
-  numericValue?: number;
-  suffix?: string;
-  icon: React.ElementType;
-  colorClass: string;
-  bgClass: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="flex items-center p-4 rounded-2xl bg-sidebar-accent/50 border border-border relative group hover:bg-sidebar-accent transition-colors gap-4">
-      <div className={`p-3 rounded-full shrink-0 ${bgClass} ${colorClass}`}>
-        <Icon className="h-6 w-6" />
-      </div>
-      <div className="flex flex-col min-w-0">
-        <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-0.5">{label}</span>
-        <span className="text-2xl font-bold tabular-nums text-foreground">
-          {numericValue !== undefined ? (
-            <AnimatedNumber value={numericValue} suffix={suffix} />
-          ) : (
-            value ?? "-"
-          )}
-        </span>
-        <span className="text-[10px] text-muted-foreground mt-0.5 tracking-tight truncate">{subtitle}</span>
-      </div>
-    </div>
-  );
-}
-
-function normalizeObjection(obj: string): string {
-  return obj.trim().replace(/\s+/g, " ").toLowerCase().replace(/^./, (c) => c.toUpperCase());
 }
 
 export default function ObjectionsKPIs({ leads }: ObjectionsKPIsProps) {

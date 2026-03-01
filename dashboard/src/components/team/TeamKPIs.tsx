@@ -3,48 +3,11 @@
 import { useMemo } from "react";
 import { Users, UserCheck, UserX, BarChart3 } from "lucide-react";
 import type { Lead, TeamMember } from "@/lib/types";
-import { AnimatedNumber } from "@/components/ui/animated-number";
+import { KPICard } from "@/components/ui/KPICard";
 
 interface TeamKPIsProps {
   teamMembers: TeamMember[];
   leads: Lead[];
-}
-
-function KPICard({
-  label,
-  numericValue,
-  suffix,
-  icon: Icon,
-  colorClass,
-  bgClass,
-  subtitle,
-}: {
-  label: string;
-  numericValue: number;
-  suffix?: string;
-  icon: React.ElementType;
-  colorClass: string;
-  bgClass: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="flex items-center p-4 rounded-2xl bg-sidebar-accent/50 border border-border relative group hover:bg-sidebar-accent transition-colors gap-4">
-      <div className={`p-3 rounded-full shrink-0 ${bgClass} ${colorClass}`}>
-        <Icon className="h-6 w-6" />
-      </div>
-      <div className="flex flex-col min-w-0">
-        <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider mb-0.5">
-          {label}
-        </span>
-        <span className="text-2xl font-bold tabular-nums text-foreground">
-          <AnimatedNumber value={numericValue} suffix={suffix ?? ""} />
-        </span>
-        <span className="text-[10px] text-muted-foreground mt-0.5 tracking-tight truncate">
-          {subtitle}
-        </span>
-      </div>
-    </div>
-  );
 }
 
 export default function TeamKPIs({ teamMembers, leads }: TeamKPIsProps) {

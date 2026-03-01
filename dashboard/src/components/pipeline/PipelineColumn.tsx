@@ -1,6 +1,6 @@
+import { useDroppable } from "@dnd-kit/core";
 import type { Lead } from "@/lib/types";
 import { STATUS_LABELS, STATUS_COLORS } from "@/lib/types";
-import Badge from "@/components/ui/Badge";
 import PipelineCard from "./PipelineCard";
 import { cn } from "@/lib/utils";
 
@@ -13,8 +13,20 @@ export default function PipelineColumn({ status, leads }: PipelineColumnProps) {
   const label = STATUS_LABELS[status];
   const color = STATUS_COLORS[status];
 
+  const { setNodeRef, isOver } = useDroppable({
+    id: status,
+  });
+
   return (
-    <div className="min-w-[280px] w-[280px] flex flex-col rounded-2xl border border-border bg-sidebar-accent/30 overflow-hidden shadow-sm backdrop-blur-md">
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "min-w-[280px] w-[280px] flex flex-col rounded-2xl border bg-sidebar-accent/30 overflow-hidden shadow-sm backdrop-blur-md transition-colors duration-200",
+        isOver
+          ? "border-primary/50 bg-primary/5"
+          : "border-border"
+      )}
+    >
       {/* Colored top border */}
       <div className="h-1 w-full shrink-0 shadow-[0_0_10px_currentColor]" style={{ backgroundColor: color, color: color }} />
 
@@ -39,8 +51,13 @@ export default function PipelineColumn({ status, leads }: PipelineColumnProps) {
         )}
       >
         {leads.length === 0 ? (
-          <div className="flex items-center justify-center h-24 rounded-xl border border-dashed border-border/50 bg-background/20">
-            <span className="text-xs font-medium text-muted-foreground">Keine Leads</span>
+          <div className={cn(
+            "flex items-center justify-center h-24 rounded-xl border border-dashed bg-background/20 transition-colors",
+            isOver ? "border-primary/40 bg-primary/5" : "border-border/50"
+          )}>
+            <span className="text-xs font-medium text-muted-foreground">
+              {isOver ? "Hier ablegen" : "Keine Leads"}
+            </span>
           </div>
         ) : (
           leads.map((lead) => (

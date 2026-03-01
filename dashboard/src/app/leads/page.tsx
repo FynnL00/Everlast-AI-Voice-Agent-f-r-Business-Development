@@ -10,7 +10,8 @@ import LeadSearch from "@/components/leads/LeadSearch";
 import LeadFilters from "@/components/leads/LeadFilters";
 import EnhancedLeadTable from "@/components/leads/EnhancedLeadTable";
 import Pagination from "@/components/leads/Pagination";
-import { Users } from "lucide-react";
+import { Users, Download } from "lucide-react";
+import { exportLeadsCSV } from "@/lib/export";
 
 const PAGE_SIZE = 25;
 
@@ -86,6 +87,20 @@ export default function LeadsPage() {
     [filteredLeads, sortField, sortDirection]
   );
 
+  // Compact KPI summary
+  const kpiSummary = useMemo(() => {
+    const total = filteredLeads.length;
+    const withAppointment = filteredLeads.filter((l) => l.appointment_booked).length;
+    const scored = filteredLeads.filter((l) => l.total_score !== null && l.total_score !== undefined);
+    const avgScore = scored.length > 0
+      ? (scored.reduce((sum, l) => sum + (l.total_score ?? 0), 0) / scored.length).toFixed(1)
+      : "-";
+    const now = new Date();
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const thisWeek = filteredLeads.filter((l) => new Date(l.created_at) >= weekAgo).length;
+    return { total, withAppointment, avgScore, thisWeek };
+  }, [filteredLeads]);
+
   const totalPages = Math.ceil(sortedLeads.length / PAGE_SIZE);
   const paginatedLeads = sortedLeads.slice(
     currentPage * PAGE_SIZE,
@@ -106,8 +121,17 @@ export default function LeadsPage() {
           onChange={setSearchQuery}
           className="sm:w-80"
         />
-        <div className="text-sm font-medium text-muted-foreground flex items-center">
-          <Badge className="mr-2 bg-primary text-primary-foreground">{filteredLeads.length}</Badge> Gesamt
+        <div className="flex items-center gap-3">
+          <div className="text-sm font-medium text-muted-foreground flex items-center">
+            <Badge className="mr-2 bg-primary text-primary-foreground">{filteredLeads.length}</Badge> Gesamt
+          </div>
+          <button
+            onClick={() => exportLeadsCSV(filteredLeads)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border bg-card hover:bg-sidebar-accent transition-colors text-foreground"
+          >
+            <Download className="h-3.5 w-3.5" />
+            CSV exportieren
+          </button>
         </div>
       </div>
 
@@ -117,6 +141,19 @@ export default function LeadsPage() {
         leadCount={filteredLeads.length}
         className="mb-4"
       />
+
+      {/* Compact KPI Summary Bar */}
+      {!loading && filteredLeads.length > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-sidebar-accent/50 border border-border text-sm text-muted-foreground font-medium">
+          <span className="text-foreground font-bold">{kpiSummary.total}</span> Leads
+          <span className="text-border">|</span>
+          <span className="text-foreground font-bold">{kpiSummary.withAppointment}</span> mit Termin
+          <span className="text-border">|</span>
+          <span>Ø Score</span> <span className="text-foreground font-bold">{kpiSummary.avgScore}</span>
+          <span className="text-border">|</span>
+          <span className="text-foreground font-bold">{kpiSummary.thisWeek}</span> diese Woche
+        </div>
+      )}
 
       <Card className="p-0 overflow-hidden w-full backdrop-blur-md bg-card/60">
         <CardContent className="p-0">

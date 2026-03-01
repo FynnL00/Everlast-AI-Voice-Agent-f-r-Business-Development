@@ -4,9 +4,9 @@ interface SentimentIndicatorProps {
 }
 
 const SENTIMENT_CONFIG: Record<string, { label: string; color: string }> = {
-  positiv: { label: "Positiv", color: "#42d77d" },
-  neutral: { label: "Neutral", color: "#f59e0b" },
-  negativ: { label: "Negativ", color: "#ef4444" },
+  positiv: { label: "Positiv", color: "var(--score-good)" },
+  neutral: { label: "Neutral", color: "var(--score-warning)" },
+  negativ: { label: "Negativ", color: "var(--score-danger)" },
 };
 
 export default function SentimentIndicator({ sentiment, showLabel = false }: SentimentIndicatorProps) {

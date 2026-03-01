@@ -4,6 +4,7 @@ import { LeadsProvider, useLeads } from "@/lib/leads-context";
 import { TeamProvider } from "@/lib/team-context";
 import Sidebar from "@/components/Sidebar";
 import { DynamicBackground } from "./layout/DynamicBackground";
+import { CommandPalette } from "@/components/CommandPalette";
 
 function AppShellInner({ children }: { children: React.ReactNode }) {
   const { isLive } = useLeads();
@@ -17,6 +18,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </main>
+      <CommandPalette />
     </div>
   );
 }

@@ -25,8 +25,12 @@ export default function TeamMemberGrid({
   const statsMap = useMemo(() => {
     const map = new Map<
       string,
-      { assignedLeads: number; aLeads: number; conversionRate: number }
+      { assignedLeads: number; aLeads: number; conversionRate: number; sparkline: number[] }
     >();
+
+    // Precompute Berlin date formatter for sparkline
+    const berlinFmt = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" });
+    const today = new Date();
 
     for (const member of teamMembers) {
       const memberLeads = leads.filter((l) => l.assigned_to === member.id);
@@ -39,10 +43,24 @@ export default function TeamMemberGrid({
           ? Math.round((converted / memberLeads.length) * 100)
           : 0;
 
+      // 7-day sparkline: daily count of leads assigned to this member
+      const leadsByDate = new Map<string, number>();
+      memberLeads.forEach((l) => {
+        const key = berlinFmt.format(new Date(l.created_at));
+        leadsByDate.set(key, (leadsByDate.get(key) ?? 0) + 1);
+      });
+      const sparkline = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(today);
+        d.setDate(d.getDate() - (6 - i));
+        const key = berlinFmt.format(d);
+        return leadsByDate.get(key) ?? 0;
+      });
+
       map.set(member.id, {
         assignedLeads: memberLeads.length,
         aLeads,
         conversionRate,
+        sparkline,
       });
     }
 
@@ -60,6 +78,7 @@ export default function TeamMemberGrid({
               assignedLeads: 0,
               aLeads: 0,
               conversionRate: 0,
+              sparkline: [0, 0, 0, 0, 0, 0, 0],
             }
           }
           onEdit={() => onEdit(member)}

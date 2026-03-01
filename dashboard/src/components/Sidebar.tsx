@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -16,20 +16,20 @@ import {
   Command,
   Sun,
   Moon,
-  MessageSquareWarning,
-  SmilePlus,
-  Quote,
   AlertTriangle,
   UserCog,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
+import { useLeads } from "@/lib/leads-context";
+import { useAlerts } from "@/lib/hooks/useAlerts";
 
 interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
+  badge?: number;
 }
 
 interface NavSection {
@@ -37,38 +37,11 @@ interface NavSection {
   items: NavItem[];
 }
 
-const NAV_SECTIONS: NavSection[] = [
-  {
-    label: "ÜBERSICHT",
-    items: [{ href: "/", label: "Dashboard", icon: LayoutDashboard }],
-  },
-  {
-    label: "DATEN",
-    items: [
-      { href: "/leads", label: "Leads", icon: Users },
-      { href: "/pipeline", label: "Pipeline", icon: Kanban },
-    ],
-  },
-  {
-    label: "ANALYSE",
-    items: [
-      { href: "/analytics", label: "Analytik", icon: BarChart3 },
-      { href: "/objections", label: "Einwände", icon: MessageSquareWarning },
-      { href: "/sentiment", label: "Sentiment", icon: SmilePlus },
-    ],
-  },
-  {
-    label: "TOOLS",
-    items: [
-      { href: "/quotes", label: "Zitate", icon: Quote },
-      { href: "/alerts", label: "Frühwarnsystem", icon: AlertTriangle },
-    ],
-  },
-  {
-    label: "TEAM",
-    items: [{ href: "/team", label: "Team-Verwaltung", icon: UserCog }],
-  },
-];
+function useSidebarAlertCount(): number {
+  const { leads } = useLeads();
+  const alerts = useAlerts(leads);
+  return useMemo(() => alerts.filter((a) => a.riskLevel === "high").length, [alerts]);
+}
 
 interface SidebarProps {
   isLive?: boolean;
@@ -79,10 +52,47 @@ export default function Sidebar({ isLive = false }: SidebarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  // useEffect only runs on the client, so now we can safely show the UI
+  const highAlertCount = useSidebarAlertCount();
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const NAV_SECTIONS: NavSection[] = useMemo(
+    () => [
+      {
+        label: "ÜBERSICHT",
+        items: [{ href: "/", label: "Dashboard", icon: LayoutDashboard }],
+      },
+      {
+        label: "DATEN",
+        items: [
+          { href: "/leads", label: "Leads", icon: Users },
+          { href: "/pipeline", label: "Pipeline", icon: Kanban },
+        ],
+      },
+      {
+        label: "ANALYSE",
+        items: [{ href: "/analytics", label: "Analytics", icon: BarChart3 }],
+      },
+      {
+        label: "TOOLS",
+        items: [
+          {
+            href: "/alerts",
+            label: "Frühwarnsystem",
+            icon: AlertTriangle,
+            badge: highAlertCount > 0 ? highAlertCount : undefined,
+          },
+        ],
+      },
+      {
+        label: "TEAM",
+        items: [{ href: "/team", label: "Team-Verwaltung", icon: UserCog }],
+      },
+    ],
+    [highAlertCount]
+  );
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -150,7 +160,12 @@ export default function Sidebar({ isLive = false }: SidebarProps) {
                       )}
                     >
                       <item.icon size={18} className={cn("shrink-0", active ? "text-sidebar-primary" : "")} />
-                      <span>{item.label}</span>
+                      <span className="flex-1">{item.label}</span>
+                      {item.badge !== undefined && item.badge > 0 && (
+                        <span className="ml-auto flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full text-[10px] font-bold bg-red-500 text-white">
+                          {item.badge}
+                        </span>
+                      )}
                     </Link>
                   </li>
                 );

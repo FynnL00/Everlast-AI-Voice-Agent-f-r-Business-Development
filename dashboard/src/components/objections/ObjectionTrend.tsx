@@ -12,6 +12,7 @@ import {
   Legend,
 } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { normalizeObjection } from "@/lib/utils";
 import type { Lead } from "@/lib/types";
 
 interface ObjectionTrendProps {
@@ -25,10 +26,6 @@ const CHART_COLORS = [
   "var(--chart-4)",
   "var(--chart-5)",
 ];
-
-function normalizeObjection(obj: string): string {
-  return obj.trim().replace(/\s+/g, " ").toLowerCase().replace(/^./, (c) => c.toUpperCase());
-}
 
 function getISOWeek(date: Date): number {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));

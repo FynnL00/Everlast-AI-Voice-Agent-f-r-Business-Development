@@ -18,9 +18,9 @@ interface SentimentDistributionProps {
 }
 
 const SENTIMENT_CONFIG: Record<string, { label: string; color: string; light: string }> = {
-  positiv: { label: "Positiv", color: "#10b981", light: "#6ee7b7" },
-  neutral: { label: "Neutral", color: "#facc15", light: "#fde047" },
-  negativ: { label: "Negativ", color: "#ef4444", light: "#fca5a5" },
+  positiv: { label: "Positiv", color: "var(--score-good)", light: "var(--score-good-bg)" },
+  neutral: { label: "Neutral", color: "var(--score-warning)", light: "var(--score-warning-bg)" },
+  negativ: { label: "Negativ", color: "var(--score-danger)", light: "var(--score-danger-bg)" },
 };
 
 interface SentimentEntry {
