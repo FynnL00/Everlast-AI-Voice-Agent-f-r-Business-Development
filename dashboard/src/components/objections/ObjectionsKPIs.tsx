@@ -73,7 +73,7 @@ export default function ObjectionsKPIs({ leads }: ObjectionsKPIsProps) {
         icon={MessageSquareWarning}
         colorClass="text-orange-400"
         bgClass="bg-orange-500/10"
-        subtitle="Verschiedene Einwände"
+        tooltip="Anzahl unterschiedlicher Einwandkategorien, die in Gesprächen genannt wurden."
       />
       <KPICard
         label="Häufigster"
@@ -81,7 +81,7 @@ export default function ObjectionsKPIs({ leads }: ObjectionsKPIsProps) {
         icon={TrendingUp}
         colorClass="text-blue-400"
         bgClass="bg-blue-500/10"
-        subtitle="Am meisten genannter Einwand"
+        tooltip="Der am häufigsten genannte Einwand über alle Gespräche."
       />
       <KPICard
         label="Verlust-Korrelation"
@@ -90,7 +90,8 @@ export default function ObjectionsKPIs({ leads }: ObjectionsKPIsProps) {
         icon={AlertTriangle}
         colorClass="text-red-400"
         bgClass="bg-red-500/10"
-        subtitle="Leads mit Einwänden → verloren"
+        tooltip="Anteil der Leads mit Einwänden, die letztlich verloren gingen."
+        tooltipFormula="Korrelation = Verlorene mit Einwänden ÷ Alle mit Einwänden × 100"
       />
       <KPICard
         label="Ø pro Gespräch"
@@ -99,7 +100,8 @@ export default function ObjectionsKPIs({ leads }: ObjectionsKPIsProps) {
         icon={BarChart3}
         colorClass="text-purple-400"
         bgClass="bg-purple-500/10"
-        subtitle="Durchschnittliche Einwände"
+        tooltip="Durchschnittliche Anzahl genannter Einwände pro Lead."
+        tooltipFormula="Ø = Gesamte Einwände ÷ Alle Leads"
       />
     </div>
   );

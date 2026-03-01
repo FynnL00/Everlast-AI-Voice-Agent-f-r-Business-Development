@@ -4,16 +4,22 @@ import { useState, useMemo, useEffect } from "react";
 import { useLeads } from "@/lib/leads-context";
 import type { Lead, SortField, SortDirection } from "@/lib/types";
 import PageHeader from "@/components/ui/PageHeader";
-import { Badge } from "@/components/ui/Badge";
 import { Card, CardContent } from "@/components/ui/Card";
 import LeadSearch from "@/components/leads/LeadSearch";
 import LeadFilters from "@/components/leads/LeadFilters";
 import EnhancedLeadTable from "@/components/leads/EnhancedLeadTable";
 import Pagination from "@/components/leads/Pagination";
-import { Users, Download } from "lucide-react";
+import { Users, Download, SlidersHorizontal, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { exportLeadsCSV } from "@/lib/export";
 
 const PAGE_SIZE = 25;
+
+const GRADE_OPTIONS: { value: "A" | "B" | "C"; color: string }[] = [
+  { value: "A", color: "var(--score-good)" },
+  { value: "B", color: "var(--score-warning)" },
+  { value: "C", color: "var(--score-danger)" },
+];
 
 function compareLead(a: Lead, b: Lead, field: SortField, dir: SortDirection): number {
   let valA: string | number | boolean | null;
@@ -67,8 +73,8 @@ export default function LeadsPage() {
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [currentPage, setCurrentPage] = useState(0);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
-  // Reset to first page when filters, search, or sort changes
   useEffect(() => {
     setCurrentPage(0);
   }, [filters, searchQuery, sortField, sortDirection]);
@@ -87,75 +93,113 @@ export default function LeadsPage() {
     [filteredLeads, sortField, sortDirection]
   );
 
-  // Compact KPI summary
-  const kpiSummary = useMemo(() => {
-    const total = filteredLeads.length;
-    const withAppointment = filteredLeads.filter((l) => l.appointment_booked).length;
-    const aLeads = filteredLeads.filter((l) => l.lead_grade === "A").length;
-    const bLeads = filteredLeads.filter((l) => l.lead_grade === "B").length;
-    const cLeads = filteredLeads.filter((l) => l.lead_grade === "C").length;
-    const now = new Date();
-    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const thisWeek = filteredLeads.filter((l) => new Date(l.created_at) >= weekAgo).length;
-    return { total, withAppointment, aLeads, bLeads, cLeads, thisWeek };
-  }, [filteredLeads]);
-
   const totalPages = Math.ceil(sortedLeads.length / PAGE_SIZE);
   const paginatedLeads = sortedLeads.slice(
     currentPage * PAGE_SIZE,
     (currentPage + 1) * PAGE_SIZE
   );
 
+  // Count active filters (excluding grades, which are in the toolbar)
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.statuses.length > 0) count++;
+    if (filters.sentiments.length > 0) count++;
+    if (filters.appointmentBooked !== null) count++;
+    if (filters.assignedTo !== null) count++;
+    if (filters.dateRange.from !== null || filters.dateRange.to !== null) count++;
+    return count;
+  }, [filters]);
+
+  const toggleGrade = (grade: "A" | "B" | "C") => {
+    const grades = filters.grades.includes(grade)
+      ? filters.grades.filter((g) => g !== grade)
+      : [...filters.grades, grade];
+    setFilters({ ...filters, grades });
+  };
+
   return (
-    <div className="min-h-screen p-6 md:p-8 max-w-[1600px] mx-auto space-y-6">
+    <div className="min-h-screen py-6 md:py-8 max-w-[1900px] mx-auto space-y-4">
       <PageHeader
         title="Leads"
         subtitle="Alle erfassten Leads und ihre Details"
         icon={Users}
       />
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-4 items-center justify-between">
+      {/* Unified Toolbar */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Search */}
         <LeadSearch
           value={searchQuery}
           onChange={setSearchQuery}
-          className="sm:w-80"
+          className="flex-1 min-w-[200px] max-w-sm"
         />
-        <div className="flex items-center gap-3">
-          <div className="text-sm font-medium text-muted-foreground flex items-center">
-            <Badge className="mr-2 bg-primary text-primary-foreground">{filteredLeads.length}</Badge> Gesamt
-          </div>
-          <button
-            onClick={() => exportLeadsCSV(filteredLeads)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-border bg-card hover:bg-sidebar-accent transition-colors text-foreground"
-          >
-            <Download className="h-3.5 w-3.5" />
-            CSV exportieren
-          </button>
+
+        {/* Grade Toggles */}
+        <div className="flex items-center gap-1">
+          {GRADE_OPTIONS.map((opt) => {
+            const active = filters.grades.includes(opt.value);
+            return (
+              <button
+                key={opt.value}
+                onClick={() => toggleGrade(opt.value)}
+                className={cn(
+                  "px-3 py-2 rounded-lg text-xs font-semibold border transition-colors duration-150",
+                  active
+                    ? "border-transparent text-white"
+                    : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+                style={
+                  active
+                    ? { backgroundColor: opt.color, color: "white" }
+                    : undefined
+                }
+              >
+                {opt.value}
+              </button>
+            );
+          })}
         </div>
+
+        {/* Filter Toggle Button */}
+        <button
+          onClick={() => setFiltersOpen(!filtersOpen)}
+          className={cn(
+            "inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-colors duration-150",
+            filtersOpen || activeFilterCount > 0
+              ? "bg-primary border-primary text-primary-foreground"
+              : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+          )}
+        >
+          {filtersOpen ? <X size={14} /> : <SlidersHorizontal size={14} />}
+          {activeFilterCount > 0 ? `${activeFilterCount} Filter` : "Filter"}
+        </button>
+
+        {/* Spacer */}
+        <div className="flex-1" />
+
+        {/* Lead Count */}
+        <span className="text-sm text-muted-foreground tabular-nums">
+          <span className="font-semibold text-foreground">{filteredLeads.length}</span> Leads
+        </span>
+
+        {/* CSV Export */}
+        <button
+          onClick={() => exportLeadsCSV(filteredLeads)}
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-border bg-card hover:bg-sidebar-accent transition-colors text-foreground"
+        >
+          <Download className="h-3.5 w-3.5" />
+          CSV
+        </button>
       </div>
 
+      {/* Collapsible Filter Panel */}
       <LeadFilters
         filters={filters}
         onChange={setFilters}
-        leadCount={filteredLeads.length}
-        className="mb-4"
+        open={filtersOpen}
       />
 
-      {/* Compact KPI Summary Bar */}
-      {!loading && filteredLeads.length > 0 && (
-        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-sidebar-accent/50 border border-border text-sm text-muted-foreground font-medium">
-          <span className="text-foreground font-bold">{kpiSummary.total}</span> Leads
-          <span className="text-border">|</span>
-          <span className="text-foreground font-bold">{kpiSummary.withAppointment}</span> mit Termin
-          <span className="text-border">|</span>
-          <span className="text-green-500 font-bold">{kpiSummary.aLeads}</span><span> A</span>
-          <span className="text-amber-500 font-bold">{kpiSummary.bLeads}</span><span> B</span>
-          <span className="text-red-400 font-bold">{kpiSummary.cLeads}</span><span> C</span>
-          <span className="text-border">|</span>
-          <span className="text-foreground font-bold">{kpiSummary.thisWeek}</span> diese Woche
-        </div>
-      )}
-
+      {/* Table */}
       <Card className="p-0 overflow-hidden w-full backdrop-blur-md bg-card/60">
         <CardContent className="p-0">
           {loading ? (
@@ -179,7 +223,6 @@ export default function LeadsPage() {
         totalItems={sortedLeads.length}
         pageSize={PAGE_SIZE}
         onPageChange={setCurrentPage}
-        className="mt-4"
       />
     </div>
   );

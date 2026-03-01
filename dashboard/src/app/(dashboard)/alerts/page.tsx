@@ -64,7 +64,7 @@ export default function AlertsPage() {
   }
 
   return (
-    <div className="min-h-screen p-6 md:p-8 max-w-[1600px] mx-auto space-y-6">
+    <div className="min-h-screen py-6 md:py-8 max-w-[1900px] mx-auto space-y-6">
       <PageHeader
         title="Frühwarnsystem"
         subtitle="Leads mit Handlungsbedarf erkennen"
@@ -87,7 +87,7 @@ export default function AlertsPage() {
               icon={AlertTriangle}
               colorClass="text-amber-400"
               bgClass="bg-amber-500/10"
-              subtitle="Leads mit Handlungsbedarf"
+              tooltip="Gesamtzahl der Leads, bei denen ein Handlungsbedarf erkannt wurde."
             />
             <KPICard
               label="Hohes Risiko"
@@ -96,6 +96,7 @@ export default function AlertsPage() {
               colorClass="text-red-400"
               bgClass="bg-red-500/10"
               subtitle="Sofort kontaktieren"
+              tooltip="Leads mit dringendem Handlungsbedarf, die sofort kontaktiert werden sollten."
             />
             <KPICard
               label="Ø Inaktive Tage"
@@ -103,7 +104,8 @@ export default function AlertsPage() {
               icon={Clock}
               colorClass="text-blue-400"
               bgClass="bg-blue-500/10"
-              subtitle="Durchschnitt aller Alerts"
+              tooltip="Durchschnittliche Tage seit der letzten Aktivität über alle gewarnten Leads."
+              tooltipFormula="Ø = Summe inaktive Tage ÷ Anzahl Alerts"
             />
             <KPICard
               label="Nicht zugewiesen"
@@ -112,7 +114,8 @@ export default function AlertsPage() {
               icon={UserX}
               colorClass="text-purple-400"
               bgClass="bg-purple-500/10"
-              subtitle="der gewarnten Leads"
+              tooltip="Anteil der gewarnten Leads, die keinem Teammitglied zugeordnet sind."
+              tooltipFormula="Rate = Nicht zugewiesene Alerts ÷ Alle Alerts × 100"
             />
           </div>
 

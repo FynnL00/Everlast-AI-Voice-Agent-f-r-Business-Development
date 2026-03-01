@@ -15,7 +15,7 @@ function AppShellInner({ children }: { children: React.ReactNode }) {
       <DynamicBackground />
       <Sidebar isLive={isLive} />
       <main className="flex-1 overflow-y-auto rounded-2xl border border-sidebar-border shadow-md bg-background/60 backdrop-blur-sm z-10 relative">
-        <div className="p-6 md:p-8">
+        <div className="p-4 md:p-6">
           {children}
         </div>
       </main>

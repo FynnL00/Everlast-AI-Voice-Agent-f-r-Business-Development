@@ -151,7 +151,7 @@ export default function LeadDetailPage() {
   }
 
   return (
-    <div className="min-h-screen p-6 md:p-8 max-w-[1400px] mx-auto">
+    <div className="min-h-screen py-6 md:py-8 max-w-[1700px] mx-auto">
       <div className="mb-6">
         <LeadDetailHeader lead={lead} />
       </div>
@@ -277,7 +277,7 @@ export default function LeadDetailPage() {
 
 function LeadDetailSkeleton() {
   return (
-    <div className="min-h-screen p-6 md:p-8 max-w-[1400px] mx-auto">
+    <div className="min-h-screen py-6 md:py-8 max-w-[1700px] mx-auto">
       {/* Header skeleton */}
       <div className="mb-6">
         <div className="h-4 w-32 bg-border rounded animate-pulse mb-4" />

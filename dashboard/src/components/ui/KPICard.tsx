@@ -1,6 +1,8 @@
 "use client";
 
+import { Info } from "lucide-react";
 import { AnimatedNumber } from "@/components/ui/animated-number";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 export interface KPICardProps {
   label: string;
@@ -13,6 +15,8 @@ export interface KPICardProps {
   subtitle?: string;
   sparklineData?: number[];
   trend?: { delta: number; improving: boolean } | null;
+  tooltip?: string;
+  tooltipFormula?: string;
 }
 
 export function KPICard({
@@ -24,6 +28,8 @@ export function KPICard({
   colorClass,
   bgClass,
   subtitle,
+  tooltip,
+  tooltipFormula,
 }: KPICardProps) {
   const ariaValue = numericValue !== undefined ? `${numericValue}${suffix}` : value ?? "-";
 
@@ -33,6 +39,27 @@ export function KPICard({
       role="status"
       aria-label={`${label}: ${ariaValue}`}
     >
+      {tooltip && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="absolute top-2.5 right-3.5 text-muted-foreground/40 hover:text-muted-foreground transition-colors cursor-help z-10"
+              aria-label={`Info: ${label}`}
+              tabIndex={0}
+            >
+              <Info className="h-3.5 w-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-64 p-3">
+            <p className="font-semibold text-card-foreground text-sm mb-1">{label}</p>
+            <p className="text-xs text-card-foreground/80 leading-relaxed">{tooltip}</p>
+            {tooltipFormula && (
+              <p className="text-[11px] text-muted-foreground mt-2 font-mono">{tooltipFormula}</p>
+            )}
+          </TooltipContent>
+        </Tooltip>
+      )}
       <div className={`p-3 rounded-full shrink-0 ${bgClass} ${colorClass}`}>
         <Icon className="h-6 w-6" />
       </div>

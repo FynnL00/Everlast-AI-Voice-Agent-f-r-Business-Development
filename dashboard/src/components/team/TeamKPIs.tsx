@@ -29,7 +29,7 @@ export default function TeamKPIs({ teamMembers, leads }: TeamKPIsProps) {
         icon={Users}
         colorClass="text-blue-400"
         bgClass="bg-blue-500/10"
-        subtitle="Aktive Mitarbeiter"
+        tooltip="Anzahl der derzeit aktiven Teammitglieder."
       />
       <KPICard
         label="Zugewiesene Leads"
@@ -37,7 +37,7 @@ export default function TeamKPIs({ teamMembers, leads }: TeamKPIsProps) {
         icon={UserCheck}
         colorClass="text-green-400"
         bgClass="bg-green-500/10"
-        subtitle="Leads mit Zuweisung"
+        tooltip="Leads, die bereits einem Teammitglied zugeordnet sind."
       />
       <KPICard
         label="Offene Leads"
@@ -45,7 +45,7 @@ export default function TeamKPIs({ teamMembers, leads }: TeamKPIsProps) {
         icon={UserX}
         colorClass="text-amber-400"
         bgClass="bg-amber-500/10"
-        subtitle="Ohne Zuweisung"
+        tooltip="Leads ohne Zuweisung an ein Teammitglied."
       />
       <KPICard
         label="Ø Leads/Mitarbeiter"
@@ -53,7 +53,8 @@ export default function TeamKPIs({ teamMembers, leads }: TeamKPIsProps) {
         icon={BarChart3}
         colorClass="text-purple-400"
         bgClass="bg-purple-500/10"
-        subtitle="Durchschnittliche Auslastung"
+        tooltip="Durchschnittliche Anzahl zugewiesener Leads pro aktivem Teammitglied."
+        tooltipFormula="Ø = Zugewiesene Leads ÷ Aktive Mitglieder"
       />
     </div>
   );

@@ -58,7 +58,8 @@ export default function SentimentKPIs({ leads }: SentimentKPIsProps) {
         icon={Smile}
         colorClass="text-green-400"
         bgClass="bg-green-500/10"
-        subtitle="Anteil positives Sentiment"
+        tooltip="Anteil der Gespräche, die als positiv eingestuft wurden."
+        tooltipFormula="Rate = Positive ÷ Alle mit Sentiment × 100"
       />
       <KPICard
         label="Neutral-Rate"
@@ -67,7 +68,8 @@ export default function SentimentKPIs({ leads }: SentimentKPIsProps) {
         icon={Meh}
         colorClass="text-amber-400"
         bgClass="bg-amber-500/10"
-        subtitle="Anteil neutrales Sentiment"
+        tooltip="Anteil der Gespräche mit neutraler Stimmung."
+        tooltipFormula="Rate = Neutrale ÷ Alle mit Sentiment × 100"
       />
       <KPICard
         label="Negativ-Rate"
@@ -76,7 +78,8 @@ export default function SentimentKPIs({ leads }: SentimentKPIsProps) {
         icon={Frown}
         colorClass="text-red-400"
         bgClass="bg-red-500/10"
-        subtitle="Anteil negatives Sentiment"
+        tooltip="Anteil der Gespräche mit negativem Sentiment."
+        tooltipFormula="Rate = Negative ÷ Alle mit Sentiment × 100"
       />
       <KPICard
         label="Trend"
@@ -84,7 +87,8 @@ export default function SentimentKPIs({ leads }: SentimentKPIsProps) {
         icon={kpis.trendImproving ? TrendingUp : TrendingDown}
         colorClass={kpis.trendImproving ? "text-green-400" : "text-red-400"}
         bgClass={kpis.trendImproving ? "bg-green-500/10" : "bg-red-500/10"}
-        subtitle="Letzte 7 Tage vs. davor"
+        tooltip="Veränderung der Positiv-Rate im Vergleich zur Vorwoche."
+        tooltipFormula="Trend = Positiv-Rate (7 Tage) − Positiv-Rate (Vorwoche)"
       />
     </div>
   );

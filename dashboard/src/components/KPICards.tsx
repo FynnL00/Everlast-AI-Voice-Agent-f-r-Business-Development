@@ -31,6 +31,7 @@ export default function KPICards({
         colorClass="text-purple-400"
         bgClass="bg-purple-500/10"
         subtitle={`Gesamt: ${totalCalls}`}
+        tooltip="Anzahl eingehender Anrufe seit Mitternacht (Berliner Zeit)."
       />
       <KPICard
         label="Conversion-Rate"
@@ -39,7 +40,8 @@ export default function KPICards({
         icon={TrendingUp}
         colorClass="text-green-400"
         bgClass="bg-green-500/10"
-        subtitle="Termine / Alle Anrufe"
+        tooltip="Anteil der Anrufe, die zu einem gebuchten Termin geführt haben."
+        tooltipFormula="Conversion Rate = Termine ÷ Alle Anrufe × 100"
       />
       <KPICard
         label="Gesprächsdauer"
@@ -47,7 +49,8 @@ export default function KPICards({
         icon={Clock}
         colorClass="text-amber-400"
         bgClass="bg-amber-500/10"
-        subtitle="Durchschnittlich"
+        tooltip="Durchschnittliche Dauer aller aufgezeichneten Gespräche."
+        tooltipFormula="Ø Dauer = Summe Gesprächszeiten ÷ Anzahl Gespräche"
       />
       <KPICard
         label="Sentiment"
@@ -56,7 +59,8 @@ export default function KPICards({
         icon={SmilePlus}
         colorClass="text-emerald-400"
         bgClass="bg-emerald-500/10"
-        subtitle="Positiv gestimmte Calls"
+        tooltip="Anteil der Gespräche mit positiver Stimmungsanalyse."
+        tooltipFormula="Positiv-Rate = Positive Calls ÷ Calls mit Sentiment × 100"
       />
     </div>
   );

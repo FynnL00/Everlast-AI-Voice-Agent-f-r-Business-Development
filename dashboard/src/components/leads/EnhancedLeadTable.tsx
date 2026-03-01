@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   ArrowUpDown,
   ArrowUp,
@@ -31,14 +31,10 @@ interface ColumnDef {
 }
 
 const COLUMNS: ColumnDef[] = [
-  { field: "caller_name", label: "Name", sortable: true },
-  { field: "company", label: "Firma", sortable: true },
+  { field: "caller_name", label: "Name / Firma", sortable: true },
   { field: "total_score", label: "Score", sortable: true, className: "text-center" },
   { field: "status", label: "Status", sortable: true },
-  { field: "sentiment", label: "Sentiment", sortable: true, className: "text-center" },
-  { field: "call_duration_seconds", label: "Dauer", sortable: true, className: "text-right" },
-  { field: "appointment_booked", label: "Termin", sortable: true },
-  { field: "created_at", label: "Datum", sortable: true, className: "text-right" },
+  { field: "appointment_booked", label: "Termin", sortable: true, className: "text-center" },
 ];
 
 function SortIcon({ field, currentField, direction }: {
@@ -60,8 +56,6 @@ export default function EnhancedLeadTable({
   sortDirection,
   onSort,
 }: EnhancedLeadTableProps) {
-  const router = useRouter();
-
   if (leads.length === 0) {
     return (
       <EmptyState
@@ -110,89 +104,91 @@ export default function EnhancedLeadTable({
           {leads.map((lead) => (
               <tr
                 key={lead.id}
-                className="group hover:bg-muted/50 border-b border-border/40 transition-colors duration-200 cursor-pointer"
-                onClick={() => router.push(`/leads/${lead.id}`)}
+                className="group/row hover:bg-muted/50 border-b border-border/40 transition-colors duration-200 cursor-pointer"
               >
-                {/* Name */}
+                {/* Name / Firma (merged) */}
                 <td className="px-4 py-4 align-middle">
-                  <div className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                    {lead.caller_name || "Unbekannt"}
-                  </div>
-                  {lead.phone && (
-                    <div className="text-xs text-muted-foreground mt-0.5 tracking-wide font-mono">{lead.phone}</div>
-                  )}
-                </td>
-
-                {/* Firma */}
-                <td className="px-4 py-4 align-middle">
-                  <div className="font-medium text-foreground">
-                    {lead.company || "\u2014"}
-                  </div>
-                  {lead.company_size && (
-                    <div className="text-[11px] text-muted-foreground mt-0.5 uppercase tracking-wider">{lead.company_size}</div>
-                  )}
+                  <Link href={`/leads/${lead.id}`} className="block">
+                    <div className="font-semibold text-foreground group-hover/row:text-primary transition-colors">
+                      {lead.caller_name || "Unbekannt"}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {lead.company || "\u2014"}
+                      {lead.company_size && (
+                        <span className="text-[11px] uppercase tracking-wider"> · {lead.company_size}</span>
+                      )}
+                    </div>
+                    {lead.phone && (
+                      <div className="text-xs text-muted-foreground mt-0.5 tracking-wide font-mono">{lead.phone}</div>
+                    )}
+                  </Link>
                 </td>
 
                 {/* Score / Grade */}
                 <td className="px-4 py-4 text-center align-middle">
-                  {lead.lead_grade ? (
-                    <span
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold shadow-sm ring-1 ring-inset"
-                      style={{
-                        backgroundColor: `${getGradeColor(lead.lead_grade)}15`,
-                        color: getGradeColor(lead.lead_grade),
-                        "--tw-ring-color": `${getGradeColor(lead.lead_grade)}30`
-                      } as React.CSSProperties}
-                    >
-                      {lead.lead_grade}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground">&mdash;</span>
-                  )}
+                  <Link href={`/leads/${lead.id}`} className="block">
+                    {lead.lead_grade ? (
+                      <span
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold shadow-sm ring-1 ring-inset"
+                        style={{
+                          backgroundColor: `${getGradeColor(lead.lead_grade)}15`,
+                          color: getGradeColor(lead.lead_grade),
+                          "--tw-ring-color": `${getGradeColor(lead.lead_grade)}30`
+                        } as React.CSSProperties}
+                      >
+                        {lead.lead_grade}
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">&mdash;</span>
+                    )}
+                  </Link>
                 </td>
 
-                {/* Status */}
+                {/* Status + Sentiment + Duration (merged) */}
                 <td className="px-4 py-4 align-middle">
-                  <StatusBadge status={lead.status} />
-                </td>
-
-                {/* Sentiment */}
-                <td className="px-4 py-4 text-center align-middle">
-                  <div className="flex justify-center">
-                    <SentimentIndicator sentiment={lead.sentiment} showLabel />
-                  </div>
-                </td>
-
-                {/* Dauer */}
-                <td className="px-4 py-4 text-right align-middle text-muted-foreground font-mono text-xs">
-                  {lead.call_duration_seconds != null
-                    ? formatDuration(lead.call_duration_seconds)
-                    : "\u2014"}
+                  <Link href={`/leads/${lead.id}`} className="block">
+                    <StatusBadge status={lead.status} />
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <SentimentIndicator sentiment={lead.sentiment} showLabel />
+                      {lead.call_duration_seconds != null && (
+                        <>
+                          <span className="text-border">·</span>
+                          <span className="text-xs text-muted-foreground font-mono">
+                            {formatDuration(lead.call_duration_seconds)}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </Link>
                 </td>
 
                 {/* Termin */}
                 <td className="px-4 py-4 align-middle text-center">
-                  {lead.appointment_booked && lead.appointment_datetime ? (
-                    <Badge className="bg-score-good-bg text-score-good hover:bg-score-good-bg shrink-0">
-                      <CalendarCheck size={12} className="mr-1" />
-                      Gebucht
-                    </Badge>
-                  ) : (
-                    <span className="text-muted-foreground">&mdash;</span>
-                  )}
-                </td>
-
-                {/* Datum */}
-                <td className="px-4 py-4 text-right align-middle text-muted-foreground text-xs whitespace-nowrap">
-                  {formatDate(lead.created_at)}
+                  <Link href={`/leads/${lead.id}`} className="block">
+                    {lead.appointment_booked && lead.appointment_datetime ? (
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                          {formatDate(lead.appointment_datetime)}
+                        </span>
+                        <Badge className="bg-score-good-bg text-score-good hover:bg-score-good-bg shrink-0">
+                          <CalendarCheck size={12} className="mr-1" />
+                          Gebucht
+                        </Badge>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">&mdash;</span>
+                    )}
+                  </Link>
                 </td>
 
                 {/* Arrow */}
                 <td className="px-2 py-4 text-right align-middle">
-                  <ChevronRight
-                    size={16}
-                    className="text-muted-foreground group-hover:text-primary transition-colors opacity-0 group-hover:opacity-100"
-                  />
+                  <Link href={`/leads/${lead.id}`} className="block">
+                    <ChevronRight
+                      size={16}
+                      className="text-muted-foreground group-hover/row:text-primary transition-colors opacity-0 group-hover/row:opacity-100"
+                    />
+                  </Link>
                 </td>
               </tr>
           ))}

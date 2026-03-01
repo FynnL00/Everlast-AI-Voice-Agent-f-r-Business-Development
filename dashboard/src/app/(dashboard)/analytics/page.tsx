@@ -55,7 +55,7 @@ function AnalyticsContent() {
   }
 
   return (
-    <div className="min-h-screen p-6 md:p-8 max-w-[1600px] mx-auto space-y-6">
+    <div className="min-h-screen py-6 md:py-8 max-w-[1900px] mx-auto space-y-6">
       <PageHeader
         title="Analytik"
         subtitle="Detaillierte Auswertungen"

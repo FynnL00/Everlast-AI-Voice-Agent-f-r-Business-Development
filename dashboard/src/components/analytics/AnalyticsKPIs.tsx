@@ -48,7 +48,8 @@ export default function AnalyticsKPIs({ leads }: AnalyticsKPIsProps) {
         icon={Shield}
         colorClass="text-purple-400"
         bgClass="bg-purple-500/10"
-        subtitle="Anteil Entscheidungsträger"
+        tooltip="Anteil der Leads, die als Entscheidungsträger identifiziert wurden."
+        tooltipFormula="Quote = Entscheider ÷ Bekannte Rollen × 100"
       />
       <KPICard
         label="Ø Score"
@@ -57,7 +58,8 @@ export default function AnalyticsKPIs({ leads }: AnalyticsKPIsProps) {
         icon={Target}
         colorClass="text-amber-400"
         bgClass="bg-amber-500/10"
-        subtitle="Durchschnittlicher Lead-Score"
+        tooltip="Durchschnittlicher Lead-Qualifizierungsscore über alle bewerteten Leads."
+        tooltipFormula="Ø Score = Summe Total Scores ÷ Bewertete Leads"
       />
       <KPICard
         label="Positiv-Rate"
@@ -66,7 +68,8 @@ export default function AnalyticsKPIs({ leads }: AnalyticsKPIsProps) {
         icon={Smile}
         colorClass="text-green-400"
         bgClass="bg-green-500/10"
-        subtitle="Positives Gesprächssentiment"
+        tooltip="Anteil der Gespräche mit positivem Sentiment-Ergebnis."
+        tooltipFormula="Positiv-Rate = Positive ÷ Alle mit Sentiment × 100"
       />
       <KPICard
         label="A-Lead Termin-%"
@@ -75,7 +78,8 @@ export default function AnalyticsKPIs({ leads }: AnalyticsKPIsProps) {
         icon={CalendarCheck}
         colorClass="text-pink-400"
         bgClass="bg-pink-500/10"
-        subtitle="A-Leads mit geb. Termin"
+        tooltip="Wie viele A-Leads (Score 10–12) bereits einen Termin gebucht haben."
+        tooltipFormula="A-Termin-% = A-Leads mit Termin ÷ Alle A-Leads × 100"
       />
     </div>
   );

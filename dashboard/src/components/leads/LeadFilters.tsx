@@ -1,23 +1,18 @@
 "use client";
 
-import { X, CalendarCheck } from "lucide-react";
+import { X, CalendarCheck, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LeadFilters as LeadFiltersType, Lead } from "@/lib/types";
 import { STATUS_LABELS, SENTIMENT_LABELS } from "@/lib/types";
 import { useTeam } from "@/lib/team-context";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface LeadFiltersProps {
   filters: LeadFiltersType;
   onChange: (filters: LeadFiltersType) => void;
-  leadCount: number;
+  open: boolean;
   className?: string;
 }
-
-const GRADE_OPTIONS: { value: "A" | "B" | "C"; color: string }[] = [
-  { value: "A", color: "var(--score-good)" },
-  { value: "B", color: "var(--score-warning)" },
-  { value: "C", color: "var(--score-danger)" },
-];
 
 const STATUS_OPTIONS: { value: Lead["status"]; label: string }[] = (
   Object.entries(STATUS_LABELS) as [Lead["status"], string][]
@@ -41,7 +36,6 @@ function getDatePreset(filters: LeadFiltersType): DatePreset {
 
 function hasActiveFilters(filters: LeadFiltersType): boolean {
   return (
-    filters.grades.length > 0 ||
     filters.statuses.length > 0 ||
     filters.sentiments.length > 0 ||
     filters.appointmentBooked !== null ||
@@ -57,7 +51,7 @@ function toDateInputValue(isoString: string | null): string {
   return d.toISOString().slice(0, 10);
 }
 
-export default function LeadFilters({ filters, onChange, leadCount, className }: LeadFiltersProps) {
+export default function LeadFilters({ filters, onChange, open, className }: LeadFiltersProps) {
   const { teamMembers } = useTeam();
 
   const customDateFrom = toDateInputValue(filters.dateRange.from);
@@ -72,13 +66,6 @@ export default function LeadFilters({ filters, onChange, leadCount, className }:
         to: to ? new Date(to + "T23:59:59").toISOString() : null,
       },
     });
-  };
-
-  const toggleGrade = (grade: "A" | "B" | "C") => {
-    const grades = filters.grades.includes(grade)
-      ? filters.grades.filter((g) => g !== grade)
-      : [...filters.grades, grade];
-    onChange({ ...filters, grades });
   };
 
   const setStatus = (status: string) => {
@@ -118,7 +105,7 @@ export default function LeadFilters({ filters, onChange, leadCount, className }:
 
   const resetFilters = () => {
     onChange({
-      grades: [],
+      grades: filters.grades, // Keep grades (they're in the toolbar)
       statuses: [],
       sentiments: [],
       appointmentBooked: null,
@@ -128,158 +115,170 @@ export default function LeadFilters({ filters, onChange, leadCount, className }:
   };
 
   const activePreset = getDatePreset(filters);
+
   const selectClasses = cn(
-    "bg-card border border-border rounded-lg",
-    "px-3 py-2 text-sm text-foreground",
+    "w-full bg-card border border-border rounded-lg",
+    "pl-3 pr-8 py-2 text-sm text-foreground",
     "focus:outline-none focus:ring-2 focus:ring-ring/50",
     "cursor-pointer appearance-none"
   );
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-2", className)}>
-      {/* Lead count badge */}
-      <span className="text-sm font-medium text-muted-foreground shrink-0">
-        {leadCount} Leads
-      </span>
-
-      {/* Grade toggles */}
-      <div className="flex items-center gap-1">
-        {GRADE_OPTIONS.map((opt) => {
-          const active = filters.grades.includes(opt.value);
-          return (
-            <button
-              key={opt.value}
-              onClick={() => toggleGrade(opt.value)}
-              className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors duration-150",
-                active
-                  ? "border-transparent text-white"
-                  : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-              style={
-                active
-                  ? { backgroundColor: opt.color, color: "white" }
-                  : undefined
-              }
-            >
-              {opt.value}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Status dropdown */}
-      <select
-        value={filters.statuses[0] ?? ""}
-        onChange={(e) => setStatus(e.target.value)}
-        className={selectClasses}
-      >
-        <option value="">Alle Status</option>
-        {STATUS_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-
-      {/* Sentiment dropdown */}
-      <select
-        value={filters.sentiments[0] ?? ""}
-        onChange={(e) => setSentiment(e.target.value)}
-        className={selectClasses}
-      >
-        <option value="">Alle Sentiments</option>
-        {SENTIMENT_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-
-      {/* Team member filter */}
-      <select
-        value={filters.assignedTo ?? ""}
-        onChange={(e) => onChange({ ...filters, assignedTo: e.target.value || null })}
-        className={selectClasses}
-      >
-        <option value="">Alle Mitarbeiter</option>
-        {teamMembers.filter((m) => m.is_active).map((m) => (
-          <option key={m.id} value={m.id}>{m.name}</option>
-        ))}
-      </select>
-
-      {/* Appointment toggle */}
-      <button
-        onClick={toggleAppointment}
-        className={cn(
-          "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-150",
-          filters.appointmentBooked === true
-            ? "bg-primary border-primary text-primary-foreground"
-            : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-        )}
-      >
-        <CalendarCheck size={14} />
-        Nur mit Termin
-      </button>
-
-      {/* Date range presets */}
-      <div className="flex items-center gap-1">
-        {([
-          { label: "7 Tage", value: "7d" as DatePreset },
-          { label: "30 Tage", value: "30d" as DatePreset },
-          { label: "Alle", value: "all" as DatePreset },
-        ]).map((preset) => (
-          <button
-            key={preset.value}
-            onClick={() => setDatePreset(preset.value)}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-150",
-              activePreset === preset.value && !isCustomDateRange
-                ? "bg-primary border-primary text-primary-foreground"
-                : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-            )}
-          >
-            {preset.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Custom date range inputs */}
-      <div className="flex items-center gap-1.5">
-        <label className="text-xs text-muted-foreground font-medium shrink-0">Von</label>
-        <input
-          type="date"
-          value={customDateFrom}
-          onChange={(e) => handleCustomDateChange(e.target.value, customDateTo)}
-          className={cn(
-            "bg-card border border-border rounded-lg px-2 py-1.5 text-xs text-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-ring/50",
-            "w-[130px]"
-          )}
-        />
-        <label className="text-xs text-muted-foreground font-medium shrink-0">Bis</label>
-        <input
-          type="date"
-          value={customDateTo}
-          onChange={(e) => handleCustomDateChange(customDateFrom, e.target.value)}
-          className={cn(
-            "bg-card border border-border rounded-lg px-2 py-1.5 text-xs text-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-ring/50",
-            "w-[130px]"
-          )}
-        />
-      </div>
-
-      {/* Reset filters */}
-      {hasActiveFilters(filters) && (
-        <button
-          onClick={resetFilters}
-          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors duration-150"
+    <AnimatePresence initial={false}>
+      {open && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.2, ease: "easeInOut" }}
+          className={cn("overflow-hidden", className)}
         >
-          <X size={14} />
-          Filter zurücksetzen
-        </button>
+          <div className="bg-card/40 backdrop-blur-sm border border-border rounded-xl p-4 space-y-4">
+            {/* Row 1: Dropdowns in grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Status */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Status</label>
+                <div className="relative">
+                  <select
+                    value={filters.statuses[0] ?? ""}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className={selectClasses}
+                  >
+                    <option value="">Alle Status</option>
+                    {STATUS_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Sentiment */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Sentiment</label>
+                <div className="relative">
+                  <select
+                    value={filters.sentiments[0] ?? ""}
+                    onChange={(e) => setSentiment(e.target.value)}
+                    className={selectClasses}
+                  >
+                    <option value="">Alle Sentiments</option>
+                    {SENTIMENT_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Team */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Team</label>
+                <div className="relative">
+                  <select
+                    value={filters.assignedTo ?? ""}
+                    onChange={(e) => onChange({ ...filters, assignedTo: e.target.value || null })}
+                    className={selectClasses}
+                  >
+                    <option value="">Alle Mitarbeiter</option>
+                    {teamMembers.filter((m) => m.is_active).map((m) => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Date Presets */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Zeitraum</label>
+                <div className="flex items-center gap-1">
+                  {([
+                    { label: "7 Tage", value: "7d" as DatePreset },
+                    { label: "30 Tage", value: "30d" as DatePreset },
+                    { label: "Alle", value: "all" as DatePreset },
+                  ]).map((preset) => (
+                    <button
+                      key={preset.value}
+                      onClick={() => setDatePreset(preset.value)}
+                      className={cn(
+                        "flex-1 px-2 py-2 rounded-lg text-xs font-medium border transition-colors duration-150",
+                        activePreset === preset.value && !isCustomDateRange
+                          ? "bg-primary border-primary text-primary-foreground"
+                          : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Row 2: Appointment toggle + Date range + Reset */}
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Appointment toggle */}
+              <button
+                onClick={toggleAppointment}
+                className={cn(
+                  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors duration-150",
+                  filters.appointmentBooked === true
+                    ? "bg-primary border-primary text-primary-foreground"
+                    : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                <CalendarCheck size={14} />
+                Nur mit Termin
+              </button>
+
+              {/* Custom date range */}
+              <div className="flex items-center gap-1.5">
+                <label className="text-xs text-muted-foreground font-medium shrink-0">Von</label>
+                <input
+                  type="date"
+                  value={customDateFrom}
+                  onChange={(e) => handleCustomDateChange(e.target.value, customDateTo)}
+                  className={cn(
+                    "bg-card border border-border rounded-lg px-2 py-1.5 text-xs text-foreground",
+                    "focus:outline-none focus:ring-2 focus:ring-ring/50",
+                    "w-[130px]"
+                  )}
+                />
+                <label className="text-xs text-muted-foreground font-medium shrink-0">Bis</label>
+                <input
+                  type="date"
+                  value={customDateTo}
+                  onChange={(e) => handleCustomDateChange(customDateFrom, e.target.value)}
+                  className={cn(
+                    "bg-card border border-border rounded-lg px-2 py-1.5 text-xs text-foreground",
+                    "focus:outline-none focus:ring-2 focus:ring-ring/50",
+                    "w-[130px]"
+                  )}
+                />
+              </div>
+
+              {/* Spacer */}
+              <div className="flex-1" />
+
+              {/* Reset */}
+              {hasActiveFilters(filters) && (
+                <button
+                  onClick={resetFilters}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium text-destructive hover:bg-destructive/10 transition-colors duration-150"
+                >
+                  <X size={14} />
+                  Filter zurücksetzen
+                </button>
+              )}
+            </div>
+          </div>
+        </motion.div>
       )}
-    </div>
+    </AnimatePresence>
   );
 }
