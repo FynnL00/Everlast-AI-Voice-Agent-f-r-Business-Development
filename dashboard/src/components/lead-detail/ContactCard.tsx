@@ -20,7 +20,7 @@ export default function ContactCard({ lead, onUpdate, className }: ContactCardPr
           Kontaktdaten
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-4 space-y-2">
+      <CardContent className="pt-3 space-y-1">
         <EditableField
           icon={User}
           label="Name"

@@ -27,7 +27,7 @@ export default function BriefingCard({ lead, onGenerate }: BriefingCardProps) {
     <Card className="shadow-sm">
       <CardHeader className="pb-3 border-b border-border/50">
         <CardTitle className="text-sm font-semibold text-muted-foreground flex items-center justify-between">
-          <span>Demo-Briefing</span>
+          <span>Call Briefing</span>
         </CardTitle>
       </CardHeader>
 

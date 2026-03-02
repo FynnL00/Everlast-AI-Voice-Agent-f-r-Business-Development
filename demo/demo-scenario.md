@@ -11,13 +11,13 @@
 
 ### Phase 1: Begrüßung
 
-> Lisa wird sich melden und den DSGVO-Hinweis geben. Warte bis sie fertig ist.
+> Lisa ruft an. Du nimmst ab und meldest dich.
 
-**Thomas:** "Ja, das ist in Ordnung."
+**Thomas:** "Weber, hallo?"
 
-> Lisa wird fragen, wie sie helfen kann.
+> Lisa wird deinen Namen nutzen, den Grund für den Anruf nennen (Interesse an Workflow-Automation) und fragen, ob du kurz zwei, drei Minuten Zeit hast.
 
-**Thomas:** "Hallo, ja, ich habe von n8n gehört und wollte mich mal erkundigen, ob das was für uns wäre."
+**Thomas:** "Ja, kurz schon. Was genau meinen Sie?"
 
 ---
 

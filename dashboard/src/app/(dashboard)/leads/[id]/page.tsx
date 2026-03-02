@@ -146,20 +146,24 @@ export default function LeadDetailPage() {
         <LeadDetailHeader lead={lead} />
       </div>
 
-      {/* Top section: 2/3 (Appointment+Assignment, Briefing) | 1/3 (Contact) */}
+      {/* Top section: Appointment+Assignment | Contact (compact) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2">
           <AppointmentAssignmentCard
             lead={lead}
             onStatusChange={handleStatusChange}
             onAssign={handleAssign}
           />
-          <BriefingCard lead={lead} onGenerate={handleGenerateBriefing} />
         </div>
 
         <div className="lg:col-span-1">
           <ContactCard lead={lead} onUpdate={handleUpdate} className="h-full" />
         </div>
+      </div>
+
+      {/* Call Briefing – full width */}
+      <div className="mb-6">
+        <BriefingCard lead={lead} onGenerate={handleGenerateBriefing} />
       </div>
 
       {/* Full-width tabs section */}

@@ -4,10 +4,10 @@
     "role": "SDR",
     "company": "n8n",
     "language": "de-DE",
-    "first_message": "Hallo, hier ist Lisa von n8n! Kurzer Hinweis vorab: Dieses Gespräch wird zur Qualitätssicherung aufgezeichnet. Ist das für Sie in Ordnung?",
+    "first_message": "Hallo, hier ist Lisa von n8n, schönen guten Tag!",
     "voice": {
       "provider": "elevenlabs",
-      "voice_id": "VOICE_ID_HERE",
+      "voice_id": "NkMe1eztMQReztnhYfeX",
       "model": "eleven_turbo_v2_5",
       "stability": 0.65,
       "similarity_boost": 0.75,
@@ -38,19 +38,34 @@
   },
   "calendar": {
     "provider": "cal.com",
-    "event_type_id": "CALCOM_EVENT_TYPE_ID",
+    "event_type_id": "4897150",
     "timezone": "Europe/Berlin",
     "slot_duration_minutes": 30,
     "booking_buffer_minutes": 15
   },
   "vapi": {
-    "server_url": "N8N_WEBHOOK_URL",
-    "end_of_call_report_url": "N8N_POST_CALL_WEBHOOK_URL",
+    "server_url": "https://n8n.srv1169417.hstgr.cloud/webhook",
+    "end_of_call_report_url": "https://n8n.srv1169417.hstgr.cloud/webhook/vapi-end-of-call",
     "background_sound": "office",
+    "background_denoising_enabled": true,
     "silence_timeout_seconds": 20,
     "max_duration_seconds": 600,
-    "interruption_threshold": 100,
-    "response_delay_seconds": 0.4,
-    "live_transcripts_enabled": true
+    "live_transcripts_enabled": true,
+    "start_speaking_plan": {
+      "wait_seconds": 0.4,
+      "smart_endpointing_plan": {
+        "provider": "vapi"
+      },
+      "transcription_endpointing_plan": {
+        "on_punctuation_seconds": 0.5,
+        "on_no_punctuation_seconds": 1.5,
+        "on_number_seconds": 0.8
+      }
+    },
+    "stop_speaking_plan": {
+      "num_words": 3,
+      "voice_seconds": 0.3,
+      "backoff_seconds": 1.5
+    }
   }
 }
