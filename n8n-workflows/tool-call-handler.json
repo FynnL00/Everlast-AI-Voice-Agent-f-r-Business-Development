@@ -26,7 +26,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\nconst secret = headers['x-webhook-secret'];\n\nif (secret !== 'REDACTED_WEBHOOK_SECRET') {\n  throw new Error('Unauthorized: Invalid webhook secret');\n}\n\nconst toolCall = body.message.toolCallList[0];\nconst toolCallId = toolCall.id;\nconst args = toolCall.function.arguments;\nconst dateRange = args.date_range || 'naechste Woche';\n\nconst now = new Date();\nconst startTime = now.toISOString();\nconst endDate = new Date(now);\nendDate.setDate(endDate.getDate() + 7);\nconst endTime = endDate.toISOString();\n\nreturn [{ json: { toolCallId, dateRange, startTime, endTime } }];"
+        "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\nconst secret = headers['x-webhook-secret'];\n\nif (secret !== '<WEBHOOK_SECRET>') {\n  throw new Error('Unauthorized: Invalid webhook secret');\n}\n\nconst toolCall = body.message.toolCallList[0];\nconst toolCallId = toolCall.id;\nconst args = toolCall.function.arguments;\nconst dateRange = args.date_range || 'naechste Woche';\n\nconst now = new Date();\nconst startTime = now.toISOString();\nconst endDate = new Date(now);\nendDate.setDate(endDate.getDate() + 7);\nconst endTime = endDate.toISOString();\n\nreturn [{ json: { toolCallId, dateRange, startTime, endTime } }];"
       },
       "id": "code-extract-avail",
       "name": "Extract Availability Request",
@@ -49,7 +49,7 @@
           "parameters": [
             {
               "name": "Authorization",
-              "value": "Bearer REDACTED_CAL_KEY"
+              "value": "Bearer <CAL_COM_API_KEY>"
             },
             {
               "name": "cal-api-version",
@@ -146,7 +146,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\nconst secret = headers['x-webhook-secret'];\n\nif (secret !== 'REDACTED_WEBHOOK_SECRET') {\n  throw new Error('Unauthorized: Invalid webhook secret');\n}\n\nconst toolCall = body.message.toolCallList[0];\nconst toolCallId = toolCall.id;\nconst args = toolCall.function.arguments;\nconst callId = body.message.call.id;\n\nfunction sanitize(val, maxLen) {\n  if (!val) return '';\n  return String(val).replace(/[<>\"';]/g, '').replace(/&/g, 'und').substring(0, maxLen || 200);\n}\n\nconst datetime = sanitize(args.datetime, 200);\nconst name = sanitize(args.name, 200);\nconst email = sanitize(args.email, 200);\nconst company = sanitize(args.company, 200);\n\nif (!datetime || !name || !email) {\n  throw new Error('Missing required fields: datetime, name, email');\n}\n\n// Build Cal.com v1 booking payload as a JSON string\nconst calPayload = JSON.stringify({\n  eventTypeId: 4897150,\n  start: datetime,\n  responses: { name, email },\n  metadata: { company },\n  timeZone: 'Europe/Berlin',\n  language: 'de'\n});\n\nreturn [{ json: { toolCallId, callId, datetime, name, email, company, calPayload } }];"
+        "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\nconst secret = headers['x-webhook-secret'];\n\nif (secret !== '<WEBHOOK_SECRET>') {\n  throw new Error('Unauthorized: Invalid webhook secret');\n}\n\nconst toolCall = body.message.toolCallList[0];\nconst toolCallId = toolCall.id;\nconst args = toolCall.function.arguments;\nconst callId = body.message.call.id;\n\nfunction sanitize(val, maxLen) {\n  if (!val) return '';\n  return String(val).replace(/[<>\"';]/g, '').replace(/&/g, 'und').substring(0, maxLen || 200);\n}\n\nconst datetime = sanitize(args.datetime, 200);\nconst name = sanitize(args.name, 200);\nconst email = sanitize(args.email, 200);\nconst company = sanitize(args.company, 200);\n\nif (!datetime || !name || !email) {\n  throw new Error('Missing required fields: datetime, name, email');\n}\n\n// Build Cal.com v1 booking payload as a JSON string\nconst calPayload = JSON.stringify({\n  eventTypeId: 4897150,\n  start: datetime,\n  responses: { name, email },\n  metadata: { company },\n  timeZone: 'Europe/Berlin',\n  language: 'de'\n});\n\nreturn [{ json: { toolCallId, callId, datetime, name, email, company, calPayload } }];"
       },
       "id": "code-extract-booking",
       "name": "Extract Booking Request",
@@ -160,7 +160,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.cal.com/v1/bookings?apiKey=REDACTED_CAL_KEY",
+        "url": "https://api.cal.com/v1/bookings?apiKey=<CAL_COM_API_KEY>",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -292,7 +292,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\nconst secret = headers['x-webhook-secret'];\n\nif (secret !== 'REDACTED_WEBHOOK_SECRET') {\n  throw new Error('Unauthorized: Invalid webhook secret');\n}\n\nconst toolCall = body.message.toolCallList[0];\nconst toolCallId = toolCall.id;\nconst args = toolCall.function.arguments;\nconst callId = body.message.call.id;\n\nfunction sanitize(val, maxLen) {\n  if (val === null || val === undefined) return null;\n  const str = String(val);\n  const cleaned = str\n    .replace(/[<>\"']/g, '')\n    .replace(/;\\s*(drop|delete|insert|update|select|union)/gi, '')\n    .replace(/<script[^>]*>.*?<\\/script>/gi, '')\n    .substring(0, maxLen || 500);\n  return cleaned.trim() || null;\n}\n\nconst callIdClean = sanitize(callId, 255);\nif (!callIdClean) throw new Error('Missing required field: call_id');\n\nconst caller_name = sanitize(args.caller_name, 500);\nconst company = sanitize(args.company, 500);\nconst company_size = sanitize(args.company_size, 500);\nconst current_stack = sanitize(args.current_stack, 500);\nconst pain_point = sanitize(args.pain_point, 500);\nconst timeline = sanitize(args.timeline, 500);\nconst email = sanitize(args.email, 500);\nconst phone = sanitize(args.phone, 50);\n\nreturn [{ json: {\n  toolCallId,\n  call_id: callIdClean,\n  caller_name,\n  company,\n  company_size,\n  current_stack,\n  pain_point,\n  timeline,\n  email,\n  phone\n} }];"
+        "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\nconst secret = headers['x-webhook-secret'];\n\nif (secret !== '<WEBHOOK_SECRET>') {\n  throw new Error('Unauthorized: Invalid webhook secret');\n}\n\nconst toolCall = body.message.toolCallList[0];\nconst toolCallId = toolCall.id;\nconst args = toolCall.function.arguments;\nconst callId = body.message.call.id;\n\nfunction sanitize(val, maxLen) {\n  if (val === null || val === undefined) return null;\n  const str = String(val);\n  const cleaned = str\n    .replace(/[<>\"']/g, '')\n    .replace(/;\\s*(drop|delete|insert|update|select|union)/gi, '')\n    .replace(/<script[^>]*>.*?<\\/script>/gi, '')\n    .substring(0, maxLen || 500);\n  return cleaned.trim() || null;\n}\n\nconst callIdClean = sanitize(callId, 255);\nif (!callIdClean) throw new Error('Missing required field: call_id');\n\nconst caller_name = sanitize(args.caller_name, 500);\nconst company = sanitize(args.company, 500);\nconst company_size = sanitize(args.company_size, 500);\nconst current_stack = sanitize(args.current_stack, 500);\nconst pain_point = sanitize(args.pain_point, 500);\nconst timeline = sanitize(args.timeline, 500);\nconst email = sanitize(args.email, 500);\nconst phone = sanitize(args.phone, 50);\n\nreturn [{ json: {\n  toolCallId,\n  call_id: callIdClean,\n  caller_name,\n  company,\n  company_size,\n  current_stack,\n  pain_point,\n  timeline,\n  email,\n  phone\n} }];"
       },
       "id": "code-validate-lead",
       "name": "Validate Lead Input",
@@ -726,7 +726,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\nconst secret = headers['x-webhook-secret'];\n\nif (secret !== 'REDACTED_WEBHOOK_SECRET') {\n  throw new Error('Unauthorized: Invalid webhook secret');\n}\n\nconst toolCall = body.message.toolCallList[0];\nconst toolCallId = toolCall.id;\nconst args = toolCall.function.arguments;\nconst dateRange = args.date_range || 'naechste Woche';\n\nconst now = new Date();\nconst startTime = now.toISOString();\nconst endDate = new Date(now);\nendDate.setDate(endDate.getDate() + 7);\nconst endTime = endDate.toISOString();\n\nreturn [{ json: { toolCallId, dateRange, startTime, endTime } }];"
+          "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\nconst secret = headers['x-webhook-secret'];\n\nif (secret !== '<WEBHOOK_SECRET>') {\n  throw new Error('Unauthorized: Invalid webhook secret');\n}\n\nconst toolCall = body.message.toolCallList[0];\nconst toolCallId = toolCall.id;\nconst args = toolCall.function.arguments;\nconst dateRange = args.date_range || 'naechste Woche';\n\nconst now = new Date();\nconst startTime = now.toISOString();\nconst endDate = new Date(now);\nendDate.setDate(endDate.getDate() + 7);\nconst endTime = endDate.toISOString();\n\nreturn [{ json: { toolCallId, dateRange, startTime, endTime } }];"
         },
         "id": "code-extract-avail",
         "name": "Extract Availability Request",
@@ -749,7 +749,7 @@
             "parameters": [
               {
                 "name": "Authorization",
-                "value": "Bearer REDACTED_CAL_KEY"
+                "value": "Bearer <CAL_COM_API_KEY>"
               },
               {
                 "name": "cal-api-version",
@@ -846,7 +846,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\nconst secret = headers['x-webhook-secret'];\n\nif (secret !== 'REDACTED_WEBHOOK_SECRET') {\n  throw new Error('Unauthorized: Invalid webhook secret');\n}\n\nconst toolCall = body.message.toolCallList[0];\nconst toolCallId = toolCall.id;\nconst args = toolCall.function.arguments;\nconst callId = body.message.call.id;\n\nfunction sanitize(val, maxLen) {\n  if (!val) return '';\n  return String(val).replace(/[<>\"';]/g, '').replace(/&/g, 'und').substring(0, maxLen || 200);\n}\n\nconst datetime = sanitize(args.datetime, 200);\nconst name = sanitize(args.name, 200);\nconst email = sanitize(args.email, 200);\nconst company = sanitize(args.company, 200);\n\nif (!datetime || !name || !email) {\n  throw new Error('Missing required fields: datetime, name, email');\n}\n\n// Build Cal.com v1 booking payload as a JSON string\nconst calPayload = JSON.stringify({\n  eventTypeId: 4897150,\n  start: datetime,\n  responses: { name, email },\n  metadata: { company },\n  timeZone: 'Europe/Berlin',\n  language: 'de'\n});\n\nreturn [{ json: { toolCallId, callId, datetime, name, email, company, calPayload } }];"
+          "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\nconst secret = headers['x-webhook-secret'];\n\nif (secret !== '<WEBHOOK_SECRET>') {\n  throw new Error('Unauthorized: Invalid webhook secret');\n}\n\nconst toolCall = body.message.toolCallList[0];\nconst toolCallId = toolCall.id;\nconst args = toolCall.function.arguments;\nconst callId = body.message.call.id;\n\nfunction sanitize(val, maxLen) {\n  if (!val) return '';\n  return String(val).replace(/[<>\"';]/g, '').replace(/&/g, 'und').substring(0, maxLen || 200);\n}\n\nconst datetime = sanitize(args.datetime, 200);\nconst name = sanitize(args.name, 200);\nconst email = sanitize(args.email, 200);\nconst company = sanitize(args.company, 200);\n\nif (!datetime || !name || !email) {\n  throw new Error('Missing required fields: datetime, name, email');\n}\n\n// Build Cal.com v1 booking payload as a JSON string\nconst calPayload = JSON.stringify({\n  eventTypeId: 4897150,\n  start: datetime,\n  responses: { name, email },\n  metadata: { company },\n  timeZone: 'Europe/Berlin',\n  language: 'de'\n});\n\nreturn [{ json: { toolCallId, callId, datetime, name, email, company, calPayload } }];"
         },
         "id": "code-extract-booking",
         "name": "Extract Booking Request",
@@ -860,7 +860,7 @@
       {
         "parameters": {
           "method": "POST",
-          "url": "https://api.cal.com/v1/bookings?apiKey=REDACTED_CAL_KEY",
+          "url": "https://api.cal.com/v1/bookings?apiKey=<CAL_COM_API_KEY>",
           "sendHeaders": true,
           "headerParameters": {
             "parameters": [
@@ -992,7 +992,7 @@
       },
       {
         "parameters": {
-          "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\nconst secret = headers['x-webhook-secret'];\n\nif (secret !== 'REDACTED_WEBHOOK_SECRET') {\n  throw new Error('Unauthorized: Invalid webhook secret');\n}\n\nconst toolCall = body.message.toolCallList[0];\nconst toolCallId = toolCall.id;\nconst args = toolCall.function.arguments;\nconst callId = body.message.call.id;\n\nfunction sanitize(val, maxLen) {\n  if (val === null || val === undefined) return null;\n  const str = String(val);\n  const cleaned = str\n    .replace(/[<>\"']/g, '')\n    .replace(/;\\s*(drop|delete|insert|update|select|union)/gi, '')\n    .replace(/<script[^>]*>.*?<\\/script>/gi, '')\n    .substring(0, maxLen || 500);\n  return cleaned.trim() || null;\n}\n\nconst callIdClean = sanitize(callId, 255);\nif (!callIdClean) throw new Error('Missing required field: call_id');\n\nconst caller_name = sanitize(args.caller_name, 500);\nconst company = sanitize(args.company, 500);\nconst company_size = sanitize(args.company_size, 500);\nconst current_stack = sanitize(args.current_stack, 500);\nconst pain_point = sanitize(args.pain_point, 500);\nconst timeline = sanitize(args.timeline, 500);\nconst email = sanitize(args.email, 500);\nconst phone = sanitize(args.phone, 50);\n\nreturn [{ json: {\n  toolCallId,\n  call_id: callIdClean,\n  caller_name,\n  company,\n  company_size,\n  current_stack,\n  pain_point,\n  timeline,\n  email,\n  phone\n} }];"
+          "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\nconst secret = headers['x-webhook-secret'];\n\nif (secret !== '<WEBHOOK_SECRET>') {\n  throw new Error('Unauthorized: Invalid webhook secret');\n}\n\nconst toolCall = body.message.toolCallList[0];\nconst toolCallId = toolCall.id;\nconst args = toolCall.function.arguments;\nconst callId = body.message.call.id;\n\nfunction sanitize(val, maxLen) {\n  if (val === null || val === undefined) return null;\n  const str = String(val);\n  const cleaned = str\n    .replace(/[<>\"']/g, '')\n    .replace(/;\\s*(drop|delete|insert|update|select|union)/gi, '')\n    .replace(/<script[^>]*>.*?<\\/script>/gi, '')\n    .substring(0, maxLen || 500);\n  return cleaned.trim() || null;\n}\n\nconst callIdClean = sanitize(callId, 255);\nif (!callIdClean) throw new Error('Missing required field: call_id');\n\nconst caller_name = sanitize(args.caller_name, 500);\nconst company = sanitize(args.company, 500);\nconst company_size = sanitize(args.company_size, 500);\nconst current_stack = sanitize(args.current_stack, 500);\nconst pain_point = sanitize(args.pain_point, 500);\nconst timeline = sanitize(args.timeline, 500);\nconst email = sanitize(args.email, 500);\nconst phone = sanitize(args.phone, 50);\n\nreturn [{ json: {\n  toolCallId,\n  call_id: callIdClean,\n  caller_name,\n  company,\n  company_size,\n  current_stack,\n  pain_point,\n  timeline,\n  email,\n  phone\n} }];"
         },
         "id": "code-validate-lead",
         "name": "Validate Lead Input",

@@ -16,7 +16,7 @@ via Cal.com und speichert alles in Supabase. Ein Next.js Dashboard zeigt Live-KP
 | TTS | ElevenLabs | via Vapi |
 | Orchestrierung | n8n (self-hosted) | MCP (`n8n-mcp`) |
 | Datenbank | Supabase (PostgreSQL) | MCP (`supabase`) |
-| Kalender | Cal.com | REST API (Key: REDACTED_CAL_KEY) |
+| Kalender | Cal.com | REST API (Key in .agent-state.json) |
 | Dashboard | Next.js 15 + shadcn/ui + Recharts | Lokaler Code unter `dashboard/` |
 
 ## Projekt-Struktur

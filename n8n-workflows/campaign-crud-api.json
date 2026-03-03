@@ -34,7 +34,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\n// Auth check\nif (headers['x-webhook-secret'] !== 'REDACTED_WEBHOOK_SECRET') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst name = (body.name || '').trim();\nif (!name) {\n  return [{ json: { error: 'Name ist erforderlich', statusCode: 400 } }];\n}\n\nreturn [{ json: {\n  name: name.substring(0, 200),\n  description: (body.description || '').substring(0, 1000) || null,\n  status: 'draft',\n  start_date: body.start_date || null,\n  end_date: body.end_date || null,\n  calling_window_start: body.calling_window_start || '09:00',\n  calling_window_end: body.calling_window_end || '18:00',\n  calling_timezone: body.calling_timezone || 'Europe/Berlin',\n  calling_days: body.calling_days || [1,2,3,4,5],\n  cadence_config: body.cadence_config || { max_attempts: 5, intervals_minutes: [60,240,1440,4320,10080], voicemail_action: 'skip', leave_voicemail_after_attempt: 3 },\n  target_filter: body.target_filter || null,\n  system_prompt_override: body.system_prompt_override || null,\n  first_message_override: body.first_message_override || null,\n  statusCode: 0\n} }];"
+                "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\n// Auth check\nif (headers['x-webhook-secret'] !== '<WEBHOOK_SECRET>') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst name = (body.name || '').trim();\nif (!name) {\n  return [{ json: { error: 'Name ist erforderlich', statusCode: 400 } }];\n}\n\nreturn [{ json: {\n  name: name.substring(0, 200),\n  description: (body.description || '').substring(0, 1000) || null,\n  status: 'draft',\n  start_date: body.start_date || null,\n  end_date: body.end_date || null,\n  calling_window_start: body.calling_window_start || '09:00',\n  calling_window_end: body.calling_window_end || '18:00',\n  calling_timezone: body.calling_timezone || 'Europe/Berlin',\n  calling_days: body.calling_days || [1,2,3,4,5],\n  cadence_config: body.cadence_config || { max_attempts: 5, intervals_minutes: [60,240,1440,4320,10080], voicemail_action: 'skip', leave_voicemail_after_attempt: 3 },\n  target_filter: body.target_filter || null,\n  system_prompt_override: body.system_prompt_override || null,\n  first_message_override: body.first_message_override || null,\n  statusCode: 0\n} }];"
             },
             "id": "code-validate-create",
             "name": "Validate Create",
@@ -87,11 +87,11 @@
                     "parameters": [
                         {
                             "name": "apikey",
-                            "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                            "value": "<SUPABASE_SERVICE_ROLE_KEY>"
                         },
                         {
                             "name": "Authorization",
-                            "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                            "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
                         },
                         {
                             "name": "Content-Type",
@@ -170,7 +170,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== 'REDACTED_WEBHOOK_SECRET') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst id = (body.id || '').trim();\nif (!id) {\n  return [{ json: { error: 'Campaign ID ist erforderlich', statusCode: 400 } }];\n}\n\n// Build update object with only provided fields\nconst update = {};\nif (body.name !== undefined) update.name = String(body.name).substring(0, 200);\nif (body.description !== undefined) update.description = String(body.description).substring(0, 1000);\nif (body.start_date !== undefined) update.start_date = body.start_date;\nif (body.end_date !== undefined) update.end_date = body.end_date;\nif (body.calling_window_start !== undefined) update.calling_window_start = body.calling_window_start;\nif (body.calling_window_end !== undefined) update.calling_window_end = body.calling_window_end;\nif (body.calling_timezone !== undefined) update.calling_timezone = body.calling_timezone;\nif (body.calling_days !== undefined) update.calling_days = body.calling_days;\nif (body.cadence_config !== undefined) update.cadence_config = body.cadence_config;\nif (body.target_filter !== undefined) update.target_filter = body.target_filter;\nif (body.system_prompt_override !== undefined) update.system_prompt_override = body.system_prompt_override;\nif (body.first_message_override !== undefined) update.first_message_override = body.first_message_override;\n\nreturn [{ json: { id, update: JSON.stringify(update), statusCode: 0 } }];"
+                "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== '<WEBHOOK_SECRET>') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst id = (body.id || '').trim();\nif (!id) {\n  return [{ json: { error: 'Campaign ID ist erforderlich', statusCode: 400 } }];\n}\n\n// Build update object with only provided fields\nconst update = {};\nif (body.name !== undefined) update.name = String(body.name).substring(0, 200);\nif (body.description !== undefined) update.description = String(body.description).substring(0, 1000);\nif (body.start_date !== undefined) update.start_date = body.start_date;\nif (body.end_date !== undefined) update.end_date = body.end_date;\nif (body.calling_window_start !== undefined) update.calling_window_start = body.calling_window_start;\nif (body.calling_window_end !== undefined) update.calling_window_end = body.calling_window_end;\nif (body.calling_timezone !== undefined) update.calling_timezone = body.calling_timezone;\nif (body.calling_days !== undefined) update.calling_days = body.calling_days;\nif (body.cadence_config !== undefined) update.cadence_config = body.cadence_config;\nif (body.target_filter !== undefined) update.target_filter = body.target_filter;\nif (body.system_prompt_override !== undefined) update.system_prompt_override = body.system_prompt_override;\nif (body.first_message_override !== undefined) update.first_message_override = body.first_message_override;\n\nreturn [{ json: { id, update: JSON.stringify(update), statusCode: 0 } }];"
             },
             "id": "code-validate-update",
             "name": "Validate Update",
@@ -223,11 +223,11 @@
                     "parameters": [
                         {
                             "name": "apikey",
-                            "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                            "value": "<SUPABASE_SERVICE_ROLE_KEY>"
                         },
                         {
                             "name": "Authorization",
-                            "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                            "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
                         },
                         {
                             "name": "Content-Type",
@@ -306,7 +306,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== 'REDACTED_WEBHOOK_SECRET') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst id = (body.id || '').trim();\nif (!id) {\n  return [{ json: { error: 'Campaign ID ist erforderlich', statusCode: 400 } }];\n}\n\nreturn [{ json: { id, statusCode: 0 } }];"
+                "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== '<WEBHOOK_SECRET>') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst id = (body.id || '').trim();\nif (!id) {\n  return [{ json: { error: 'Campaign ID ist erforderlich', statusCode: 400 } }];\n}\n\nreturn [{ json: { id, statusCode: 0 } }];"
             },
             "id": "code-validate-pause",
             "name": "Validate Pause",
@@ -359,11 +359,11 @@
                     "parameters": [
                         {
                             "name": "apikey",
-                            "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                            "value": "<SUPABASE_SERVICE_ROLE_KEY>"
                         },
                         {
                             "name": "Authorization",
-                            "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                            "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
                         },
                         {
                             "name": "Content-Type",
@@ -442,7 +442,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== 'REDACTED_WEBHOOK_SECRET') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst id = (body.id || '').trim();\nif (!id) {\n  return [{ json: { error: 'Campaign ID ist erforderlich', statusCode: 400 } }];\n}\n\nreturn [{ json: { id, statusCode: 0 } }];"
+                "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== '<WEBHOOK_SECRET>') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst id = (body.id || '').trim();\nif (!id) {\n  return [{ json: { error: 'Campaign ID ist erforderlich', statusCode: 400 } }];\n}\n\nreturn [{ json: { id, statusCode: 0 } }];"
             },
             "id": "code-validate-activate",
             "name": "Validate Activate",
@@ -495,11 +495,11 @@
                     "parameters": [
                         {
                             "name": "apikey",
-                            "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                            "value": "<SUPABASE_SERVICE_ROLE_KEY>"
                         },
                         {
                             "name": "Authorization",
-                            "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                            "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
                         },
                         {
                             "name": "Content-Type",
@@ -578,7 +578,7 @@
         },
         {
             "parameters": {
-                "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== 'REDACTED_WEBHOOK_SECRET') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst campaignId = (body.campaign_id || '').trim();\nconst leadIds = body.lead_ids;\n\nif (!campaignId) {\n  return [{ json: { error: 'campaign_id ist erforderlich', statusCode: 400 } }];\n}\n\nif (!Array.isArray(leadIds) || leadIds.length === 0) {\n  return [{ json: { error: 'lead_ids Array ist erforderlich', statusCode: 400 } }];\n}\n\nif (leadIds.length > 500) {\n  return [{ json: { error: 'Maximal 500 Leads pro Request', statusCode: 400 } }];\n}\n\nreturn [{ json: { campaignId, leadIds, statusCode: 0 } }];"
+                "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== '<WEBHOOK_SECRET>') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst campaignId = (body.campaign_id || '').trim();\nconst leadIds = body.lead_ids;\n\nif (!campaignId) {\n  return [{ json: { error: 'campaign_id ist erforderlich', statusCode: 400 } }];\n}\n\nif (!Array.isArray(leadIds) || leadIds.length === 0) {\n  return [{ json: { error: 'lead_ids Array ist erforderlich', statusCode: 400 } }];\n}\n\nif (leadIds.length > 500) {\n  return [{ json: { error: 'Maximal 500 Leads pro Request', statusCode: 400 } }];\n}\n\nreturn [{ json: { campaignId, leadIds, statusCode: 0 } }];"
             },
             "id": "code-validate-add-leads",
             "name": "Validate Add Leads",
@@ -644,11 +644,11 @@
                     "parameters": [
                         {
                             "name": "apikey",
-                            "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                            "value": "<SUPABASE_SERVICE_ROLE_KEY>"
                         },
                         {
                             "name": "Authorization",
-                            "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                            "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
                         },
                         {
                             "name": "Content-Type",
@@ -1068,7 +1068,7 @@
             },
             {
                 "parameters": {
-                    "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\n// Auth check\nif (headers['x-webhook-secret'] !== 'REDACTED_WEBHOOK_SECRET') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst name = (body.name || '').trim();\nif (!name) {\n  return [{ json: { error: 'Name ist erforderlich', statusCode: 400 } }];\n}\n\nreturn [{ json: {\n  name: name.substring(0, 200),\n  description: (body.description || '').substring(0, 1000) || null,\n  status: 'draft',\n  start_date: body.start_date || null,\n  end_date: body.end_date || null,\n  calling_window_start: body.calling_window_start || '09:00',\n  calling_window_end: body.calling_window_end || '18:00',\n  calling_timezone: body.calling_timezone || 'Europe/Berlin',\n  calling_days: body.calling_days || [1,2,3,4,5],\n  cadence_config: body.cadence_config || { max_attempts: 5, intervals_minutes: [60,240,1440,4320,10080], voicemail_action: 'skip', leave_voicemail_after_attempt: 3 },\n  target_filter: body.target_filter || null,\n  system_prompt_override: body.system_prompt_override || null,\n  first_message_override: body.first_message_override || null,\n  statusCode: 0\n} }];"
+                    "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\n// Auth check\nif (headers['x-webhook-secret'] !== '<WEBHOOK_SECRET>') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst name = (body.name || '').trim();\nif (!name) {\n  return [{ json: { error: 'Name ist erforderlich', statusCode: 400 } }];\n}\n\nreturn [{ json: {\n  name: name.substring(0, 200),\n  description: (body.description || '').substring(0, 1000) || null,\n  status: 'draft',\n  start_date: body.start_date || null,\n  end_date: body.end_date || null,\n  calling_window_start: body.calling_window_start || '09:00',\n  calling_window_end: body.calling_window_end || '18:00',\n  calling_timezone: body.calling_timezone || 'Europe/Berlin',\n  calling_days: body.calling_days || [1,2,3,4,5],\n  cadence_config: body.cadence_config || { max_attempts: 5, intervals_minutes: [60,240,1440,4320,10080], voicemail_action: 'skip', leave_voicemail_after_attempt: 3 },\n  target_filter: body.target_filter || null,\n  system_prompt_override: body.system_prompt_override || null,\n  first_message_override: body.first_message_override || null,\n  statusCode: 0\n} }];"
                 },
                 "id": "code-validate-create",
                 "name": "Validate Create",
@@ -1121,11 +1121,11 @@
                         "parameters": [
                             {
                                 "name": "apikey",
-                                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                                "value": "<SUPABASE_SERVICE_ROLE_KEY>"
                             },
                             {
                                 "name": "Authorization",
-                                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                                "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
                             },
                             {
                                 "name": "Content-Type",
@@ -1204,7 +1204,7 @@
             },
             {
                 "parameters": {
-                    "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== 'REDACTED_WEBHOOK_SECRET') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst id = (body.id || '').trim();\nif (!id) {\n  return [{ json: { error: 'Campaign ID ist erforderlich', statusCode: 400 } }];\n}\n\n// Build update object with only provided fields\nconst update = {};\nif (body.name !== undefined) update.name = String(body.name).substring(0, 200);\nif (body.description !== undefined) update.description = String(body.description).substring(0, 1000);\nif (body.start_date !== undefined) update.start_date = body.start_date;\nif (body.end_date !== undefined) update.end_date = body.end_date;\nif (body.calling_window_start !== undefined) update.calling_window_start = body.calling_window_start;\nif (body.calling_window_end !== undefined) update.calling_window_end = body.calling_window_end;\nif (body.calling_timezone !== undefined) update.calling_timezone = body.calling_timezone;\nif (body.calling_days !== undefined) update.calling_days = body.calling_days;\nif (body.cadence_config !== undefined) update.cadence_config = body.cadence_config;\nif (body.target_filter !== undefined) update.target_filter = body.target_filter;\nif (body.system_prompt_override !== undefined) update.system_prompt_override = body.system_prompt_override;\nif (body.first_message_override !== undefined) update.first_message_override = body.first_message_override;\n\nreturn [{ json: { id, update: JSON.stringify(update), statusCode: 0 } }];"
+                    "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== '<WEBHOOK_SECRET>') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst id = (body.id || '').trim();\nif (!id) {\n  return [{ json: { error: 'Campaign ID ist erforderlich', statusCode: 400 } }];\n}\n\n// Build update object with only provided fields\nconst update = {};\nif (body.name !== undefined) update.name = String(body.name).substring(0, 200);\nif (body.description !== undefined) update.description = String(body.description).substring(0, 1000);\nif (body.start_date !== undefined) update.start_date = body.start_date;\nif (body.end_date !== undefined) update.end_date = body.end_date;\nif (body.calling_window_start !== undefined) update.calling_window_start = body.calling_window_start;\nif (body.calling_window_end !== undefined) update.calling_window_end = body.calling_window_end;\nif (body.calling_timezone !== undefined) update.calling_timezone = body.calling_timezone;\nif (body.calling_days !== undefined) update.calling_days = body.calling_days;\nif (body.cadence_config !== undefined) update.cadence_config = body.cadence_config;\nif (body.target_filter !== undefined) update.target_filter = body.target_filter;\nif (body.system_prompt_override !== undefined) update.system_prompt_override = body.system_prompt_override;\nif (body.first_message_override !== undefined) update.first_message_override = body.first_message_override;\n\nreturn [{ json: { id, update: JSON.stringify(update), statusCode: 0 } }];"
                 },
                 "id": "code-validate-update",
                 "name": "Validate Update",
@@ -1257,11 +1257,11 @@
                         "parameters": [
                             {
                                 "name": "apikey",
-                                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                                "value": "<SUPABASE_SERVICE_ROLE_KEY>"
                             },
                             {
                                 "name": "Authorization",
-                                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                                "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
                             },
                             {
                                 "name": "Content-Type",
@@ -1340,7 +1340,7 @@
             },
             {
                 "parameters": {
-                    "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== 'REDACTED_WEBHOOK_SECRET') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst id = (body.id || '').trim();\nif (!id) {\n  return [{ json: { error: 'Campaign ID ist erforderlich', statusCode: 400 } }];\n}\n\nreturn [{ json: { id, statusCode: 0 } }];"
+                    "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== '<WEBHOOK_SECRET>') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst id = (body.id || '').trim();\nif (!id) {\n  return [{ json: { error: 'Campaign ID ist erforderlich', statusCode: 400 } }];\n}\n\nreturn [{ json: { id, statusCode: 0 } }];"
                 },
                 "id": "code-validate-pause",
                 "name": "Validate Pause",
@@ -1393,11 +1393,11 @@
                         "parameters": [
                             {
                                 "name": "apikey",
-                                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                                "value": "<SUPABASE_SERVICE_ROLE_KEY>"
                             },
                             {
                                 "name": "Authorization",
-                                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                                "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
                             },
                             {
                                 "name": "Content-Type",
@@ -1476,7 +1476,7 @@
             },
             {
                 "parameters": {
-                    "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== 'REDACTED_WEBHOOK_SECRET') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst id = (body.id || '').trim();\nif (!id) {\n  return [{ json: { error: 'Campaign ID ist erforderlich', statusCode: 400 } }];\n}\n\nreturn [{ json: { id, statusCode: 0 } }];"
+                    "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== '<WEBHOOK_SECRET>') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst id = (body.id || '').trim();\nif (!id) {\n  return [{ json: { error: 'Campaign ID ist erforderlich', statusCode: 400 } }];\n}\n\nreturn [{ json: { id, statusCode: 0 } }];"
                 },
                 "id": "code-validate-activate",
                 "name": "Validate Activate",
@@ -1529,11 +1529,11 @@
                         "parameters": [
                             {
                                 "name": "apikey",
-                                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                                "value": "<SUPABASE_SERVICE_ROLE_KEY>"
                             },
                             {
                                 "name": "Authorization",
-                                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                                "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
                             },
                             {
                                 "name": "Content-Type",
@@ -1612,7 +1612,7 @@
             },
             {
                 "parameters": {
-                    "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== 'REDACTED_WEBHOOK_SECRET') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst campaignId = (body.campaign_id || '').trim();\nconst leadIds = body.lead_ids;\n\nif (!campaignId) {\n  return [{ json: { error: 'campaign_id ist erforderlich', statusCode: 400 } }];\n}\n\nif (!Array.isArray(leadIds) || leadIds.length === 0) {\n  return [{ json: { error: 'lead_ids Array ist erforderlich', statusCode: 400 } }];\n}\n\nif (leadIds.length > 500) {\n  return [{ json: { error: 'Maximal 500 Leads pro Request', statusCode: 400 } }];\n}\n\nreturn [{ json: { campaignId, leadIds, statusCode: 0 } }];"
+                    "jsCode": "const body = $input.first().json.body;\nconst headers = $input.first().json.headers;\n\nif (headers['x-webhook-secret'] !== '<WEBHOOK_SECRET>') {\n  return [{ json: { error: 'Unauthorized', statusCode: 401 } }];\n}\n\nconst campaignId = (body.campaign_id || '').trim();\nconst leadIds = body.lead_ids;\n\nif (!campaignId) {\n  return [{ json: { error: 'campaign_id ist erforderlich', statusCode: 400 } }];\n}\n\nif (!Array.isArray(leadIds) || leadIds.length === 0) {\n  return [{ json: { error: 'lead_ids Array ist erforderlich', statusCode: 400 } }];\n}\n\nif (leadIds.length > 500) {\n  return [{ json: { error: 'Maximal 500 Leads pro Request', statusCode: 400 } }];\n}\n\nreturn [{ json: { campaignId, leadIds, statusCode: 0 } }];"
                 },
                 "id": "code-validate-add-leads",
                 "name": "Validate Add Leads",
@@ -1678,11 +1678,11 @@
                         "parameters": [
                             {
                                 "name": "apikey",
-                                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                                "value": "<SUPABASE_SERVICE_ROLE_KEY>"
                             },
                             {
                                 "name": "Authorization",
-                                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                                "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
                             },
                             {
                                 "name": "Content-Type",

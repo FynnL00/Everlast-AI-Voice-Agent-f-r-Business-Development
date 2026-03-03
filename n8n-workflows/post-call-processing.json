@@ -195,11 +195,11 @@
           "parameters": [
             {
               "name": "apikey",
-              "value": "REDACTED_SUPABASE_SERVICE_KEY"
+              "value": "<SUPABASE_SERVICE_ROLE_KEY>"
             },
             {
               "name": "Authorization",
-              "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+              "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
             }
           ]
         },
@@ -237,11 +237,11 @@
           "parameters": [
             {
               "name": "apikey",
-              "value": "REDACTED_SUPABASE_SERVICE_KEY"
+              "value": "<SUPABASE_SERVICE_ROLE_KEY>"
             },
             {
               "name": "Authorization",
-              "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+              "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
             },
             {
               "name": "Content-Type",
@@ -442,11 +442,11 @@
           "parameters": [
             {
               "name": "apikey",
-              "value": "REDACTED_SUPABASE_SERVICE_KEY"
+              "value": "<SUPABASE_SERVICE_ROLE_KEY>"
             },
             {
               "name": "Authorization",
-              "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+              "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
             }
           ]
         },
@@ -471,11 +471,11 @@
           "parameters": [
             {
               "name": "apikey",
-              "value": "REDACTED_SUPABASE_SERVICE_KEY"
+              "value": "<SUPABASE_SERVICE_ROLE_KEY>"
             },
             {
               "name": "Authorization",
-              "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+              "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
             },
             {
               "name": "Content-Type",
@@ -990,11 +990,11 @@
             "parameters": [
               {
                 "name": "apikey",
-                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                "value": "<SUPABASE_SERVICE_ROLE_KEY>"
               },
               {
                 "name": "Authorization",
-                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
               }
             ]
           },
@@ -1032,11 +1032,11 @@
             "parameters": [
               {
                 "name": "apikey",
-                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                "value": "<SUPABASE_SERVICE_ROLE_KEY>"
               },
               {
                 "name": "Authorization",
-                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
               },
               {
                 "name": "Content-Type",
@@ -1237,11 +1237,11 @@
             "parameters": [
               {
                 "name": "apikey",
-                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                "value": "<SUPABASE_SERVICE_ROLE_KEY>"
               },
               {
                 "name": "Authorization",
-                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
               }
             ]
           },
@@ -1266,11 +1266,11 @@
             "parameters": [
               {
                 "name": "apikey",
-                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                "value": "<SUPABASE_SERVICE_ROLE_KEY>"
               },
               {
                 "name": "Authorization",
-                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                "value": "Bearer <SUPABASE_SERVICE_ROLE_KEY>"
               },
               {
                 "name": "Content-Type",
