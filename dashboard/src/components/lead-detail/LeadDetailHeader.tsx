@@ -46,7 +46,7 @@ export default function LeadDetailHeader({ lead }: LeadDetailHeaderProps) {
       {/* Metadata row — each item has an icon or label for context */}
       <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground font-medium mt-3">
         <div className="flex items-center h-8 bg-sidebar-accent/50 px-2.5 rounded-md border border-border">
-          <StatusBadge status={lead.status} outboundState={lead.outbound_state} />
+          <StatusBadge status={lead.status} />
         </div>
         <div className="flex items-center gap-1.5 h-8 bg-sidebar-accent/50 px-2.5 rounded-md border border-border">
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70">Stimmung</span>

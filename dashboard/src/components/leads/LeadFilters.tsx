@@ -110,7 +110,6 @@ export default function LeadFilters({ filters, onChange, open, className }: Lead
     onChange({
       grades: filters.grades, // Keep grades (they're in the toolbar)
       statuses: [],
-      outboundStates: [],
       sentiments: [],
       appointmentBooked: null,
       assignedTo: null,

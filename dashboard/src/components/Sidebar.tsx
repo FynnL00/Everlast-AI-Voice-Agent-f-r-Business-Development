@@ -65,7 +65,7 @@ export default function Sidebar({ isLive = false, isMockMode = false, onToggleMo
         label: "ANALYSE",
         items: [
           { href: "/sentiment", label: "Sentiment", icon: Heart },
-          { href: "/objections", label: "Gesprächshürden", icon: ShieldAlert },
+          { href: "/objections", label: "Einwände", icon: ShieldAlert },
         ],
       },
       {

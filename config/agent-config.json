@@ -4,7 +4,7 @@
     "role": "SDR",
     "company": "n8n",
     "language": "de-DE",
-    "first_message": "Hallo, hier ist Lisa von n8n, schönen guten Tag!",
+    "first_message": "Hallo, hier ist Lisa von n8n, schönen guten Tag! Kurzer Hinweis vorab: Dieses Gespräch wird zur Qualitätssicherung aufgezeichnet. Was kann ich für Sie tun?",
     "voice": {
       "provider": "elevenlabs",
       "voice_id": "NkMe1eztMQReztnhYfeX",
@@ -27,13 +27,13 @@
     "language": "de"
   },
   "qualification": {
-    "min_score_for_booking": 7,
-    "criteria": ["company_size", "tech_stack", "pain_point", "timeline"],
+    "min_score_for_booking": 9,
+    "criteria": ["company_size", "tech_stack", "pain_point", "timeline", "budget"],
     "max_objection_handling": 2,
     "scoring": {
-      "A": { "min": 10, "max": 12, "label": "Hot Lead" },
-      "B": { "min": 7, "max": 9, "label": "Warm Lead" },
-      "C": { "min": 4, "max": 6, "label": "Cold Lead" }
+      "A": { "min": 13, "max": 15, "label": "Hot Lead" },
+      "B": { "min": 9, "max": 12, "label": "Warm Lead" },
+      "C": { "min": 5, "max": 8, "label": "Cold Lead" }
     }
   },
   "calendar": {

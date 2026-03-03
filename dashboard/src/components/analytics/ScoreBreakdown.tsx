@@ -28,6 +28,7 @@ const DIMENSION_LABELS: Record<string, string> = {
   tech_stack: "Tech-Stack",
   pain_point: "Pain Point",
   timeline: "Zeitrahmen",
+  budget: "Budget",
 };
 
 function CustomTooltip({
@@ -54,6 +55,7 @@ export default function ScoreBreakdown({ leads }: ScoreBreakdownProps) {
       { key: "score_tech_stack" as const, label: DIMENSION_LABELS.tech_stack },
       { key: "score_pain_point" as const, label: DIMENSION_LABELS.pain_point },
       { key: "score_timeline" as const, label: DIMENSION_LABELS.timeline },
+      { key: "score_budget" as const, label: DIMENSION_LABELS.budget },
     ];
 
     return dimensions.map(({ key, label }) => {

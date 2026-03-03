@@ -5,11 +5,8 @@ import { useParams } from "next/navigation";
 import { UserX, FileText, Quote, StickyNote, ClipboardList } from "lucide-react";
 import { useLeads } from "@/lib/leads-context";
 import { useCampaigns } from "@/lib/campaigns-context";
-import type { Lead, LeadUpdatePayload, LeadQuote, CallAttempt, ScoringDimension } from "@/lib/types";
-import { SCORING_DIMENSION_LABELS, SCORING_DIMENSION_COLORS, SCORING_DIMENSION_ORDER } from "@/lib/types";
+import type { Lead, LeadUpdatePayload, LeadQuote, CallAttempt } from "@/lib/types";
 import EmptyState from "@/components/ui/EmptyState";
-import { Badge } from "@/components/ui/Badge";
-import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import LeadDetailHeader from "@/components/lead-detail/LeadDetailHeader";
 import ContactCard from "@/components/lead-detail/ContactCard";
@@ -22,7 +19,7 @@ import BriefingCard from "@/components/lead-detail/BriefingCard";
 import AppointmentAssignmentCard from "@/components/lead-detail/AppointmentAssignmentCard";
 import RecentCallAttemptsCard from "@/components/lead-detail/RecentCallAttemptsCard";
 import FollowUpCadenceTimeline from "@/components/lead-detail/FollowUpCadenceTimeline";
-import QuoteCard from "@/components/quotes/QuoteCard";
+import QuotesAccordion from "@/components/quotes/QuotesAccordion";
 import { computeCadenceSteps, isEarlyStage, DEFAULT_MAX_ATTEMPTS } from "@/lib/cadence-utils";
 
 export default function LeadDetailPage() {
@@ -305,43 +302,7 @@ export default function LeadDetailPage() {
               description="Für diesen Lead wurden noch keine Zitate extrahiert."
             />
           ) : (
-            <div className="space-y-6">
-              {(() => {
-                const grouped = quotes.reduce<Record<string, LeadQuote[]>>((acc, q) => {
-                  const dim = q.scoring_dimension || "general";
-                  if (!acc[dim]) acc[dim] = [];
-                  acc[dim].push(q);
-                  return acc;
-                }, {});
-
-                return SCORING_DIMENSION_ORDER
-                  .filter((dim) => grouped[dim]?.length)
-                  .map((dim) => (
-                    <div key={dim}>
-                      <div className="flex items-center gap-2 mb-3">
-                        <Badge
-                          variant="outline"
-                          className={cn(
-                            "text-xs font-semibold",
-                            SCORING_DIMENSION_COLORS[dim]
-                          )}
-                        >
-                          {SCORING_DIMENSION_LABELS[dim]}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground/60">
-                          {grouped[dim].length}{" "}
-                          {grouped[dim].length === 1 ? "Zitat" : "Zitate"}
-                        </span>
-                      </div>
-                      <div className="space-y-3">
-                        {grouped[dim].map((quote) => (
-                          <QuoteCard key={quote.id} quote={quote} />
-                        ))}
-                      </div>
-                    </div>
-                  ));
-              })()}
-            </div>
+            <QuotesAccordion quotes={quotes} />
           )}
         </TabsContent>
 

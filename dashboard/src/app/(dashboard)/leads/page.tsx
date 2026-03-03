@@ -10,7 +10,7 @@ import LeadFilters from "@/components/leads/LeadFilters";
 import EnhancedLeadTable from "@/components/leads/EnhancedLeadTable";
 import Pagination from "@/components/leads/Pagination";
 import ImportLeadsDialog from "@/components/leads/ImportLeadsDialog";
-import { Users, Download, Upload, SlidersHorizontal, X, PhoneOutgoing, PhoneCall, Voicemail, CalendarCheck } from "lucide-react";
+import { Users, Download, Upload, SlidersHorizontal, X, PhoneCall, Voicemail, CalendarCheck } from "lucide-react";
 import { KPICard } from "@/components/ui/KPICard";
 import { cn } from "@/lib/utils";
 import { exportLeadsCSV } from "@/lib/export";
@@ -115,19 +115,21 @@ export default function LeadsPage() {
   }, [filters]);
 
   const { attempts, connectionRate, voicemailRate, demoBookingRate } = useMemo(() => {
-    const outbound = filteredLeads.filter(l => l.call_direction === 'outbound');
-    const attempts = outbound.reduce((sum, l) => sum + (l.call_attempts || 0), 0);
+    const attempts = filteredLeads.reduce((sum, l) => {
+      const a = l.call_attempts || 0;
+      return sum + (a > 0 ? a : 1);
+    }, 0);
 
     const connectedCodes = ['connected', 'callback'];
-    const connected = outbound.filter(l =>
+    const connected = filteredLeads.filter(l =>
       l.disposition_code && connectedCodes.includes(l.disposition_code)
     ).length;
     const connectionRate = attempts > 0 ? Math.round((connected / attempts) * 100) : 0;
 
-    const voicemails = outbound.filter(l => l.disposition_code === 'voicemail').length;
+    const voicemails = filteredLeads.filter(l => l.disposition_code === 'voicemail').length;
     const voicemailRate = attempts > 0 ? Math.round((voicemails / attempts) * 100) : 0;
 
-    const demosBooked = outbound.filter(l => l.appointment_booked).length;
+    const demosBooked = filteredLeads.filter(l => l.appointment_booked).length;
     const demoBookingRate = connected > 0 ? Math.round((demosBooked / connected) * 100) : 0;
 
     return { attempts, connectionRate, voicemailRate, demoBookingRate };
@@ -152,13 +154,13 @@ export default function LeadsPage() {
       <div className="glass p-6 rounded-2xl w-full transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <KPICard
-            label="Anrufversuche"
+            label="Gespräche"
             numericValue={attempts}
             suffix=""
-            icon={PhoneOutgoing}
+            icon={PhoneCall}
             colorClass="text-purple-400"
             bgClass="bg-purple-500/10"
-            tooltip="Gesamtanzahl aller Outbound-Anrufversuche der gefilterten Leads."
+            tooltip="Gesamtanzahl aller Gespräche der gefilterten Leads."
           />
           <KPICard
             label="Conversion Rate"

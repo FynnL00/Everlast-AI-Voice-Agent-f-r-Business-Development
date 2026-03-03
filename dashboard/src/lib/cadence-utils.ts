@@ -1,4 +1,4 @@
-import type { Lead, CallAttempt, CadenceConfig, DispositionCode, OutboundState } from "./types";
+import type { Lead, CallAttempt, CadenceConfig, DispositionCode } from "./types";
 
 // --- Sales Psychology Cadence ---
 // Day offsets based on proven B2B cold calling patterns:
@@ -83,7 +83,7 @@ export function computeCadenceSteps(
       ? new Date(sorted[0].created_at)
       : new Date(lead.created_at);
 
-  const isExhausted = lead.outbound_state === "exhausted";
+  const isExhausted = lead.status === "lost";
   const completedCount = sorted.length;
 
   const steps: CadenceStep[] = [];
@@ -151,16 +151,8 @@ export function computeCadenceSteps(
   return steps;
 }
 
-const EARLY_STATUSES: Lead["status"][] = ["new", "contacted"];
-const EARLY_OUTBOUND_STATES: OutboundState[] = [
-  "attempting",
-  "not_reached",
-];
+const EARLY_STATUSES: Lead["status"][] = ["new", "not_reached", "contacted"];
 
 export function isEarlyStage(lead: Lead): boolean {
-  return (
-    EARLY_STATUSES.includes(lead.status) ||
-    (lead.outbound_state !== null &&
-      EARLY_OUTBOUND_STATES.includes(lead.outbound_state))
-  );
+  return EARLY_STATUSES.includes(lead.status);
 }

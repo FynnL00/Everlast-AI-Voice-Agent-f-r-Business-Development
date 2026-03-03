@@ -13,7 +13,6 @@ const ALLOWED_FIELDS = new Set([
   "pain_point",
   "timeline",
   "status",
-  "outbound_state",
   "notes",
   "next_steps",
   "assigned_to",
@@ -28,18 +27,12 @@ const ALLOWED_FIELDS = new Set([
 
 const VALID_STATUSES = new Set([
   "new",
+  "not_reached",
   "contacted",
   "qualified",
   "appointment_booked",
   "converted",
   "lost",
-]);
-
-const VALID_OUTBOUND_STATES = new Set([
-  "attempting",
-  "not_reached",
-  "callback_scheduled",
-  "exhausted",
 ]);
 
 function sanitize(value: unknown): string {
@@ -81,7 +74,6 @@ export async function PATCH(
   for (const [key, value] of Object.entries(body)) {
     if (!ALLOWED_FIELDS.has(key)) continue;
     if (key === "status" && !VALID_STATUSES.has(value as string)) continue;
-    if (key === "outbound_state" && value !== null && !VALID_OUTBOUND_STATES.has(value as string)) continue;
     if (key === "next_steps" && Array.isArray(value)) {
       updates[key] = value.map((v) => sanitize(v)).filter(Boolean);
     } else {

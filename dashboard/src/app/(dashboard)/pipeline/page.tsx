@@ -17,17 +17,19 @@ export default function PipelinePage() {
   const { filteredLeads, loading } = useLeads();
 
   const kpis = useMemo(() => {
-    const outbound = filteredLeads.filter((l) => l.call_direction === "outbound");
-    const attempts = outbound.reduce((sum, l) => sum + (l.call_attempts || 0), 0);
-    const connected = outbound.filter(
+    const attempts = filteredLeads.reduce((sum, l) => {
+      const a = l.call_attempts || 0;
+      return sum + (a > 0 ? a : 1);
+    }, 0);
+    const connected = filteredLeads.filter(
       (l) => l.disposition_code && ["connected", "callback"].includes(l.disposition_code)
     ).length;
     const connectionRate = attempts > 0 ? Math.round((connected / attempts) * 100) : 0;
 
-    const demosBooked = outbound.filter((l) => l.appointment_booked).length;
+    const demosBooked = filteredLeads.filter((l) => l.appointment_booked).length;
     const demoRate = connected > 0 ? Math.round((demosBooked / connected) * 100) : 0;
 
-    const leadsWithAttempts = outbound.filter((l) => l.call_attempts > 0);
+    const leadsWithAttempts = filteredLeads.filter((l) => (l.call_attempts || 0) > 0);
     const avgAttempts = leadsWithAttempts.length > 0
       ? Math.round(
           (leadsWithAttempts.reduce((sum, l) => sum + l.call_attempts, 0) / leadsWithAttempts.length) * 10

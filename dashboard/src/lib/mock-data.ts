@@ -214,7 +214,7 @@ function weightedPick(rng: () => number, items: { code: DispositionCode; weight:
 // ---------- Grade-aware lead generation ----------
 interface GradeSpec {
   grade: "A" | "B" | "C";
-  scoreRanges: [number, number][]; // [min, max] for each of the 4 scoring dimensions
+  scoreRanges: [number, number][]; // [min, max] for each of the 5 scoring dimensions
   sentimentWeights: { positiv: number; neutral: number; negativ: number };
   appointmentChance: number;
   summaries: readonly string[];
@@ -223,21 +223,21 @@ interface GradeSpec {
 const GRADE_SPECS: GradeSpec[] = [
   {
     grade: "A",
-    scoreRanges: [[2, 3], [2, 3], [3, 3], [2, 3]],
+    scoreRanges: [[2, 3], [2, 3], [3, 3], [2, 3], [2, 3]],
     sentimentWeights: { positiv: 70, neutral: 25, negativ: 5 },
     appointmentChance: 0.8,
     summaries: SUMMARIES_A,
   },
   {
     grade: "B",
-    scoreRanges: [[1, 3], [1, 3], [2, 3], [1, 2]],
+    scoreRanges: [[1, 3], [1, 3], [2, 3], [1, 2], [1, 3]],
     sentimentWeights: { positiv: 30, neutral: 50, negativ: 20 },
     appointmentChance: 0.3,
     summaries: SUMMARIES_B,
   },
   {
     grade: "C",
-    scoreRanges: [[1, 2], [1, 2], [1, 2], [1, 2]],
+    scoreRanges: [[1, 2], [1, 2], [1, 2], [1, 2], [1, 2]],
     sentimentWeights: { positiv: 10, neutral: 45, negativ: 45 },
     appointmentChance: 0,
     summaries: SUMMARIES_C,
@@ -268,7 +268,8 @@ function deriveStatus(
   // No conversation happened
   if (callDuration === 0) return "new";
 
-  // Disposition-based overrides
+  // Disposition-based overrides — not reached
+  if (disposition === "no_answer" || disposition === "voicemail" || disposition === "busy") return "not_reached";
   if (disposition === "not_interested") return "lost";
   if (disposition === "gatekeeper" || disposition === "technical_error") return "contacted";
 
@@ -365,14 +366,14 @@ export function generateMockLeads(): Lead[] {
     let totalScore = scores.reduce((a, b) => a + b, 0);
 
     // Ensure total_score matches grade range
-    if (spec.grade === "A" && totalScore < 10) totalScore = 10;
-    if (spec.grade === "B" && (totalScore < 7 || totalScore > 9)) {
-      totalScore = between(rng, 7, 9);
+    if (spec.grade === "A" && totalScore < 13) totalScore = 13;
+    if (spec.grade === "B" && (totalScore < 9 || totalScore > 12)) {
+      totalScore = between(rng, 9, 12);
     }
-    if (spec.grade === "C" && totalScore > 6) totalScore = 6;
+    if (spec.grade === "C" && totalScore > 8) totalScore = 8;
 
     // Recalculate individual scores to match total if needed
-    const [s1, s2, s3, s4] = scores;
+    const [s1, s2, s3, s4, s5] = scores;
 
     const sentiment = pickWeightedSentiment(rng, spec.sentimentWeights);
     const sentimentScore = Math.round(sentimentToScore(sentiment, rng) * 100) / 100;
@@ -435,10 +436,12 @@ export function generateMockLeads(): Lead[] {
       current_stack: pick(rng, CURRENT_STACKS),
       pain_point: pick(rng, PAIN_POINTS),
       timeline: pick(rng, TIMELINES),
+      budget: pick(rng, ["€500+/Monat genehmigt", "Ca. €100/Monat geplant", "Noch kein Budget", "Enterprise-Budget vorhanden", "Wird noch intern geklärt"]),
       score_company_size: s1,
       score_tech_stack: s2,
       score_pain_point: s3,
       score_timeline: s4,
+      score_budget: s5,
       score_engagement: null,
       total_score: totalScore,
       lead_grade: spec.grade,
@@ -457,9 +460,6 @@ export function generateMockLeads(): Lead[] {
       call_started_at: callStartedAt,
       is_decision_maker: spec.grade === "A" ? true : rng() < 0.4,
       status,
-      outbound_state: isOutbound && !hasAppointment && status !== "converted" && status !== "lost"
-        ? pick(rng, ["attempting", "not_reached", "callback_scheduled", "exhausted"] as const)
-        : null,
       next_steps: spec.grade !== "C" ? pickN(rng, [
         "Demo-Termin abwarten",
         "Infomaterial zusenden",

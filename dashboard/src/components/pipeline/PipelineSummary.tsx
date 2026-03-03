@@ -30,6 +30,7 @@ export default function PipelineSummary() {
   const { stages, lostCount, notReachedCount } = useMemo(() => {
     const counts: Record<Lead["status"], number> = {
       new: 0,
+      not_reached: 0,
       contacted: 0,
       qualified: 0,
       appointment_booked: 0,
@@ -37,7 +38,7 @@ export default function PipelineSummary() {
       lost: 0,
     };
     for (const lead of filteredLeads) counts[lead.status]++;
-    const notReachedTotal = filteredLeads.filter(l => l.outbound_state === "not_reached").length;
+    const notReachedTotal = counts.not_reached;
 
     const cumulative: number[] = [];
     let sum = 0;

@@ -8,33 +8,33 @@ Testet: Niedrige Scores, **kein Termin gebucht**, Graceful-Exit-Flow, `save_lead
 - **Alter:** 28
 - **Rolle:** Freelance Webentwickler
 - **Firma:** Selbstständig (1 Person)
-- **Situation:** Hat einen Blog-Artikel über n8n gelesen und ruft aus Neugier an. Kein konkretes Problem, kein Budget, kein Zeitdruck. Will sich "nur mal informieren".
+- **Situation:** Hat einen Blogartikel über n8n gelesen und ruft aus Neugier an. Kein konkretes Problem, kein Budget, kein Zeitdruck. Will sich "nur mal informieren".
 
 ## Deine exakten Sätze als Lukas
 
-### Phase 1: Begrüßung
+### Phase 1: Begrüßung (Schritt 1 – Opening)
 
-> Lisa ruft an. Du nimmst ab.
+> Du rufst bei n8n an. Lisa nimmt ab und spielt ihre Begrüßung.
 
-**Lukas:** "Hallo?"
+**Lisa:** "Hallo, hier ist Lisa von n8n, schönen guten Tag! Kurzer Hinweis vorab: Dieses Gespräch wird zur Qualitätssicherung aufgezeichnet. Was kann ich für Sie tun?"
 
-> Lisa wird sich vorstellen, den Grund für den Anruf nennen und fragen, ob du kurz Zeit hast.
+**Lukas:** "Ah ja, hallo! Ich hab neulich nen Blogartikel über n8n gelesen und wollte mich mal erkundigen. Aber ich bin nur Freelancer, weiß nicht ob das was für mich ist."
 
-**Lukas:** "Ja, kurz schon. n8n, sagt mir was – ich hab da neulich was drüber gelesen. Aber ich bin nur Freelancer, weiß nicht ob das was für mich ist."
+> Lisa wird neugierig nachfragen, was ihn interessiert hat.
 
 ---
 
-### Phase 2: Bedarfsermittlung
+### Phase 2: Bedarfsermittlung (Schritt 2 – Discovery)
 
 > Lisa wird nach einem konkreten Prozess fragen, den er automatisieren möchte.
 
 **Lukas:** "Hmm, nichts Konkretes eigentlich. Ich arbeite als Freelancer und mache Webentwicklung. Manchmal denke ich, es wäre cool, ein paar Sachen zu automatisieren, aber ich hab mich noch nicht wirklich damit beschäftigt."
 
-> Lisa wird nach seinem Tech-Stack fragen.
+> Lisa wird nach seinem aktuellen Tech-Stack fragen.
 
 **Lukas:** "Nee, ich mach eigentlich alles händisch. Also E-Mails, Rechnungen, Kundenverwaltung – alles manuell. Hatte noch nie ein Automation-Tool."
 
-> Lisa wird nach Unternehmensgröße / Branche fragen.
+> Lisa wird nach Teamgröße fragen.
 
 **Lukas:** "Bin nur ich, also Einzelunternehmer. Ab und zu arbeite ich mit ein, zwei Freelancern zusammen, aber meistens allein."
 
@@ -44,25 +44,28 @@ Testet: Niedrige Scores, **kein Termin gebucht**, Graceful-Exit-Flow, `save_lead
 
 ---
 
-### Phase 3: Pitch + Ablehnung
+### Phase 3: Terminangebot + Ablehnung (Schritt 3)
 
-> Lisa wird trotzdem den Mehrwert von n8n pitchen und einen Termin vorschlagen.
+> Lisa wird trotzdem den Mehrwert von n8n pitchen und einen Demo-Termin vorschlagen: "Wissen Sie was, ich hätte da eine Idee: Wollen wir mal einen kurzen Demo-Termin machen?"
 
 **Lukas:** "Klingt schon interessant, aber ehrlich gesagt brauche ich das gerade nicht. Für einen Ein-Mann-Betrieb ist das etwas oversized."
 
-> Lisa wird einen zweiten Anlauf machen (Einwandbehandlung).
+> Lisa wird einen zweiten Anlauf machen (Einwandbehandlung, Versuch 1 von max. 2).
 
 **Lukas:** "Nee, wirklich. Ich merke mir das mal vor, aber aktuell ist das nichts für mich."
+
+> Nach 2 gescheiterten Versuchen leitet Lisa den Graceful Exit ein.
 
 ---
 
 ### Phase 4: Graceful Exit (kein Termin)
 
-> Lisa sollte jetzt den Graceful-Exit einleiten: Info-Material anbieten und nach E-Mail fragen.
+> Lisa bietet Info-Material an: "Soll ich Ihnen mal unsere Fallstudien rüberschicken per Mail?"
 
 **Lukas:** "Klar, schicken Sie gerne was. Die E-Mail ist lukas@vogeldev.de."
 
-> Lisa wird save_lead_info aufrufen und sich verabschieden.
+> Lisa bestätigt die E-Mail und verabschiedet sich freundlich.
+> `[TOOL: save_lead_info — still, nicht angekündigt]` mit allen bekannten Daten: caller_name="Lukas Vogel", company_size="1", current_stack="manuell", pain_point="nur informierend", timeline="kein Zeitrahmen", email="lukas@vogeldev.de"
 
 **Lukas:** "Alles klar, danke für die Infos. Tschüss!"
 
@@ -88,6 +91,7 @@ Testet: Niedrige Scores, **kein Termin gebucht**, Graceful-Exit-Flow, `save_lead
 - [ ] `check_availability` und `book_appointment` werden NICHT aufgerufen
 - [ ] Post-Call Scoring ergibt korrekten C-Lead (4-5 Punkte)
 - [ ] Lisa beendet das Gespräch freundlich und ohne Druck
+- [ ] Maximal 2 Einwandbehandlungs-Versuche (nicht mehr)
 
 ## Tipps für die Aufnahme
 - Entspannt und locker klingen – Lukas hat kein Problem, er ist nur neugierig

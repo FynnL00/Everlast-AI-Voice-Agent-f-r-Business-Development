@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Smile, Meh, Frown, TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
+import { Smile, Meh, Frown, BarChart3 } from "lucide-react";
 import type { Lead } from "@/lib/types";
 import { KPICard } from "@/components/ui/KPICard";
 
@@ -29,56 +29,59 @@ export default function SentimentKPIs({ leads }: SentimentKPIsProps) {
         ? withScore.reduce((sum, l) => sum + (l.sentiment_score ?? 0), 0) / withScore.length
         : null;
 
-    // Trend: Score-Durchschnitt letzte 7 Tage vs. Vorwoche
+    // Per-card trend: letzte 7 Tage vs. Vorwoche
     const now = new Date();
     const sevenDaysAgo = new Date(now);
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const fourteenDaysAgo = new Date(now);
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
 
+    const recentSentiment = withSentiment.filter((l) => new Date(l.created_at) >= sevenDaysAgo);
+    const previousSentiment = withSentiment.filter(
+      (l) => new Date(l.created_at) >= fourteenDaysAgo && new Date(l.created_at) < sevenDaysAgo
+    );
+
+    // Score trend
     const recentWithScore = withScore.filter((l) => new Date(l.created_at) >= sevenDaysAgo);
     const previousWithScore = withScore.filter(
       (l) => new Date(l.created_at) >= fourteenDaysAgo && new Date(l.created_at) < sevenDaysAgo
     );
+    const recentScoreAvg = recentWithScore.length > 0
+      ? recentWithScore.reduce((s, l) => s + (l.sentiment_score ?? 0), 0) / recentWithScore.length
+      : null;
+    const previousScoreAvg = previousWithScore.length > 0
+      ? previousWithScore.reduce((s, l) => s + (l.sentiment_score ?? 0), 0) / previousWithScore.length
+      : null;
+    const scoreTrend = recentScoreAvg !== null && previousScoreAvg !== null
+      ? { delta: Math.round((recentScoreAvg - previousScoreAvg) * 100), improving: recentScoreAvg >= previousScoreAvg }
+      : null;
 
-    const recentAvg =
-      recentWithScore.length > 0
-        ? recentWithScore.reduce((s, l) => s + (l.sentiment_score ?? 0), 0) / recentWithScore.length
-        : null;
-    const previousAvg =
-      previousWithScore.length > 0
-        ? previousWithScore.reduce((s, l) => s + (l.sentiment_score ?? 0), 0) / previousWithScore.length
-        : null;
+    // Rate trends helper
+    const rateTrend = (sentiment: string) => {
+      const rRecent = recentSentiment.length > 0
+        ? Math.round((recentSentiment.filter((l) => l.sentiment === sentiment).length / recentSentiment.length) * 100)
+        : 0;
+      const rPrevious = previousSentiment.length > 0
+        ? Math.round((previousSentiment.filter((l) => l.sentiment === sentiment).length / previousSentiment.length) * 100)
+        : 0;
+      if (recentSentiment.length === 0 && previousSentiment.length === 0) return null;
+      const delta = rRecent - rPrevious;
+      // For negativ, improving means it went DOWN
+      const improving = sentiment === "negativ" ? delta <= 0 : delta >= 0;
+      return { delta, improving };
+    };
 
-    // Fallback auf kategorischen Trend wenn keine Scores vorhanden
-    let trendDelta: number;
-    let trendImproving: boolean;
-
-    if (recentAvg !== null && previousAvg !== null) {
-      trendDelta = Math.round((recentAvg - previousAvg) * 100);
-      trendImproving = recentAvg >= previousAvg;
-    } else {
-      const recentLeads = withSentiment.filter((l) => new Date(l.created_at) >= sevenDaysAgo);
-      const previousLeads = withSentiment.filter(
-        (l) => new Date(l.created_at) >= fourteenDaysAgo && new Date(l.created_at) < sevenDaysAgo
-      );
-      const recentPositivePct =
-        recentLeads.length > 0
-          ? (recentLeads.filter((l) => l.sentiment === "positiv").length / recentLeads.length) * 100
-          : 0;
-      const previousPositivePct =
-        previousLeads.length > 0
-          ? (previousLeads.filter((l) => l.sentiment === "positiv").length / previousLeads.length) * 100
-          : 0;
-      trendDelta = Math.round(recentPositivePct - previousPositivePct);
-      trendImproving = recentPositivePct >= previousPositivePct;
-    }
-
-    return { positivePct, neutralPct, negativePct, avgScore, trendImproving, trendDelta };
+    return {
+      positivePct, neutralPct, negativePct, avgScore,
+      scoreTrend,
+      positiveTrend: rateTrend("positiv"),
+      neutralTrend: rateTrend("neutral"),
+      negativeTrend: rateTrend("negativ"),
+    };
   }, [leads]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <KPICard
         label="Sentiment-Score"
         value={kpis.avgScore !== null ? (kpis.avgScore * 100).toFixed(0) : "–"}
@@ -96,6 +99,7 @@ export default function SentimentKPIs({ leads }: SentimentKPIsProps) {
           : kpis.avgScore <= 0.33 ? "bg-red-500/10"
           : "bg-amber-500/10"
         }
+        trend={kpis.scoreTrend}
         tooltip="Durchschnittlicher Sentiment-Score aller Gespräche (0 = sehr negativ, 100 = sehr positiv)."
         tooltipFormula="Score = Ø sentiment_score × 100"
       />
@@ -106,6 +110,7 @@ export default function SentimentKPIs({ leads }: SentimentKPIsProps) {
         icon={Smile}
         colorClass="text-green-400"
         bgClass="bg-green-500/10"
+        trend={kpis.positiveTrend}
         tooltip="Anteil der Gespräche, die als positiv eingestuft wurden."
         tooltipFormula="Rate = Positive ÷ Alle mit Sentiment × 100"
       />
@@ -116,6 +121,7 @@ export default function SentimentKPIs({ leads }: SentimentKPIsProps) {
         icon={Meh}
         colorClass="text-amber-400"
         bgClass="bg-amber-500/10"
+        trend={kpis.neutralTrend}
         tooltip="Anteil der Gespräche mit neutraler Stimmung."
         tooltipFormula="Rate = Neutrale ÷ Alle mit Sentiment × 100"
       />
@@ -126,17 +132,9 @@ export default function SentimentKPIs({ leads }: SentimentKPIsProps) {
         icon={Frown}
         colorClass="text-red-400"
         bgClass="bg-red-500/10"
+        trend={kpis.negativeTrend}
         tooltip="Anteil der Gespräche mit negativem Sentiment."
         tooltipFormula="Rate = Negative ÷ Alle mit Sentiment × 100"
-      />
-      <KPICard
-        label="Trend"
-        value={`${kpis.trendDelta >= 0 ? "+" : ""}${kpis.trendDelta}%`}
-        icon={kpis.trendImproving ? TrendingUp : TrendingDown}
-        colorClass={kpis.trendImproving ? "text-green-400" : "text-red-400"}
-        bgClass={kpis.trendImproving ? "bg-green-500/10" : "bg-red-500/10"}
-        tooltip="Veränderung des Sentiment-Scores im Vergleich zur Vorwoche."
-        tooltipFormula="Trend = Ø Score (7 Tage) − Ø Score (Vorwoche) × 100"
       />
     </div>
   );

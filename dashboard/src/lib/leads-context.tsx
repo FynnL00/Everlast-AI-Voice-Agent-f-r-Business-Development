@@ -14,12 +14,11 @@ import type { Lead, LeadFilters } from "@/lib/types";
 
 // Fields fetched for the list view (no transcript for performance)
 const CONTEXT_FIELDS =
-  "id, created_at, updated_at, caller_name, company, email, phone, company_size, current_stack, pain_point, timeline, score_company_size, score_tech_stack, score_pain_point, score_timeline, score_engagement, total_score, lead_grade, call_id, call_duration_seconds, call_started_at, conversation_summary, sentiment, objections_raised, drop_off_point, appointment_booked, appointment_datetime, is_decision_maker, status, outbound_state, next_steps, notes, briefing, briefing_generated_at, assigned_to, campaign_id, call_direction, disposition_code, call_attempts, last_call_attempt_at, next_call_scheduled_at, voicemail_left, gatekeeper_name, callback_datetime, is_dnc, dnc_reason, recording_url, lead_source, follow_up_reason";
+  "id, created_at, updated_at, caller_name, company, email, phone, company_size, current_stack, pain_point, timeline, budget, score_company_size, score_tech_stack, score_pain_point, score_timeline, score_budget, score_engagement, total_score, lead_grade, call_id, call_duration_seconds, call_started_at, conversation_summary, sentiment, objections_raised, drop_off_point, appointment_booked, appointment_datetime, is_decision_maker, status, next_steps, notes, briefing, briefing_generated_at, assigned_to, campaign_id, call_direction, disposition_code, call_attempts, last_call_attempt_at, next_call_scheduled_at, voicemail_left, gatekeeper_name, callback_datetime, is_dnc, dnc_reason, recording_url, lead_source, follow_up_reason";
 
 const DEFAULT_FILTERS: LeadFilters = {
   grades: [],
   statuses: [],
-  outboundStates: [],
   sentiments: [],
   appointmentBooked: null,
   dateRange: { from: null, to: null },
@@ -281,15 +280,6 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
     // Status filter
     if (filters.statuses.length > 0) {
       result = result.filter((l) => filters.statuses.includes(l.status));
-    }
-
-    // Outbound state filter
-    if (filters.outboundStates.length > 0) {
-      result = result.filter(
-        (l) =>
-          l.outbound_state !== null &&
-          filters.outboundStates.includes(l.outbound_state as Lead["outbound_state"] & string)
-      );
     }
 
     // Sentiment filter

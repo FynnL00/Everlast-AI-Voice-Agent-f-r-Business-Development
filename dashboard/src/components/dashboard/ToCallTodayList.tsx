@@ -36,8 +36,7 @@ export default function ToCallTodayList({ leads }: ToCallTodayListProps) {
           new Date(l.next_call_scheduled_at) <= now &&
           !l.is_dnc &&
           l.call_direction === "outbound" &&
-          !TERMINAL_STATUSES.includes(l.status) &&
-          l.outbound_state !== "exhausted"
+          !TERMINAL_STATUSES.includes(l.status)
       )
       .sort((a, b) => {
         // A-Leads first

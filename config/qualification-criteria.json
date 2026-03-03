@@ -66,18 +66,18 @@
       }
     },
     "timeline": {
-      "label": "Timeline & Budget",
+      "label": "Timeline",
       "question": "Gibt es einen zeitlichen Rahmen, bis wann Sie das umsetzen möchten?",
       "scoring": {
         "3": {
           "label": "Immediate",
-          "description": "Innerhalb 1 Monat, Budget vorhanden",
-          "indicators": ["sofort", "diese woche", "diesen monat", "budget steht", "genehmigt", "dringend"]
+          "description": "Innerhalb 1 Monat, dringender Bedarf",
+          "indicators": ["sofort", "diese woche", "diesen monat", "dringend", "schnellstmöglich"]
         },
         "2": {
           "label": "Planning",
-          "description": "1-3 Monate, Budget unklar",
-          "indicators": ["nächstes quartal", "paar monate", "planen", "evaluieren", "budget klären"]
+          "description": "1-3 Monate, in Planung",
+          "indicators": ["nächstes quartal", "paar monate", "planen", "evaluieren", "nächstes jahr"]
         },
         "1": {
           "label": "No Timeline",
@@ -85,26 +85,47 @@
           "indicators": ["irgendwann", "kein zeitdruck", "mal schauen", "keine eile"]
         }
       }
+    },
+    "budget": {
+      "label": "Budget",
+      "question": "Haben Sie da schon ein ungefähres Budget im Kopf?",
+      "scoring": {
+        "3": {
+          "label": "Budget freigegeben",
+          "description": "Festes Budget genehmigt, Enterprise-Bereich (€500+/Monat) oder Projektbudget >€10K",
+          "indicators": ["budget steht", "freigegeben", "genehmigt", "enterprise", "investieren", "budget vorhanden", "eingeplant"]
+        },
+        "2": {
+          "label": "Budget in Klärung",
+          "description": "Grundsätzlich vorhanden aber noch nicht final, Starter/Pro-Bereich (€20-200/Monat)",
+          "indicators": ["müssen klären", "ungefähr", "kleineres budget", "starter", "pro plan", "noch besprechen", "budget klären"]
+        },
+        "1": {
+          "label": "Kein Budget",
+          "description": "Kein Budget eingeplant, nur Community/Open-Source-Interesse",
+          "indicators": ["kein budget", "kostenlos", "open source", "community edition", "gratis", "nichts eingeplant", "self-hosted"]
+        }
+      }
     }
   },
   "grades": {
     "A": {
-      "min_score": 10,
-      "max_score": 12,
+      "min_score": 13,
+      "max_score": 15,
       "label": "Hot Lead",
       "action": "Sofort Termin buchen, hohe Priorität",
       "color": "#22c55e"
     },
     "B": {
-      "min_score": 7,
-      "max_score": 9,
+      "min_score": 9,
+      "max_score": 12,
       "label": "Warm Lead",
       "action": "Mehrwert argumentieren, dann Termin anbieten",
       "color": "#f59e0b"
     },
     "C": {
-      "min_score": 4,
-      "max_score": 6,
+      "min_score": 5,
+      "max_score": 8,
       "label": "Cold Lead",
       "action": "Info-Material senden, Follow-up planen",
       "color": "#ef4444"

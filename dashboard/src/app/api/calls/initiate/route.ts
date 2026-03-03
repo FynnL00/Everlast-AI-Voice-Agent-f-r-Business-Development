@@ -107,7 +107,6 @@ export async function POST(request: NextRequest) {
       call_id: vapiCall.id,
       last_call_attempt_at: new Date().toISOString(),
       status: lead.status === "new" ? "contacted" : lead.status,
-      outbound_state: "attempting",
       call_direction: "outbound",
     })
     .eq("id", leadId);

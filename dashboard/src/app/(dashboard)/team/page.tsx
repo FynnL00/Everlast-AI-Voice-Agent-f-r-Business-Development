@@ -57,7 +57,12 @@ export default function TeamPage() {
       />
 
       {/* KPI Row */}
-      <TeamKPIs teamMembers={teamMembers} leads={leads} />
+      <div className="glass p-6 rounded-2xl w-full transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px">
+        <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 block">
+          TEAM KPIS
+        </span>
+        <TeamKPIs teamMembers={teamMembers} leads={leads} />
+      </div>
 
       {/* Performance Chart */}
       <TeamPerformanceChart teamMembers={teamMembers} leads={leads} />

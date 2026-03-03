@@ -126,7 +126,7 @@ export default function EnhancedLeadTable({
                 {/* Status */}
                 <td className="px-5 py-5 align-middle">
                   <Link href={`/leads/${lead.id}`} className="block">
-                    <StatusBadge status={lead.status} outboundState={lead.outbound_state} />
+                    <StatusBadge status={lead.status} />
                   </Link>
                 </td>
 

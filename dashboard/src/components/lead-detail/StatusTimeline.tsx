@@ -22,6 +22,7 @@ const MAIN_STATUSES: Lead["status"][] = [
 
 const ALL_STATUSES: Lead["status"][] = [
   "new",
+  "not_reached",
   "contacted",
   "qualified",
   "appointment_booked",
@@ -37,6 +38,7 @@ export default function StatusTimeline({
 
   const currentIndex = MAIN_STATUSES.indexOf(currentStatus);
   const isLost = currentStatus === "lost";
+  const isNotReached = currentStatus === "not_reached";
 
   const handleStatusChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newStatus = e.target.value as Lead["status"];
@@ -64,7 +66,7 @@ export default function StatusTimeline({
             {/* Connecting line background */}
             <div className="absolute top-3.5 left-4 right-4 h-0.5 bg-border/50 rounded-full" />
             {/* Connecting line active */}
-            {!isLost && currentIndex > 0 && (
+            {!isLost && !isNotReached && currentIndex > 0 && (
               <div
                 className="absolute top-3.5 left-4 h-0.5 bg-primary rounded-full transition-all duration-700 ease-out"
                 style={{
@@ -75,9 +77,10 @@ export default function StatusTimeline({
             )}
 
             {MAIN_STATUSES.map((status, idx) => {
-              const isCompleted = !isLost && currentIndex >= 0 && idx < currentIndex;
-              const isCurrent = !isLost && status === currentStatus;
-              const isFuture = isLost || currentIndex < 0 || idx > currentIndex;
+              const isSideState = isLost || isNotReached;
+              const isCompleted = !isSideState && currentIndex >= 0 && idx < currentIndex;
+              const isCurrent = !isSideState && status === currentStatus;
+              const isFuture = isSideState || currentIndex < 0 || idx > currentIndex;
               const color = STATUS_COLORS[status];
 
               return (
@@ -125,8 +128,8 @@ export default function StatusTimeline({
             })}
           </div>
 
-          {/* Lost branch */}
-          {isLost && (
+          {/* Side-state branches (lost / not_reached) */}
+          {(isLost || isNotReached) && (
             <div className="flex flex-col items-center mt-6 relative mx-auto w-fit">
               <div className="absolute -top-6 left-1/2 w-0.5 h-6 bg-border/50 -translate-x-1/2" />
               <div
@@ -134,18 +137,18 @@ export default function StatusTimeline({
                   "w-7 h-7 rounded-full border-2 flex items-center justify-center scale-110 ring-4 ring-opacity-20 shadow-sm"
                 )}
                 style={{
-                  borderColor: STATUS_COLORS.lost,
-                  backgroundColor: STATUS_COLORS.lost,
-                  "--tw-ring-color": STATUS_COLORS.lost
+                  borderColor: STATUS_COLORS[currentStatus],
+                  backgroundColor: STATUS_COLORS[currentStatus],
+                  "--tw-ring-color": STATUS_COLORS[currentStatus]
                 } as React.CSSProperties}
               >
                 <div className="w-2.5 h-2.5 rounded-full bg-white shadow-sm" />
               </div>
               <span
                 className="text-[11px] mt-2.5 font-bold text-center"
-                style={{ color: STATUS_COLORS.lost }}
+                style={{ color: STATUS_COLORS[currentStatus] }}
               >
-                {STATUS_LABELS.lost}
+                {STATUS_LABELS[currentStatus]}
               </span>
             </div>
           )}

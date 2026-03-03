@@ -119,10 +119,12 @@ export interface Lead {
   current_stack: string | null;
   pain_point: string | null;
   timeline: string | null;
+  budget: string | null;
   score_company_size: number | null;
   score_tech_stack: number | null;
   score_pain_point: number | null;
   score_timeline: number | null;
+  score_budget: number | null;
   score_engagement: number | null;
   total_score: number | null;
   lead_grade: "A" | "B" | "C" | null;
@@ -140,8 +142,7 @@ export interface Lead {
   cal_booking_id: string | null;
   call_started_at: string | null;
   is_decision_maker: boolean | null;
-  status: 'new' | 'contacted' | 'qualified' | 'appointment_booked' | 'converted' | 'lost';
-  outbound_state: OutboundState | null;
+  status: 'new' | 'not_reached' | 'contacted' | 'qualified' | 'appointment_booked' | 'converted' | 'lost';
   next_steps: string[] | null;
   notes: string | null;
   briefing: string | null;
@@ -201,6 +202,7 @@ export type ScoringDimension =
   | 'tech_stack'
   | 'pain_point'
   | 'timeline'
+  | 'budget'
   | 'engagement'
   | 'sentiment'
   | 'objection'
@@ -212,6 +214,7 @@ export const SCORING_DIMENSION_LABELS: Record<ScoringDimension, string> = {
   tech_stack: "Tech-Stack",
   pain_point: "Pain Point",
   timeline: "Timeline",
+  budget: "Budget",
   engagement: "Engagement",
   sentiment: "Stimmung",
   objection: "Einwand",
@@ -224,6 +227,7 @@ export const SCORING_DIMENSION_COLORS: Record<ScoringDimension, string> = {
   tech_stack: "bg-purple-500/10 text-purple-600 border-purple-200",
   pain_point: "bg-orange-500/10 text-orange-600 border-orange-200",
   timeline: "bg-teal-500/10 text-teal-600 border-teal-200",
+  budget: "bg-emerald-500/10 text-emerald-600 border-emerald-200",
   engagement: "bg-indigo-500/10 text-indigo-600 border-indigo-200",
   sentiment: "bg-pink-500/10 text-pink-600 border-pink-200",
   objection: "bg-red-500/10 text-red-600 border-red-200",
@@ -233,7 +237,7 @@ export const SCORING_DIMENSION_COLORS: Record<ScoringDimension, string> = {
 
 // Sorted order for displaying dimensions
 export const SCORING_DIMENSION_ORDER: ScoringDimension[] = [
-  'company_size', 'tech_stack', 'pain_point', 'timeline',
+  'company_size', 'tech_stack', 'pain_point', 'timeline', 'budget',
   'engagement', 'sentiment', 'objection', 'drop_off', 'general',
 ];
 
@@ -257,7 +261,6 @@ export interface LeadQuote {
 export interface LeadFilters {
   grades: ("A" | "B" | "C")[];
   statuses: Lead["status"][];
-  outboundStates: OutboundState[];
   sentiments: (NonNullable<Lead["sentiment"]>)[];
   appointmentBooked: boolean | null;
   dateRange: { from: string | null; to: string | null };
@@ -278,7 +281,6 @@ export interface LeadUpdatePayload {
   pain_point?: string;
   timeline?: string;
   status?: Lead["status"];
-  outbound_state?: Lead["outbound_state"];
   notes?: string;
   next_steps?: string[];
   assigned_to?: string | null;
@@ -293,6 +295,7 @@ export interface LeadUpdatePayload {
 
 export const STATUS_LABELS: Record<Lead["status"], string> = {
   new: "Neu",
+  not_reached: "Nicht erreicht",
   contacted: "Kontaktiert",
   qualified: "Qualifiziert",
   appointment_booked: "Termin gebucht",
@@ -302,28 +305,12 @@ export const STATUS_LABELS: Record<Lead["status"], string> = {
 
 export const STATUS_COLORS: Record<Lead["status"], string> = {
   new: "var(--muted-foreground)",
+  not_reached: "var(--chart-3)",
   contacted: "var(--chart-1)",
   qualified: "var(--chart-5)",
   appointment_booked: "var(--score-warning)",
   converted: "var(--score-good)",
   lost: "var(--score-danger)",
-};
-
-// --- Outbound State (operational, separate from pipeline status) ---
-export type OutboundState = 'attempting' | 'not_reached' | 'callback_scheduled' | 'exhausted';
-
-export const OUTBOUND_STATE_LABELS: Record<OutboundState, string> = {
-  attempting: "Wird angerufen",
-  not_reached: "Nicht erreicht",
-  callback_scheduled: "Rückruf geplant",
-  exhausted: "Ausgeschöpft",
-};
-
-export const OUTBOUND_STATE_COLORS: Record<OutboundState, string> = {
-  attempting: "var(--chart-1)",
-  not_reached: "var(--chart-3)",
-  callback_scheduled: "var(--chart-5)",
-  exhausted: "var(--chart-3)",
 };
 
 export const SENTIMENT_LABELS: Record<NonNullable<Lead["sentiment"]>, string> = {

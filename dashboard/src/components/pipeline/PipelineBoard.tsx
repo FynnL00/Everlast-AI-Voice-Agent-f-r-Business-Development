@@ -20,6 +20,7 @@ import PipelineCard from "./PipelineCard";
 
 const PIPELINE_STAGES: Lead["status"][] = [
   "new",
+  "not_reached",
   "contacted",
   "qualified",
   "appointment_booked",
@@ -42,6 +43,7 @@ export default function PipelineBoard() {
   const grouped = useMemo(() => {
     const map: Record<Lead["status"], Lead[]> = {
       new: [],
+      not_reached: [],
       contacted: [],
       qualified: [],
       appointment_booked: [],

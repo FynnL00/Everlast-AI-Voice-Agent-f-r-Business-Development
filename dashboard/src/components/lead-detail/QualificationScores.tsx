@@ -28,9 +28,14 @@ const SCORING_CRITERIA: Record<string, { score: number; label: string; descripti
     { score: 1, label: "Browsing", description: "Nur informierend, kein konkreter Bedarf" },
   ],
   "Timeline": [
-    { score: 3, label: "Immediate", description: "Innerhalb 1 Monat, Budget vorhanden" },
-    { score: 2, label: "Planning", description: "1–3 Monate, Budget unklar" },
+    { score: 3, label: "Immediate", description: "Innerhalb 1 Monat, dringender Bedarf" },
+    { score: 2, label: "Planning", description: "1–3 Monate, in Planung" },
     { score: 1, label: "No Timeline", description: "Kein konkreter Zeitrahmen" },
+  ],
+  "Budget": [
+    { score: 3, label: "Budget freigegeben", description: "Festes Budget genehmigt, Enterprise-Bereich (€500+/Monat)" },
+    { score: 2, label: "Budget in Klärung", description: "Grundsätzlich vorhanden, Starter/Pro-Bereich (€20–200/Monat)" },
+    { score: 1, label: "Kein Budget", description: "Kein Budget eingeplant, nur Open-Source-Interesse" },
   ],
 };
 
@@ -167,10 +172,10 @@ export default function QualificationScores({ lead }: QualificationScoresProps) 
         <TooltipContent side="top" className="max-w-64 p-3">
           <p className="font-semibold text-card-foreground text-sm mb-1">Qualifizierungs-Scores</p>
           <p className="text-xs text-card-foreground/80 leading-relaxed">
-            Jeder Lead wird nach dem Gespräch automatisch per KI in 4 Kategorien bewertet (je 1–3 Punkte).
+            Jeder Lead wird nach dem Gespräch automatisch per KI in 5 Kategorien bewertet (je 1–3 Punkte).
           </p>
           <p className="text-[11px] text-muted-foreground mt-2 font-mono">
-            A-Lead: 10–12 · B-Lead: 7–9 · C-Lead: 4–6
+            A-Lead: 13–15 · B-Lead: 9–12 · C-Lead: 5–8
           </p>
         </TooltipContent>
       </Tooltip>
@@ -184,11 +189,12 @@ export default function QualificationScores({ lead }: QualificationScoresProps) 
         <ScoreBar label="Tech-Stack" score={lead.score_tech_stack} detail={lead.current_stack} />
         <ScoreBar label="Pain Point" score={lead.score_pain_point} detail={lead.pain_point} />
         <ScoreBar label="Timeline" score={lead.score_timeline} detail={lead.timeline} />
+        <ScoreBar label="Budget" score={lead.score_budget} detail={lead.budget} />
 
         {/* Total */}
         <div className="flex items-center justify-between pt-4 mt-2 border-t border-border/50 bg-muted/10 -mx-6 px-6 -mb-6 pb-6 rounded-b-2xl">
           <span className="text-sm font-bold text-foreground">
-            Gesamt: {totalScore != null ? <span className="text-primary">{totalScore}/12</span> : "\u2014"}
+            Gesamt: {totalScore != null ? <span className="text-primary">{totalScore}/15</span> : "\u2014"}
           </span>
           {lead.lead_grade && (
             <div
