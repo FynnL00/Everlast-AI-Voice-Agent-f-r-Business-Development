@@ -2,6 +2,7 @@
 
 import { LeadsProvider, useLeads } from "@/lib/leads-context";
 import { TeamProvider } from "@/lib/team-context";
+import { CampaignProvider } from "@/lib/campaigns-context";
 import { ObjectionCategoriesProvider } from "@/lib/objection-categories-context";
 import Sidebar from "@/components/Sidebar";
 import { DynamicBackground } from "./layout/DynamicBackground";
@@ -28,9 +29,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <TeamProvider>
       <LeadsProvider>
-        <ObjectionCategoriesProvider>
-          <AppShellInner>{children}</AppShellInner>
-        </ObjectionCategoriesProvider>
+        <CampaignProvider>
+          <ObjectionCategoriesProvider>
+            <AppShellInner>{children}</AppShellInner>
+          </ObjectionCategoriesProvider>
+        </CampaignProvider>
       </LeadsProvider>
     </TeamProvider>
   );

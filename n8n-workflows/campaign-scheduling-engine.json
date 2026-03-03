@@ -1,0 +1,707 @@
+{
+    "updatedAt": "2026-03-03T16:59:35.610Z",
+    "createdAt": "2026-03-03T16:59:11.751Z",
+    "id": "5XPYVYKLfZR0QzZf",
+    "name": "Campaign Scheduling Engine",
+    "description": null,
+    "active": true,
+    "isArchived": false,
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "cronExpression",
+                            "expression": "0 6 * * *"
+                        }
+                    ]
+                }
+            },
+            "id": "cron-trigger",
+            "name": "Daily 06:00 Trigger",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                0,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/campaigns?status=eq.active&select=id,name,cadence_config,calling_window_start,calling_window_end,calling_timezone,calling_days",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "http-fetch-campaigns",
+            "name": "Fetch Active Campaigns",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                224,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Process campaigns and fetch unscheduled leads for each\nconst campaigns = $input.all().map(item => item.json);\nconst campaignList = Array.isArray(campaigns[0]) ? campaigns[0] : (campaigns[0] && campaigns[0].id ? campaigns : []);\n\nif (campaignList.length === 0) {\n  return [{ json: { skip: true, message: 'Keine aktiven Kampagnen gefunden' } }];\n}\n\nconst results = [];\nfor (const campaign of campaignList) {\n  if (!campaign.id) continue;\n  const cadence = campaign.cadence_config || { max_attempts: 5 };\n  results.push({\n    json: {\n      campaignId: campaign.id,\n      campaignName: campaign.name || 'Unbenannt',\n      maxAttempts: cadence.max_attempts || 5,\n      windowStart: campaign.calling_window_start || '09:00',\n      windowEnd: campaign.calling_window_end || '18:00',\n      callingDays: campaign.calling_days || [1,2,3,4,5],\n      timezone: campaign.calling_timezone || 'Europe/Berlin'\n    }\n  });\n}\n\nreturn results.length > 0 ? results : [{ json: { skip: true } }];"
+            },
+            "id": "code-process-campaigns",
+            "name": "Process Campaigns",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                448,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "version": 2,
+                        "leftValue": "",
+                        "caseSensitive": true,
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "c1",
+                            "leftValue": "={{ $json.skip }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "notEquals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "if-should-process",
+            "name": "Should Process?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                672,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{ 'https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/leads?campaign_id=eq.' + $json.campaignId + '&status=in.(queued,attempting,callback_scheduled)&next_call_scheduled_at=is.null&is_dnc=eq.false&call_attempts=lt.' + $json.maxAttempts + '&select=id,phone,call_attempts,caller_name,company&limit=200' }}",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "http-fetch-leads",
+            "name": "Fetch Unscheduled Leads",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                896,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Schedule leads: assign next_call_scheduled_at within the campaign calling window\nconst campaignData = $('Should Process?').first().json;\nconst leads = $input.all().map(item => item.json);\nconst leadList = Array.isArray(leads[0]) ? leads[0] : leads;\n\nif (!leadList || leadList.length === 0 || !leadList[0] || !leadList[0].id) {\n  return [{ json: { count: 0, campaignId: campaignData.campaignId, message: 'Keine unplaned Leads' } }];\n}\n\nconst windowStart = campaignData.windowStart || '09:00';\nconst windowEnd = campaignData.windowEnd || '18:00';\nconst [startH, startM] = windowStart.split(':').map(Number);\nconst [endH, endM] = windowEnd.split(':').map(Number);\nconst startMinutes = startH * 60 + startM;\nconst endMinutes = endH * 60 + endM;\nconst windowMinutes = endMinutes - startMinutes;\n\nconst now = new Date();\nconst today = new Date(now);\ntoday.setHours(0, 0, 0, 0);\n\n// Emit individual items for each lead update\nconst results = leadList.map((lead, i) => {\n  const offset = Math.floor(startMinutes + (windowMinutes * i / Math.max(leadList.length, 1)));\n  const jitter = Math.floor(Math.random() * 10);\n  const scheduleTime = new Date(today);\n  scheduleTime.setHours(Math.floor((offset + jitter) / 60), (offset + jitter) % 60, Math.floor(Math.random() * 60), 0);\n  \n  if (scheduleTime < now) {\n    scheduleTime.setDate(scheduleTime.getDate() + 1);\n  }\n  \n  return {\n    json: {\n      leadId: lead.id,\n      next_call_scheduled_at: scheduleTime.toISOString(),\n      status: 'attempting',\n      follow_up_reason: 'Initiale Kampagnen-Planung',\n      campaignId: campaignData.campaignId\n    }\n  };\n});\n\nreturn results;"
+            },
+            "id": "code-schedule-leads",
+            "name": "Schedule Leads",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1120,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "method": "PATCH",
+                "url": "={{ 'https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/leads?id=eq.' + $json.leadId }}",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Prefer",
+                            "value": "return=minimal"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "contentType": "raw",
+                "rawContentType": "application/json",
+                "body": "={{ JSON.stringify({ next_call_scheduled_at: $json.next_call_scheduled_at, status: $json.status, follow_up_reason: $json.follow_up_reason }) }}",
+                "options": {}
+            },
+            "id": "http-update-lead",
+            "name": "Update Lead Schedule",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1344,
+                200
+            ],
+            "continueOnFail": true
+        },
+        {
+            "parameters": {
+                "jsCode": "// Update campaign metrics: count total_leads, leads_called, leads_connected, leads_converted\n// We aggregate by looking at lead data from the input items\nconst items = $input.all();\nconst campaignData = $('Should Process?').first().json;\nconst campaignId = campaignData.campaignId;\n\n// Just return the campaign ID - the metrics update will query Supabase directly\nreturn [{ json: { campaignId } }];"
+            },
+            "id": "code-prep-metrics",
+            "name": "Prepare Metrics Query",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1568,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "method": "PATCH",
+                "url": "={{ 'https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/campaigns?id=eq.' + $json.campaignId }}",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                        },
+                        {
+                            "name": "Authorization",
+                            "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        },
+                        {
+                            "name": "Prefer",
+                            "value": "return=minimal"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "contentType": "raw",
+                "rawContentType": "application/json",
+                "body": "={{ JSON.stringify({ updated_at: new Date().toISOString() }) }}",
+                "options": {}
+            },
+            "id": "http-update-campaign",
+            "name": "Update Campaign Timestamp",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1792,
+                200
+            ],
+            "continueOnFail": true
+        }
+    ],
+    "connections": {
+        "Daily 06:00 Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch Active Campaigns",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Fetch Active Campaigns": {
+            "main": [
+                [
+                    {
+                        "node": "Process Campaigns",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Process Campaigns": {
+            "main": [
+                [
+                    {
+                        "node": "Should Process?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Should Process?": {
+            "main": [
+                [
+                    {
+                        "node": "Fetch Unscheduled Leads",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                []
+            ]
+        },
+        "Fetch Unscheduled Leads": {
+            "main": [
+                [
+                    {
+                        "node": "Schedule Leads",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Schedule Leads": {
+            "main": [
+                [
+                    {
+                        "node": "Update Lead Schedule",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Update Lead Schedule": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare Metrics Query",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare Metrics Query": {
+            "main": [
+                [
+                    {
+                        "node": "Update Campaign Timestamp",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1",
+        "callerPolicy": "workflowsFromSameOwner",
+        "availableInMCP": false
+    },
+    "staticData": {
+        "node:Daily 06:00 Trigger": {
+            "recurrenceRules": []
+        }
+    },
+    "meta": null,
+    "pinData": null,
+    "versionId": "76888cb7-55ea-4614-b1c6-4947a08988fb",
+    "activeVersionId": "76888cb7-55ea-4614-b1c6-4947a08988fb",
+    "versionCounter": 5,
+    "triggerCount": 1,
+    "shared": [
+        {
+            "updatedAt": "2026-03-03T16:59:11.753Z",
+            "createdAt": "2026-03-03T16:59:11.753Z",
+            "role": "workflow:owner",
+            "workflowId": "5XPYVYKLfZR0QzZf",
+            "projectId": "Hb8MCr6jApuP43D1",
+            "project": {
+                "updatedAt": "2025-12-01T16:24:24.630Z",
+                "createdAt": "2025-12-01T16:17:56.703Z",
+                "id": "Hb8MCr6jApuP43D1",
+                "name": "Fynn Loosen <fynn.loosen@outlook.de>",
+                "type": "personal",
+                "icon": null,
+                "description": null,
+                "creatorId": "495728b9-b3cb-456c-9843-b80be60568f8"
+            }
+        }
+    ],
+    "tags": [],
+    "activeVersion": {
+        "updatedAt": "2026-03-03T16:59:35.611Z",
+        "createdAt": "2026-03-03T16:59:35.611Z",
+        "versionId": "76888cb7-55ea-4614-b1c6-4947a08988fb",
+        "workflowId": "5XPYVYKLfZR0QzZf",
+        "nodes": [
+            {
+                "parameters": {
+                    "rule": {
+                        "interval": [
+                            {
+                                "field": "cronExpression",
+                                "expression": "0 6 * * *"
+                            }
+                        ]
+                    }
+                },
+                "id": "cron-trigger",
+                "name": "Daily 06:00 Trigger",
+                "type": "n8n-nodes-base.scheduleTrigger",
+                "typeVersion": 1.2,
+                "position": [
+                    0,
+                    300
+                ]
+            },
+            {
+                "parameters": {
+                    "url": "https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/campaigns?status=eq.active&select=id,name,cadence_config,calling_window_start,calling_window_end,calling_timezone,calling_days",
+                    "sendHeaders": true,
+                    "headerParameters": {
+                        "parameters": [
+                            {
+                                "name": "apikey",
+                                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                            },
+                            {
+                                "name": "Authorization",
+                                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                            }
+                        ]
+                    },
+                    "options": {}
+                },
+                "id": "http-fetch-campaigns",
+                "name": "Fetch Active Campaigns",
+                "type": "n8n-nodes-base.httpRequest",
+                "typeVersion": 4.2,
+                "position": [
+                    224,
+                    300
+                ]
+            },
+            {
+                "parameters": {
+                    "jsCode": "// Process campaigns and fetch unscheduled leads for each\nconst campaigns = $input.all().map(item => item.json);\nconst campaignList = Array.isArray(campaigns[0]) ? campaigns[0] : (campaigns[0] && campaigns[0].id ? campaigns : []);\n\nif (campaignList.length === 0) {\n  return [{ json: { skip: true, message: 'Keine aktiven Kampagnen gefunden' } }];\n}\n\nconst results = [];\nfor (const campaign of campaignList) {\n  if (!campaign.id) continue;\n  const cadence = campaign.cadence_config || { max_attempts: 5 };\n  results.push({\n    json: {\n      campaignId: campaign.id,\n      campaignName: campaign.name || 'Unbenannt',\n      maxAttempts: cadence.max_attempts || 5,\n      windowStart: campaign.calling_window_start || '09:00',\n      windowEnd: campaign.calling_window_end || '18:00',\n      callingDays: campaign.calling_days || [1,2,3,4,5],\n      timezone: campaign.calling_timezone || 'Europe/Berlin'\n    }\n  });\n}\n\nreturn results.length > 0 ? results : [{ json: { skip: true } }];"
+                },
+                "id": "code-process-campaigns",
+                "name": "Process Campaigns",
+                "type": "n8n-nodes-base.code",
+                "typeVersion": 2,
+                "position": [
+                    448,
+                    300
+                ]
+            },
+            {
+                "parameters": {
+                    "conditions": {
+                        "options": {
+                            "version": 2,
+                            "leftValue": "",
+                            "caseSensitive": true,
+                            "typeValidation": "strict"
+                        },
+                        "conditions": [
+                            {
+                                "id": "c1",
+                                "leftValue": "={{ $json.skip }}",
+                                "rightValue": true,
+                                "operator": {
+                                    "type": "boolean",
+                                    "operation": "notEquals"
+                                }
+                            }
+                        ],
+                        "combinator": "and"
+                    },
+                    "options": {}
+                },
+                "id": "if-should-process",
+                "name": "Should Process?",
+                "type": "n8n-nodes-base.if",
+                "typeVersion": 2.2,
+                "position": [
+                    672,
+                    300
+                ]
+            },
+            {
+                "parameters": {
+                    "url": "={{ 'https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/leads?campaign_id=eq.' + $json.campaignId + '&status=in.(queued,attempting,callback_scheduled)&next_call_scheduled_at=is.null&is_dnc=eq.false&call_attempts=lt.' + $json.maxAttempts + '&select=id,phone,call_attempts,caller_name,company&limit=200' }}",
+                    "sendHeaders": true,
+                    "headerParameters": {
+                        "parameters": [
+                            {
+                                "name": "apikey",
+                                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                            },
+                            {
+                                "name": "Authorization",
+                                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                            }
+                        ]
+                    },
+                    "options": {}
+                },
+                "id": "http-fetch-leads",
+                "name": "Fetch Unscheduled Leads",
+                "type": "n8n-nodes-base.httpRequest",
+                "typeVersion": 4.2,
+                "position": [
+                    896,
+                    200
+                ]
+            },
+            {
+                "parameters": {
+                    "jsCode": "// Schedule leads: assign next_call_scheduled_at within the campaign calling window\nconst campaignData = $('Should Process?').first().json;\nconst leads = $input.all().map(item => item.json);\nconst leadList = Array.isArray(leads[0]) ? leads[0] : leads;\n\nif (!leadList || leadList.length === 0 || !leadList[0] || !leadList[0].id) {\n  return [{ json: { count: 0, campaignId: campaignData.campaignId, message: 'Keine unplaned Leads' } }];\n}\n\nconst windowStart = campaignData.windowStart || '09:00';\nconst windowEnd = campaignData.windowEnd || '18:00';\nconst [startH, startM] = windowStart.split(':').map(Number);\nconst [endH, endM] = windowEnd.split(':').map(Number);\nconst startMinutes = startH * 60 + startM;\nconst endMinutes = endH * 60 + endM;\nconst windowMinutes = endMinutes - startMinutes;\n\nconst now = new Date();\nconst today = new Date(now);\ntoday.setHours(0, 0, 0, 0);\n\n// Emit individual items for each lead update\nconst results = leadList.map((lead, i) => {\n  const offset = Math.floor(startMinutes + (windowMinutes * i / Math.max(leadList.length, 1)));\n  const jitter = Math.floor(Math.random() * 10);\n  const scheduleTime = new Date(today);\n  scheduleTime.setHours(Math.floor((offset + jitter) / 60), (offset + jitter) % 60, Math.floor(Math.random() * 60), 0);\n  \n  if (scheduleTime < now) {\n    scheduleTime.setDate(scheduleTime.getDate() + 1);\n  }\n  \n  return {\n    json: {\n      leadId: lead.id,\n      next_call_scheduled_at: scheduleTime.toISOString(),\n      status: 'attempting',\n      follow_up_reason: 'Initiale Kampagnen-Planung',\n      campaignId: campaignData.campaignId\n    }\n  };\n});\n\nreturn results;"
+                },
+                "id": "code-schedule-leads",
+                "name": "Schedule Leads",
+                "type": "n8n-nodes-base.code",
+                "typeVersion": 2,
+                "position": [
+                    1120,
+                    200
+                ]
+            },
+            {
+                "parameters": {
+                    "method": "PATCH",
+                    "url": "={{ 'https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/leads?id=eq.' + $json.leadId }}",
+                    "sendHeaders": true,
+                    "headerParameters": {
+                        "parameters": [
+                            {
+                                "name": "apikey",
+                                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                            },
+                            {
+                                "name": "Authorization",
+                                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                            },
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "name": "Prefer",
+                                "value": "return=minimal"
+                            }
+                        ]
+                    },
+                    "sendBody": true,
+                    "contentType": "raw",
+                    "rawContentType": "application/json",
+                    "body": "={{ JSON.stringify({ next_call_scheduled_at: $json.next_call_scheduled_at, status: $json.status, follow_up_reason: $json.follow_up_reason }) }}",
+                    "options": {}
+                },
+                "id": "http-update-lead",
+                "name": "Update Lead Schedule",
+                "type": "n8n-nodes-base.httpRequest",
+                "typeVersion": 4.2,
+                "position": [
+                    1344,
+                    200
+                ],
+                "continueOnFail": true
+            },
+            {
+                "parameters": {
+                    "jsCode": "// Update campaign metrics: count total_leads, leads_called, leads_connected, leads_converted\n// We aggregate by looking at lead data from the input items\nconst items = $input.all();\nconst campaignData = $('Should Process?').first().json;\nconst campaignId = campaignData.campaignId;\n\n// Just return the campaign ID - the metrics update will query Supabase directly\nreturn [{ json: { campaignId } }];"
+                },
+                "id": "code-prep-metrics",
+                "name": "Prepare Metrics Query",
+                "type": "n8n-nodes-base.code",
+                "typeVersion": 2,
+                "position": [
+                    1568,
+                    200
+                ]
+            },
+            {
+                "parameters": {
+                    "method": "PATCH",
+                    "url": "={{ 'https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/campaigns?id=eq.' + $json.campaignId }}",
+                    "sendHeaders": true,
+                    "headerParameters": {
+                        "parameters": [
+                            {
+                                "name": "apikey",
+                                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+                            },
+                            {
+                                "name": "Authorization",
+                                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+                            },
+                            {
+                                "name": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "name": "Prefer",
+                                "value": "return=minimal"
+                            }
+                        ]
+                    },
+                    "sendBody": true,
+                    "contentType": "raw",
+                    "rawContentType": "application/json",
+                    "body": "={{ JSON.stringify({ updated_at: new Date().toISOString() }) }}",
+                    "options": {}
+                },
+                "id": "http-update-campaign",
+                "name": "Update Campaign Timestamp",
+                "type": "n8n-nodes-base.httpRequest",
+                "typeVersion": 4.2,
+                "position": [
+                    1792,
+                    200
+                ],
+                "continueOnFail": true
+            }
+        ],
+        "connections": {
+            "Daily 06:00 Trigger": {
+                "main": [
+                    [
+                        {
+                            "node": "Fetch Active Campaigns",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Fetch Active Campaigns": {
+                "main": [
+                    [
+                        {
+                            "node": "Process Campaigns",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Process Campaigns": {
+                "main": [
+                    [
+                        {
+                            "node": "Should Process?",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Should Process?": {
+                "main": [
+                    [
+                        {
+                            "node": "Fetch Unscheduled Leads",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ],
+                    []
+                ]
+            },
+            "Fetch Unscheduled Leads": {
+                "main": [
+                    [
+                        {
+                            "node": "Schedule Leads",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Schedule Leads": {
+                "main": [
+                    [
+                        {
+                            "node": "Update Lead Schedule",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Update Lead Schedule": {
+                "main": [
+                    [
+                        {
+                            "node": "Prepare Metrics Query",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Prepare Metrics Query": {
+                "main": [
+                    [
+                        {
+                            "node": "Update Campaign Timestamp",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            }
+        },
+        "authors": "Fynn Loosen",
+        "name": null,
+        "description": null,
+        "autosaved": false,
+        "workflowPublishHistory": [
+            {
+                "createdAt": "2026-03-03T16:59:35.749Z",
+                "id": 473,
+                "workflowId": "5XPYVYKLfZR0QzZf",
+                "versionId": "76888cb7-55ea-4614-b1c6-4947a08988fb",
+                "event": "activated",
+                "userId": "495728b9-b3cb-456c-9843-b80be60568f8"
+            }
+        ]
+    }
+}

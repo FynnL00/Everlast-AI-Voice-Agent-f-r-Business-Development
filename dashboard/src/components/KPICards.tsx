@@ -1,68 +1,91 @@
 "use client";
 
-import { Phone, TrendingUp, Clock, SmilePlus } from "lucide-react";
+import { PhoneOutgoing, PhoneCall, Voicemail, Clock, CalendarCheck, Gauge } from "lucide-react";
 import { KPICard } from "@/components/ui/KPICard";
 
 interface KPICardsProps {
-  callsInRange: number;
+  attempts: number;
+  connectionRate: number;
+  voicemailRate: number;
+  avgDuration: number;
+  demoBookingRate: number;
+  callsPerHour: number;
   callLabel: string;
   callSubtitle?: string;
-  conversionRate: number;
-  avgDuration: number;
-  positiveSentimentRate: number;
 }
 
 export default function KPICards({
-  callsInRange,
+  attempts,
+  connectionRate,
+  voicemailRate,
+  avgDuration,
+  demoBookingRate,
+  callsPerHour,
   callLabel,
   callSubtitle,
-  conversionRate,
-  avgDuration,
-  positiveSentimentRate,
 }: KPICardsProps) {
   const mins = Math.floor(avgDuration / 60);
   const secs = Math.round(avgDuration % 60);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <KPICard
         label={callLabel}
-        numericValue={callsInRange}
+        numericValue={attempts}
         suffix=""
-        icon={Phone}
+        icon={PhoneOutgoing}
         colorClass="text-purple-400"
         bgClass="bg-purple-500/10"
         subtitle={callSubtitle}
-        tooltip="Anzahl eingehender Anrufe im gewählten Zeitraum."
+        tooltip="Gesamtanzahl aller Outbound-Anrufversuche im gewählten Zeitraum."
       />
       <KPICard
-        label="Conversion-Rate"
-        numericValue={conversionRate}
+        label="Connection Rate"
+        numericValue={connectionRate}
         suffix="%"
-        icon={TrendingUp}
+        icon={PhoneCall}
         colorClass="text-green-400"
         bgClass="bg-green-500/10"
-        tooltip="Anteil der Anrufe, die zu einem gebuchten Termin geführt haben."
-        tooltipFormula="Conversion Rate = Termine ÷ Alle Anrufe × 100"
+        tooltip="Anteil der Anrufversuche, bei denen der Kontakt erreicht wurde."
+        tooltipFormula="Connection Rate = Erreichte ÷ Versuche × 100"
       />
       <KPICard
-        label="Gesprächsdauer"
-        value={`${mins}:${secs.toString().padStart(2, "0")}`}
-        icon={Clock}
+        label="Mailbox-Quote"
+        numericValue={voicemailRate}
+        suffix="%"
+        icon={Voicemail}
         colorClass="text-amber-400"
         bgClass="bg-amber-500/10"
-        tooltip="Durchschnittliche Dauer aller aufgezeichneten Gespräche."
-        tooltipFormula="Ø Dauer = Summe Gesprächszeiten ÷ Anzahl Gespräche"
+        tooltip="Anteil der Anrufversuche, die auf der Mailbox gelandet sind."
+        tooltipFormula="Mailbox-Quote = Mailbox ÷ Versuche × 100"
       />
       <KPICard
-        label="Sentiment"
-        numericValue={positiveSentimentRate}
+        label="Ø Gesprächsdauer"
+        value={`${mins}:${secs.toString().padStart(2, "0")}`}
+        icon={Clock}
+        colorClass="text-cyan-400"
+        bgClass="bg-cyan-500/10"
+        tooltip="Durchschnittliche Dauer aller verbundenen Gespräche."
+        tooltipFormula="Ø Dauer = Summe Gesprächszeiten ÷ Verbundene Gespräche"
+      />
+      <KPICard
+        label="Demo-Buchungsrate"
+        numericValue={demoBookingRate}
         suffix="%"
-        icon={SmilePlus}
+        icon={CalendarCheck}
         colorClass="text-emerald-400"
         bgClass="bg-emerald-500/10"
-        tooltip="Anteil der Gespräche mit positiver Stimmungsanalyse."
-        tooltipFormula="Positiv-Rate = Positive Calls ÷ Calls mit Sentiment × 100"
+        tooltip="Anteil der erreichten Kontakte, die eine Demo gebucht haben."
+        tooltipFormula="Demo-Rate = Demos gebucht ÷ Erreichte × 100"
+      />
+      <KPICard
+        label="Calls/Stunde"
+        value={callsPerHour.toFixed(1)}
+        icon={Gauge}
+        colorClass="text-indigo-400"
+        bgClass="bg-indigo-500/10"
+        tooltip="Durchschnittliche Anzahl Anrufversuche pro Stunde heute."
+        tooltipFormula="Calls/h = Heutige Versuche ÷ Stunden seit Mitternacht"
       />
     </div>
   );

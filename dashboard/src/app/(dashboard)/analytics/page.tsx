@@ -28,6 +28,11 @@ import ObjectionConversionCorrelation from "@/components/objections/ObjectionCon
 import ObjectionTrend from "@/components/objections/ObjectionTrend";
 import ObjectionCounterArguments from "@/components/objections/ObjectionCounterArguments";
 
+// Reachability tab components
+import OutboundFunnel from "@/components/analytics/OutboundFunnel";
+import BestTimeHeatmap from "@/components/dashboard/BestTimeHeatmap";
+import ConnectionRateOverTime from "@/components/analytics/ConnectionRateOverTime";
+
 function AnalyticsContent() {
   const { leads, loading } = useLeads();
   const searchParams = useSearchParams();
@@ -67,6 +72,7 @@ function AnalyticsContent() {
           <TabsTrigger value="overview">Überblick</TabsTrigger>
           <TabsTrigger value="sentiment">Sentiment</TabsTrigger>
           <TabsTrigger value="objections">Einwände</TabsTrigger>
+          <TabsTrigger value="reachability">Erreichbarkeit</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -105,6 +111,17 @@ function AnalyticsContent() {
             </div>
             <ObjectionTrend leads={leads} />
             <ObjectionCounterArguments leads={leads} />
+          </div>
+        </TabsContent>
+
+        {/* Reachability Tab */}
+        <TabsContent value="reachability">
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <OutboundFunnel leads={leads} />
+              <BestTimeHeatmap leads={leads} />
+            </div>
+            <ConnectionRateOverTime leads={leads} />
           </div>
         </TabsContent>
       </Tabs>

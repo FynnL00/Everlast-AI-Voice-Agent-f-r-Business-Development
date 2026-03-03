@@ -16,6 +16,8 @@ import {
   Moon,
   AlertTriangle,
   UserCog,
+  Megaphone,
+  ShieldBan,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -63,15 +65,22 @@ export default function Sidebar({ isLive = false }: SidebarProps) {
         items: [{ href: "/", label: "Dashboard", icon: LayoutDashboard }],
       },
       {
-        label: "DATEN",
+        label: "OUTBOUND",
         items: [
-          { href: "/leads", label: "Leads", icon: Users },
+          { href: "/campaigns", label: "Kampagnen", icon: Megaphone },
           { href: "/pipeline", label: "Pipeline", icon: Kanban },
         ],
       },
       {
+        label: "DATEN",
+        items: [
+          { href: "/leads", label: "Leads", icon: Users },
+          { href: "/dnc", label: "DNC-Liste", icon: ShieldBan },
+        ],
+      },
+      {
         label: "ANALYSE",
-        items: [{ href: "/analytics", label: "Analytics", icon: BarChart3 }],
+        items: [{ href: "/analytics", label: "Analytik", icon: BarChart3 }],
       },
       {
         label: "TOOLS",

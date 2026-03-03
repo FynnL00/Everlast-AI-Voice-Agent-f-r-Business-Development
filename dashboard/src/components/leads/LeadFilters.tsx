@@ -111,6 +111,10 @@ export default function LeadFilters({ filters, onChange, open, className }: Lead
       appointmentBooked: null,
       assignedTo: null,
       dateRange: { from: null, to: null },
+      campaignId: null,
+      dispositionCodes: [],
+      isDnc: null,
+      callDirection: null,
     });
   };
 

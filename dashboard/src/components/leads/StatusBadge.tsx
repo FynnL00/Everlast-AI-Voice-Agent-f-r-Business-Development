@@ -9,6 +9,11 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
   lost: { label: "Verloren", color: "var(--score-danger)" },
   not_reached: { label: "Nicht erreicht", color: "var(--chart-3)" },
   rejected: { label: "Abgelehnt", color: "var(--destructive)" },
+  queued: { label: "Warteschlange", color: "var(--muted-foreground)" },
+  attempting: { label: "Wird angerufen", color: "var(--chart-1)" },
+  exhausted: { label: "Ausgeschöpft", color: "var(--chart-3)" },
+  callback_scheduled: { label: "Rückruf geplant", color: "var(--chart-5)" },
+  dnc: { label: "DNC", color: "var(--destructive)" },
 };
 
 interface StatusBadgeProps {

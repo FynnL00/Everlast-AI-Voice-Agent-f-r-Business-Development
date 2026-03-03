@@ -9,7 +9,8 @@ import LeadSearch from "@/components/leads/LeadSearch";
 import LeadFilters from "@/components/leads/LeadFilters";
 import EnhancedLeadTable from "@/components/leads/EnhancedLeadTable";
 import Pagination from "@/components/leads/Pagination";
-import { Users, Download, SlidersHorizontal, X } from "lucide-react";
+import ImportLeadsDialog from "@/components/leads/ImportLeadsDialog";
+import { Users, Download, Upload, SlidersHorizontal, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { exportLeadsCSV } from "@/lib/export";
 
@@ -74,6 +75,7 @@ export default function LeadsPage() {
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
   const [currentPage, setCurrentPage] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   useEffect(() => {
     setCurrentPage(0);
@@ -182,6 +184,15 @@ export default function LeadsPage() {
           <span className="font-semibold text-foreground">{filteredLeads.length}</span> Leads
         </span>
 
+        {/* Import */}
+        <button
+          onClick={() => setImportDialogOpen(true)}
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-lg border border-border bg-card hover:bg-sidebar-accent transition-colors text-foreground"
+        >
+          <Upload className="h-3.5 w-3.5" />
+          Import
+        </button>
+
         {/* CSV Export */}
         <button
           onClick={() => exportLeadsCSV(filteredLeads)}
@@ -224,6 +235,8 @@ export default function LeadsPage() {
         pageSize={PAGE_SIZE}
         onPageChange={setCurrentPage}
       />
+
+      <ImportLeadsDialog open={importDialogOpen} onClose={() => setImportDialogOpen(false)} />
     </div>
   );
 }
