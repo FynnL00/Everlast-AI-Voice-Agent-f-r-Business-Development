@@ -5,6 +5,7 @@ import { CalendarCheck, Calendar, UserCog, Loader2 } from "lucide-react";
 import type { Lead } from "@/lib/types";
 import { STATUS_LABELS } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/Card";
+import { cn } from "@/lib/utils";
 import { useTeam } from "@/lib/team-context";
 import { ROLE_LABELS } from "@/lib/types";
 import TeamMemberSelect from "@/components/ui/team-member-select";
@@ -14,6 +15,7 @@ interface AppointmentAssignmentCardProps {
   lead: Lead;
   onStatusChange: (status: Lead["status"]) => Promise<void>;
   onAssign: (id: string | null) => Promise<void>;
+  className?: string;
 }
 
 const ALL_STATUSES: Lead["status"][] = [
@@ -23,14 +25,13 @@ const ALL_STATUSES: Lead["status"][] = [
   "appointment_booked",
   "converted",
   "lost",
-  "not_reached",
-  "rejected",
 ];
 
 export default function AppointmentAssignmentCard({
   lead,
   onStatusChange,
   onAssign,
+  className,
 }: AppointmentAssignmentCardProps) {
   const { teamMembers, getTeamMember } = useTeam();
   const [statusSaving, setStatusSaving] = useState(false);
@@ -63,7 +64,7 @@ export default function AppointmentAssignmentCard({
   };
 
   return (
-    <Card className="shadow-sm">
+    <Card className={cn("shadow-sm", className)}>
       {/* Header: Lead Name + Status Dropdown */}
       <div className="flex items-center justify-between gap-4 px-6 pt-5 pb-4 border-b border-border/50">
         <h2 className="text-lg font-bold text-foreground truncate">
@@ -96,7 +97,7 @@ export default function AppointmentAssignmentCard({
         </div>
       </div>
 
-      <CardContent className="pt-4 space-y-5">
+      <CardContent className="pt-4 space-y-5 flex-1 flex flex-col">
         {/* Termin Section */}
         <div>
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
@@ -135,7 +136,7 @@ export default function AppointmentAssignmentCard({
         <div className="border-t border-border/50" />
 
         {/* Zuständigkeit Section */}
-        <div>
+        <div className="flex-1 flex flex-col">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <UserCog size={14} />
             Zuständigkeit

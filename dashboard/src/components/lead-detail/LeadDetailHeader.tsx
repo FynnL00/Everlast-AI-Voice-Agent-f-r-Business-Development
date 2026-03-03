@@ -24,14 +24,14 @@ export default function LeadDetailHeader({ lead }: LeadDetailHeaderProps) {
         <span>Zurück zu Leads</span>
       </Link>
 
-      {/* Main header row */}
+      {/* Name + Grade */}
       <div className="flex flex-wrap items-center gap-3 mb-2">
-        <h1 className="text-3xl font-bold text-foreground tracking-tight">
+        <h1 className="text-3xl font-bold text-foreground tracking-tight leading-none">
           {lead.caller_name || "Unbekannter Lead"}
         </h1>
         {lead.lead_grade && (
           <div
-            className="px-2.5 py-0.5 rounded-full text-xs font-bold ring-1 ring-inset"
+            className="px-2.5 py-1 rounded-full text-xs font-bold ring-1 ring-inset"
             style={{
               backgroundColor: `${getGradeColor(lead.lead_grade)}15`,
               color: getGradeColor(lead.lead_grade),
@@ -41,23 +41,28 @@ export default function LeadDetailHeader({ lead }: LeadDetailHeaderProps) {
             {lead.lead_grade}-Lead
           </div>
         )}
-        <StatusBadge status={lead.status} />
-        <SentimentIndicator sentiment={lead.sentiment} showLabel />
       </div>
 
-      {/* Secondary info row */}
-      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground font-medium mt-3">
+      {/* Metadata row — each item has an icon or label for context */}
+      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground font-medium mt-3">
+        <div className="flex items-center h-8 bg-sidebar-accent/50 px-2.5 rounded-md border border-border">
+          <StatusBadge status={lead.status} outboundState={lead.outbound_state} />
+        </div>
+        <div className="flex items-center gap-1.5 h-8 bg-sidebar-accent/50 px-2.5 rounded-md border border-border">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70">Stimmung</span>
+          <SentimentIndicator sentiment={lead.sentiment} sentimentScore={lead.sentiment_score} sentimentReason={lead.sentiment_reason} showLabel />
+        </div>
         {lead.call_duration_seconds != null && (
-          <div className="flex items-center gap-1.5 bg-sidebar-accent/50 px-2 py-1 rounded-md border border-border">
+          <div className="flex items-center gap-1.5 h-8 bg-sidebar-accent/50 px-2.5 rounded-md border border-border">
             <Clock size={14} className="text-muted-foreground" />
             <span>{formatDuration(lead.call_duration_seconds)}</span>
           </div>
         )}
-        <div className="flex items-center gap-1.5 bg-sidebar-accent/50 px-2 py-1 rounded-md border border-border">
+        <div className="flex items-center gap-1.5 h-8 bg-sidebar-accent/50 px-2.5 rounded-md border border-border">
           <Calendar size={14} className="text-muted-foreground" />
           <span>Angerufen am {formatDate(lead.created_at)}</span>
         </div>
-        <div className="flex items-center gap-1.5 bg-sidebar-accent/50 px-2 py-1 rounded-md border border-border">
+        <div className="flex items-center gap-1.5 h-8 bg-sidebar-accent/50 px-2.5 rounded-md border border-border">
           <Shield
             size={14}
             className={

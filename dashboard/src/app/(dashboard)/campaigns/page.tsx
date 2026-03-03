@@ -41,41 +41,46 @@ export default function CampaignsPage() {
       />
 
       {/* KPI Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KPICard
-          label="Gesamt"
-          numericValue={stats.total}
-          icon={Megaphone}
-          colorClass="text-chart-1"
-          bgClass="bg-chart-1/10"
-          tooltip="Gesamtanzahl aller Kampagnen"
-        />
-        <KPICard
-          label="Aktive"
-          numericValue={stats.active}
-          icon={Activity}
-          colorClass="text-green-500"
-          bgClass="bg-green-500/10"
-          tooltip="Aktuell laufende Kampagnen"
-        />
-        <KPICard
-          label="Leads total"
-          numericValue={stats.totalLeads}
-          icon={Users}
-          colorClass="text-chart-3"
-          bgClass="bg-chart-3/10"
-          tooltip="Gesamtzahl aller Leads in Kampagnen"
-        />
-        <KPICard
-          label="Ø Connection Rate"
-          numericValue={Math.round(stats.avgConnectionRate * 10) / 10}
-          suffix="%"
-          icon={Signal}
-          colorClass="text-chart-5"
-          bgClass="bg-chart-5/10"
-          tooltip="Durchschnittliche Erreichbarkeit"
-          tooltipFormula="Erreicht / Angerufen"
-        />
+      <div className="glass p-6 rounded-2xl w-full transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px">
+        <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 block">
+          Kampagnen KPIs
+        </span>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <KPICard
+            label="Gesamt"
+            numericValue={stats.total}
+            icon={Megaphone}
+            colorClass="text-chart-1"
+            bgClass="bg-chart-1/10"
+            tooltip="Gesamtanzahl aller Kampagnen"
+          />
+          <KPICard
+            label="Aktive"
+            numericValue={stats.active}
+            icon={Activity}
+            colorClass="text-green-500"
+            bgClass="bg-green-500/10"
+            tooltip="Aktuell laufende Kampagnen"
+          />
+          <KPICard
+            label="Leads total"
+            numericValue={stats.totalLeads}
+            icon={Users}
+            colorClass="text-chart-3"
+            bgClass="bg-chart-3/10"
+            tooltip="Gesamtzahl aller Leads in Kampagnen"
+          />
+          <KPICard
+            label="Ø Connection Rate"
+            numericValue={Math.round(stats.avgConnectionRate * 10) / 10}
+            suffix="%"
+            icon={Signal}
+            colorClass="text-chart-5"
+            bgClass="bg-chart-5/10"
+            tooltip="Durchschnittliche Erreichbarkeit"
+            tooltipFormula="Erreicht / Angerufen"
+          />
+        </div>
       </div>
 
       {/* Campaign Table */}

@@ -41,8 +41,6 @@ export default function BestTimeHeatmap({ leads }: BestTimeHeatmapProps) {
     let dataFound = false;
     const connectedDispositions = new Set([
       "connected",
-      "qualified",
-      "demo_booked",
       "callback",
     ]);
 
@@ -109,7 +107,7 @@ export default function BestTimeHeatmap({ leads }: BestTimeHeatmapProps) {
   }
 
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full flex flex-col">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px w-full h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-base font-semibold">Beste Anrufzeiten</CardTitle>
         <CardDescription>Connection Rate nach Wochentag & Uhrzeit</CardDescription>

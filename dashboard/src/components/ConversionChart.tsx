@@ -61,15 +61,18 @@ function CustomTooltip({
 export default function ConversionChart({ data, subtitle }: ConversionChartProps) {
   const maxCalls = Math.max(...data.map((d) => d.calls), 1);
   const [revealed, setRevealed] = useState(false);
+  const [animDone, setAnimDone] = useState(false);
 
   useEffect(() => {
     setRevealed(false);
-    const timer = setTimeout(() => setRevealed(true), 50);
-    return () => clearTimeout(timer);
+    setAnimDone(false);
+    const t1 = setTimeout(() => setRevealed(true), 50);
+    const t2 = setTimeout(() => setAnimDone(true), 2500);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [data, subtitle]);
 
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full overflow-visible">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px w-full h-full overflow-visible">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold">Entwicklung</CardTitle>
         <CardDescription>{subtitle ?? "Letzte 7 Tage"}</CardDescription>
@@ -78,8 +81,8 @@ export default function ConversionChart({ data, subtitle }: ConversionChartProps
         <div
           className="h-[280px] overflow-visible"
           style={{
-            clipPath: revealed ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)",
-            transition: "clip-path 2.4s cubic-bezier(0.16, 1, 0.3, 1)",
+            clipPath: animDone ? "none" : revealed ? "inset(0 0% 0 0)" : "inset(0 100% 0 0)",
+            transition: animDone ? "none" : "clip-path 2.4s cubic-bezier(0.16, 1, 0.3, 1)",
           }}
         >
           <ResponsiveContainer width="100%" height="100%">
@@ -118,7 +121,7 @@ export default function ConversionChart({ data, subtitle }: ConversionChartProps
                 domain={[0, Math.ceil(maxCalls * 1.2)]}
                 allowDecimals={false}
               />
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: "var(--border)" }} isAnimationActive={false} allowEscapeViewBox={{ x: true, y: true }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: "var(--border)" }} isAnimationActive={false} allowEscapeViewBox={{ x: true, y: true }} wrapperStyle={{ zIndex: 9999 }} />
               <Legend
                 verticalAlign="top"
                 align="left"

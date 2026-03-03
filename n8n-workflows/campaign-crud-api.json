@@ -624,7 +624,7 @@
         },
         {
             "parameters": {
-                "jsCode": "// Build batch update: set campaign_id and status=queued for all leads\nconst data = $input.first().json;\nconst leadIds = data.leadIds;\nconst campaignId = data.campaignId;\n\n// Emit individual items for each lead\nreturn leadIds.map(id => ({ json: { leadId: id, campaignId } }));"
+                "jsCode": "// Build batch update: set campaign_id for all leads\nconst data = $input.first().json;\nconst leadIds = data.leadIds;\nconst campaignId = data.campaignId;\n\n// Emit individual items for each lead\nreturn leadIds.map(id => ({ json: { leadId: id, campaignId } }));"
             },
             "id": "code-split-leads",
             "name": "Split Lead IDs",
@@ -663,7 +663,7 @@
                 "sendBody": true,
                 "contentType": "raw",
                 "rawContentType": "application/json",
-                "body": "={{ JSON.stringify({ campaign_id: $json.campaignId, status: 'queued', call_direction: 'outbound' }) }}",
+                "body": "={{ JSON.stringify({ campaign_id: $json.campaignId, status: 'new', call_direction: 'outbound' }) }}",
                 "options": {}
             },
             "id": "http-assign-lead",
@@ -1658,7 +1658,7 @@
             },
             {
                 "parameters": {
-                    "jsCode": "// Build batch update: set campaign_id and status=queued for all leads\nconst data = $input.first().json;\nconst leadIds = data.leadIds;\nconst campaignId = data.campaignId;\n\n// Emit individual items for each lead\nreturn leadIds.map(id => ({ json: { leadId: id, campaignId } }));"
+                    "jsCode": "// Build batch update: set campaign_id for all leads\nconst data = $input.first().json;\nconst leadIds = data.leadIds;\nconst campaignId = data.campaignId;\n\n// Emit individual items for each lead\nreturn leadIds.map(id => ({ json: { leadId: id, campaignId } }));"
                 },
                 "id": "code-split-leads",
                 "name": "Split Lead IDs",
@@ -1697,7 +1697,7 @@
                     "sendBody": true,
                     "contentType": "raw",
                     "rawContentType": "application/json",
-                    "body": "={{ JSON.stringify({ campaign_id: $json.campaignId, status: 'queued', call_direction: 'outbound' }) }}",
+                    "body": "={{ JSON.stringify({ campaign_id: $json.campaignId, status: 'new', call_direction: 'outbound' }) }}",
                     "options": {}
                 },
                 "id": "http-assign-lead",

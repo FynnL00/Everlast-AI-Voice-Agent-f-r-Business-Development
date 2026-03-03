@@ -5,7 +5,7 @@ import { useLeads } from "@/lib/leads-context";
 import type { Lead } from "@/lib/types";
 import { STATUS_LABELS } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
-import { TrendingDown, PhoneOff, XCircle } from "lucide-react";
+import { TrendingDown, PhoneOff } from "lucide-react";
 
 const FUNNEL_STAGES: Lead["status"][] = [
   "new",
@@ -27,7 +27,7 @@ export default function PipelineSummary() {
   const { filteredLeads } = useLeads();
   const [hovered, setHovered] = useState<number | null>(null);
 
-  const { stages, lostCount, notReachedCount, rejectedCount } = useMemo(() => {
+  const { stages, lostCount, notReachedCount } = useMemo(() => {
     const counts: Record<Lead["status"], number> = {
       new: 0,
       contacted: 0,
@@ -35,15 +35,9 @@ export default function PipelineSummary() {
       appointment_booked: 0,
       converted: 0,
       lost: 0,
-      not_reached: 0,
-      rejected: 0,
-      queued: 0,
-      attempting: 0,
-      exhausted: 0,
-      callback_scheduled: 0,
-      dnc: 0,
     };
     for (const lead of filteredLeads) counts[lead.status]++;
+    const notReachedTotal = filteredLeads.filter(l => l.outbound_state === "not_reached").length;
 
     const cumulative: number[] = [];
     let sum = 0;
@@ -74,8 +68,7 @@ export default function PipelineSummary() {
         };
       }),
       lostCount: counts.lost,
-      notReachedCount: counts.not_reached,
-      rejectedCount: counts.rejected,
+      notReachedCount: notReachedTotal,
     };
   }, [filteredLeads]);
 
@@ -226,7 +219,7 @@ export default function PipelineSummary() {
           </svg>
         </div>
 
-        {(lostCount > 0 || notReachedCount > 0 || rejectedCount > 0) && (
+        {(lostCount > 0 || notReachedCount > 0) && (
           <div className="flex items-center gap-4 mt-2 pt-4 border-t border-border/50 flex-wrap">
             {lostCount > 0 && (
               <>
@@ -256,19 +249,6 @@ export default function PipelineSummary() {
                   <PhoneOff size={14} className="text-orange-400" />
                   <span className="text-sm font-bold text-orange-400">
                     {notReachedCount}
-                  </span>
-                </div>
-              </>
-            )}
-            {rejectedCount > 0 && (
-              <>
-                <span className="w-20 shrink-0 text-xs font-medium text-muted-foreground text-right">
-                  Abgelehnt
-                </span>
-                <div className="flex items-center gap-2.5 bg-red-500/10 px-3 py-1.5 rounded-md border border-red-500/20">
-                  <XCircle size={14} className="text-red-400" />
-                  <span className="text-sm font-bold text-red-400">
-                    {rejectedCount}
                   </span>
                 </div>
               </>

@@ -59,8 +59,6 @@ export default function ConnectionRateOverTime({ leads }: ConnectionRateOverTime
 
     const connectedDispositions = new Set([
       "connected",
-      "qualified",
-      "demo_booked",
       "callback",
     ]);
 
@@ -114,7 +112,7 @@ export default function ConnectionRateOverTime({ leads }: ConnectionRateOverTime
   const hasData = data.some((d) => d.total > 0);
 
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5 w-full h-full">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold">Connection Rate (30 Tage)</CardTitle>
         <CardDescription>Anteil erreichter Kontakte pro Tag</CardDescription>

@@ -9,8 +9,6 @@ export type DispositionCode =
   | 'callback'
   | 'not_interested'
   | 'dnc_request'
-  | 'demo_booked'
-  | 'qualified'
   | 'technical_error';
 
 export const DISPOSITION_LABELS: Record<DispositionCode, string> = {
@@ -23,8 +21,6 @@ export const DISPOSITION_LABELS: Record<DispositionCode, string> = {
   callback: "Rückruf gewünscht",
   not_interested: "Kein Interesse",
   dnc_request: "DNC-Anfrage",
-  demo_booked: "Demo gebucht",
-  qualified: "Qualifiziert",
   technical_error: "Technischer Fehler",
 };
 
@@ -38,8 +34,6 @@ export const DISPOSITION_COLORS: Record<DispositionCode, string> = {
   callback: "var(--chart-5)",
   not_interested: "var(--score-danger)",
   dnc_request: "var(--destructive)",
-  demo_booked: "var(--score-good)",
-  qualified: "var(--chart-5)",
   technical_error: "var(--chart-3)",
 };
 
@@ -137,6 +131,8 @@ export interface Lead {
   transcript: string | null;
   conversation_summary: string | null;
   sentiment: "positiv" | "neutral" | "negativ" | null;
+  sentiment_score: number | null;
+  sentiment_reason: string | null;
   objections_raised: string[] | null;
   drop_off_point: string | null;
   appointment_booked: boolean;
@@ -144,7 +140,8 @@ export interface Lead {
   cal_booking_id: string | null;
   call_started_at: string | null;
   is_decision_maker: boolean | null;
-  status: 'new' | 'contacted' | 'qualified' | 'appointment_booked' | 'converted' | 'lost' | 'not_reached' | 'rejected' | 'queued' | 'attempting' | 'exhausted' | 'callback_scheduled' | 'dnc';
+  status: 'new' | 'contacted' | 'qualified' | 'appointment_booked' | 'converted' | 'lost';
+  outbound_state: OutboundState | null;
   next_steps: string[] | null;
   notes: string | null;
   briefing: string | null;
@@ -198,6 +195,48 @@ export interface ObjectionCategory {
   occurrence_count: number;
 }
 
+// --- Scoring Dimensions ---
+export type ScoringDimension =
+  | 'company_size'
+  | 'tech_stack'
+  | 'pain_point'
+  | 'timeline'
+  | 'engagement'
+  | 'sentiment'
+  | 'objection'
+  | 'drop_off'
+  | 'general';
+
+export const SCORING_DIMENSION_LABELS: Record<ScoringDimension, string> = {
+  company_size: "Unternehmensgröße",
+  tech_stack: "Tech-Stack",
+  pain_point: "Pain Point",
+  timeline: "Timeline",
+  engagement: "Engagement",
+  sentiment: "Stimmung",
+  objection: "Einwand",
+  drop_off: "Gesprächsabbruch",
+  general: "Allgemein",
+};
+
+export const SCORING_DIMENSION_COLORS: Record<ScoringDimension, string> = {
+  company_size: "bg-blue-500/10 text-blue-600 border-blue-200",
+  tech_stack: "bg-purple-500/10 text-purple-600 border-purple-200",
+  pain_point: "bg-orange-500/10 text-orange-600 border-orange-200",
+  timeline: "bg-teal-500/10 text-teal-600 border-teal-200",
+  engagement: "bg-indigo-500/10 text-indigo-600 border-indigo-200",
+  sentiment: "bg-pink-500/10 text-pink-600 border-pink-200",
+  objection: "bg-red-500/10 text-red-600 border-red-200",
+  drop_off: "bg-amber-500/10 text-amber-600 border-amber-200",
+  general: "bg-gray-500/10 text-gray-600 border-gray-200",
+};
+
+// Sorted order for displaying dimensions
+export const SCORING_DIMENSION_ORDER: ScoringDimension[] = [
+  'company_size', 'tech_stack', 'pain_point', 'timeline',
+  'engagement', 'sentiment', 'objection', 'drop_off', 'general',
+];
+
 // --- Quotes ---
 export interface LeadQuote {
   id: string;
@@ -208,24 +247,17 @@ export interface LeadQuote {
   topic: string | null;
   sentiment: 'positiv' | 'neutral' | 'negativ' | null;
   context: string | null;
+  scoring_dimension: ScoringDimension | null;
+  score_value: number | null;
   // Joined from leads for display
   lead_name?: string;
   lead_company?: string;
 }
 
-// --- Early Warning ---
-export interface AlertItem {
-  id: string;
-  lead: Lead;
-  riskLevel: 'high' | 'medium' | 'low';
-  reasons: string[];
-  daysSinceLastActivity: number;
-  suggestedAction: string;
-}
-
 export interface LeadFilters {
   grades: ("A" | "B" | "C")[];
   statuses: Lead["status"][];
+  outboundStates: OutboundState[];
   sentiments: (NonNullable<Lead["sentiment"]>)[];
   appointmentBooked: boolean | null;
   dateRange: { from: string | null; to: string | null };
@@ -246,6 +278,7 @@ export interface LeadUpdatePayload {
   pain_point?: string;
   timeline?: string;
   status?: Lead["status"];
+  outbound_state?: Lead["outbound_state"];
   notes?: string;
   next_steps?: string[];
   assigned_to?: string | null;
@@ -265,13 +298,6 @@ export const STATUS_LABELS: Record<Lead["status"], string> = {
   appointment_booked: "Termin gebucht",
   converted: "Konvertiert",
   lost: "Verloren",
-  not_reached: "Nicht erreicht",
-  rejected: "Abgelehnt",
-  queued: "Warteschlange",
-  attempting: "Wird angerufen",
-  exhausted: "Ausgeschöpft",
-  callback_scheduled: "Rückruf geplant",
-  dnc: "DNC",
 };
 
 export const STATUS_COLORS: Record<Lead["status"], string> = {
@@ -281,13 +307,23 @@ export const STATUS_COLORS: Record<Lead["status"], string> = {
   appointment_booked: "var(--score-warning)",
   converted: "var(--score-good)",
   lost: "var(--score-danger)",
-  not_reached: "var(--chart-3)",
-  rejected: "var(--destructive)",
-  queued: "var(--muted-foreground)",
+};
+
+// --- Outbound State (operational, separate from pipeline status) ---
+export type OutboundState = 'attempting' | 'not_reached' | 'callback_scheduled' | 'exhausted';
+
+export const OUTBOUND_STATE_LABELS: Record<OutboundState, string> = {
+  attempting: "Wird angerufen",
+  not_reached: "Nicht erreicht",
+  callback_scheduled: "Rückruf geplant",
+  exhausted: "Ausgeschöpft",
+};
+
+export const OUTBOUND_STATE_COLORS: Record<OutboundState, string> = {
   attempting: "var(--chart-1)",
-  exhausted: "var(--chart-3)",
+  not_reached: "var(--chart-3)",
   callback_scheduled: "var(--chart-5)",
-  dnc: "var(--destructive)",
+  exhausted: "var(--chart-3)",
 };
 
 export const SENTIMENT_LABELS: Record<NonNullable<Lead["sentiment"]>, string> = {

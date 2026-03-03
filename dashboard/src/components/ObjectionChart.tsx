@@ -25,7 +25,7 @@ export default function ObjectionChart({ data }: ObjectionChartProps) {
   }, []);
 
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full overflow-visible">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px w-full h-full overflow-visible">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold">Top Einwände</CardTitle>
       </CardHeader>

@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
+import { getDropOffPhaseLabel } from "@/lib/utils";
 import { AlertTriangle } from "lucide-react";
 
 interface ObjectionsCardProps {
@@ -67,7 +68,7 @@ export default function ObjectionsCard({
               Abbruchpunkt
             </span>
             <span className="text-sm font-medium text-red-400">
-              {dropOffPoint}
+              {getDropOffPhaseLabel(dropOffPoint)}
             </span>
           </div>
         )}

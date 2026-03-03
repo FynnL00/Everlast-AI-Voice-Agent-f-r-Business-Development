@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { UserX, FileText, Quote, StickyNote, ClipboardList } from "lucide-react";
 import { useLeads } from "@/lib/leads-context";
-import type { Lead, LeadUpdatePayload, LeadQuote } from "@/lib/types";
+import { useCampaigns } from "@/lib/campaigns-context";
+import type { Lead, LeadUpdatePayload, LeadQuote, CallAttempt, ScoringDimension } from "@/lib/types";
+import { SCORING_DIMENSION_LABELS, SCORING_DIMENSION_COLORS, SCORING_DIMENSION_ORDER } from "@/lib/types";
 import EmptyState from "@/components/ui/EmptyState";
+import { Badge } from "@/components/ui/Badge";
+import { cn } from "@/lib/utils";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import LeadDetailHeader from "@/components/lead-detail/LeadDetailHeader";
 import ContactCard from "@/components/lead-detail/ContactCard";
@@ -16,16 +20,22 @@ import TranscriptViewer from "@/components/lead-detail/TranscriptViewer";
 import QualificationScores from "@/components/lead-detail/QualificationScores";
 import BriefingCard from "@/components/lead-detail/BriefingCard";
 import AppointmentAssignmentCard from "@/components/lead-detail/AppointmentAssignmentCard";
+import RecentCallAttemptsCard from "@/components/lead-detail/RecentCallAttemptsCard";
+import FollowUpCadenceTimeline from "@/components/lead-detail/FollowUpCadenceTimeline";
 import QuoteCard from "@/components/quotes/QuoteCard";
+import { computeCadenceSteps, isEarlyStage, DEFAULT_MAX_ATTEMPTS } from "@/lib/cadence-utils";
 
 export default function LeadDetailPage() {
   const params = useParams<{ id: string }>();
   const { fetchLeadDetail, updateLead, generateBriefing } = useLeads();
+  const { campaigns } = useCampaigns();
   const [lead, setLead] = useState<Lead | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [quotes, setQuotes] = useState<LeadQuote[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(false);
+  const [callAttempts, setCallAttempts] = useState<CallAttempt[]>([]);
+  const [attemptsLoading, setAttemptsLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,6 +87,50 @@ export default function LeadDetailPage() {
       cancelled = true;
     };
   }, [params.id]);
+
+  // Fetch call attempts for this lead
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAttempts() {
+      setAttemptsLoading(true);
+      try {
+        const res = await fetch(`/api/leads/${params.id}/attempts`);
+        if (!res.ok) {
+          setCallAttempts([]);
+          return;
+        }
+        const json = await res.json();
+        if (!cancelled) setCallAttempts(json.data ?? []);
+      } catch {
+        if (!cancelled) setCallAttempts([]);
+      } finally {
+        if (!cancelled) setAttemptsLoading(false);
+      }
+    }
+
+    loadAttempts();
+    return () => {
+      cancelled = true;
+    };
+  }, [params.id]);
+
+  // Compute cadence steps
+  const campaign = lead?.campaign_id
+    ? campaigns.find((c) => c.id === lead.campaign_id) ?? null
+    : null;
+  const cadenceConfig = campaign?.cadence_config ?? null;
+  const maxAttempts = cadenceConfig?.max_attempts ?? DEFAULT_MAX_ATTEMPTS;
+
+  const cadenceSteps = useMemo(() => {
+    if (!lead) return [];
+    return computeCadenceSteps(lead, callAttempts, cadenceConfig);
+  }, [lead, callAttempts, cadenceConfig]);
+
+  const earlyStage = lead ? isEarlyStage(lead) : false;
+  const showCadence =
+    callAttempts.length > 0 ||
+    (lead?.call_direction === "outbound");
 
   const handleUpdate = useCallback(
     async (fields: Partial<LeadUpdatePayload>) => {
@@ -146,20 +200,42 @@ export default function LeadDetailPage() {
         <LeadDetailHeader lead={lead} />
       </div>
 
-      {/* Top section: Appointment+Assignment | Contact (compact) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        <div className="lg:col-span-2">
-          <AppointmentAssignmentCard
-            lead={lead}
-            onStatusChange={handleStatusChange}
-            onAssign={handleAssign}
+      {/* Top section: Conditional layout based on lead stage */}
+      {earlyStage ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <ContactCard lead={lead} onUpdate={handleUpdate} className="h-full" />
+          <RecentCallAttemptsCard
+            attempts={callAttempts}
+            loading={attemptsLoading}
+            className="h-full"
           />
         </div>
-
-        <div className="lg:col-span-1">
-          <ContactCard lead={lead} onUpdate={handleUpdate} className="h-full" />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="lg:col-span-2">
+            <AppointmentAssignmentCard
+              lead={lead}
+              onStatusChange={handleStatusChange}
+              onAssign={handleAssign}
+              className="h-full"
+            />
+          </div>
+          <div className="lg:col-span-1">
+            <ContactCard lead={lead} onUpdate={handleUpdate} className="h-full" />
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* Follow-Up Cadence Timeline */}
+      {showCadence && (
+        <div className="mb-6">
+          <FollowUpCadenceTimeline
+            steps={cadenceSteps}
+            maxAttempts={maxAttempts}
+            leadStatus={lead.status}
+          />
+        </div>
+      )}
 
       {/* Call Briefing – full width */}
       <div className="mb-6">
@@ -198,6 +274,8 @@ export default function LeadDetailPage() {
             <ConversationSummary
               summary={lead.conversation_summary}
               sentiment={lead.sentiment}
+              sentimentScore={lead.sentiment_score}
+              sentimentReason={lead.sentiment_reason}
             />
             <QualificationScores lead={lead} />
             <ObjectionsCard
@@ -227,10 +305,42 @@ export default function LeadDetailPage() {
               description="Für diesen Lead wurden noch keine Zitate extrahiert."
             />
           ) : (
-            <div className="space-y-3">
-              {quotes.map((quote) => (
-                <QuoteCard key={quote.id} quote={quote} />
-              ))}
+            <div className="space-y-6">
+              {(() => {
+                const grouped = quotes.reduce<Record<string, LeadQuote[]>>((acc, q) => {
+                  const dim = q.scoring_dimension || "general";
+                  if (!acc[dim]) acc[dim] = [];
+                  acc[dim].push(q);
+                  return acc;
+                }, {});
+
+                return SCORING_DIMENSION_ORDER
+                  .filter((dim) => grouped[dim]?.length)
+                  .map((dim) => (
+                    <div key={dim}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-xs font-semibold",
+                            SCORING_DIMENSION_COLORS[dim]
+                          )}
+                        >
+                          {SCORING_DIMENSION_LABELS[dim]}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground/60">
+                          {grouped[dim].length}{" "}
+                          {grouped[dim].length === 1 ? "Zitat" : "Zitate"}
+                        </span>
+                      </div>
+                      <div className="space-y-3">
+                        {grouped[dim].map((quote) => (
+                          <QuoteCard key={quote.id} quote={quote} />
+                        ))}
+                      </div>
+                    </div>
+                  ));
+              })()}
             </div>
           )}
         </TabsContent>

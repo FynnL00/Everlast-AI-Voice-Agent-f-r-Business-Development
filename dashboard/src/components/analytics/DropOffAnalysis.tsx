@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/Card";
+import { getDropOffPhaseLabel } from "@/lib/utils";
 import type { Lead } from "@/lib/types";
 
 interface DropOffAnalysisProps {
@@ -58,7 +59,7 @@ export default function DropOffAnalysis({ leads, subtitle }: DropOffAnalysisProp
   const maxCount = data.length > 0 ? data[0].count : 1;
 
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full flex flex-col">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px w-full h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-base font-semibold">Gesprächsabbrüche</CardTitle>
         <div className="flex items-center gap-3">
@@ -117,7 +118,7 @@ export default function DropOffAnalysis({ leads, subtitle }: DropOffAnalysisProp
                     {/* Phase name + percentage subtitle */}
                     <div className="shrink-0 w-32">
                       <span className="block text-sm text-foreground font-semibold">
-                        {item.phase}
+                        {getDropOffPhaseLabel(item.phase)}
                       </span>
                       <span className="text-xs text-muted-foreground tabular-nums">
                         {item.percentage}% aller Abbrüche

@@ -12,7 +12,6 @@ const PAGES = [
   { name: "Leads", href: "/leads", icon: "👥" },
   { name: "Pipeline", href: "/pipeline", icon: "📊" },
   { name: "Analytics", href: "/analytics", icon: "📈" },
-  { name: "Frühwarnsystem", href: "/alerts", icon: "⚠️" },
   { name: "Team", href: "/team", icon: "👤" },
 ];
 

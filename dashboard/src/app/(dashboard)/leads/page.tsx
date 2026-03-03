@@ -10,7 +10,8 @@ import LeadFilters from "@/components/leads/LeadFilters";
 import EnhancedLeadTable from "@/components/leads/EnhancedLeadTable";
 import Pagination from "@/components/leads/Pagination";
 import ImportLeadsDialog from "@/components/leads/ImportLeadsDialog";
-import { Users, Download, Upload, SlidersHorizontal, X } from "lucide-react";
+import { Users, Download, Upload, SlidersHorizontal, X, PhoneOutgoing, PhoneCall, Voicemail, CalendarCheck } from "lucide-react";
+import { KPICard } from "@/components/ui/KPICard";
 import { cn } from "@/lib/utils";
 import { exportLeadsCSV } from "@/lib/export";
 
@@ -108,9 +109,29 @@ export default function LeadsPage() {
     if (filters.sentiments.length > 0) count++;
     if (filters.appointmentBooked !== null) count++;
     if (filters.assignedTo !== null) count++;
+    if (filters.campaignId !== null) count++;
     if (filters.dateRange.from !== null || filters.dateRange.to !== null) count++;
     return count;
   }, [filters]);
+
+  const { attempts, connectionRate, voicemailRate, demoBookingRate } = useMemo(() => {
+    const outbound = filteredLeads.filter(l => l.call_direction === 'outbound');
+    const attempts = outbound.reduce((sum, l) => sum + (l.call_attempts || 0), 0);
+
+    const connectedCodes = ['connected', 'callback'];
+    const connected = outbound.filter(l =>
+      l.disposition_code && connectedCodes.includes(l.disposition_code)
+    ).length;
+    const connectionRate = attempts > 0 ? Math.round((connected / attempts) * 100) : 0;
+
+    const voicemails = outbound.filter(l => l.disposition_code === 'voicemail').length;
+    const voicemailRate = attempts > 0 ? Math.round((voicemails / attempts) * 100) : 0;
+
+    const demosBooked = outbound.filter(l => l.appointment_booked).length;
+    const demoBookingRate = connected > 0 ? Math.round((demosBooked / connected) * 100) : 0;
+
+    return { attempts, connectionRate, voicemailRate, demoBookingRate };
+  }, [filteredLeads]);
 
   const toggleGrade = (grade: "A" | "B" | "C") => {
     const grades = filters.grades.includes(grade)
@@ -127,8 +148,53 @@ export default function LeadsPage() {
         icon={Users}
       />
 
+      {/* KPI Cards */}
+      <div className="glass p-6 rounded-2xl w-full transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <KPICard
+            label="Anrufversuche"
+            numericValue={attempts}
+            suffix=""
+            icon={PhoneOutgoing}
+            colorClass="text-purple-400"
+            bgClass="bg-purple-500/10"
+            tooltip="Gesamtanzahl aller Outbound-Anrufversuche der gefilterten Leads."
+          />
+          <KPICard
+            label="Conversion Rate"
+            numericValue={demoBookingRate}
+            suffix="%"
+            icon={CalendarCheck}
+            colorClass="text-emerald-400"
+            bgClass="bg-emerald-500/10"
+            tooltip="Anteil der erreichten Kontakte, die eine Demo gebucht haben."
+            tooltipFormula="Conversion Rate = Demos gebucht ÷ Erreichte × 100"
+          />
+          <KPICard
+            label="Connection Rate"
+            numericValue={connectionRate}
+            suffix="%"
+            icon={PhoneCall}
+            colorClass="text-green-400"
+            bgClass="bg-green-500/10"
+            tooltip="Anteil der Anrufversuche, bei denen der Kontakt erreicht wurde."
+            tooltipFormula="Connection Rate = Erreichte ÷ Versuche × 100"
+          />
+          <KPICard
+            label="Mailbox-Quote"
+            numericValue={voicemailRate}
+            suffix="%"
+            icon={Voicemail}
+            colorClass="text-amber-400"
+            bgClass="bg-amber-500/10"
+            tooltip="Anteil der Anrufversuche, die auf der Mailbox gelandet sind."
+            tooltipFormula="Mailbox-Quote = Mailbox ÷ Versuche × 100"
+          />
+        </div>
+      </div>
+
       {/* Unified Toolbar */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="glass p-4 rounded-2xl w-full flex items-center gap-3 flex-wrap">
         {/* Search */}
         <LeadSearch
           value={searchQuery}

@@ -53,7 +53,7 @@ export default function ObjectionCounterArguments({ leads }: ObjectionCounterArg
   }
 
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5 w-full">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full">
       <CardHeader className="pb-2">
         <div className="flex items-center gap-2">
           <Lightbulb className="h-5 w-5 text-amber-400" />

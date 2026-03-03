@@ -21,7 +21,7 @@ export default function PipelineCard({ lead, isDragOverlay }: PipelineCardProps)
       ref={isDragOverlay ? undefined : setNodeRef}
       className={cn(
         "group relative rounded-xl border border-border bg-card/60 backdrop-blur-md p-4 shadow-sm",
-        "transition-[transform,box-shadow,background-color,border-color] duration-200 hover:bg-card/80 hover:shadow-md hover:border-foreground/20 hover:-translate-y-0.5 cursor-pointer flex flex-col gap-2.5",
+        "transition-[transform,box-shadow,background-color,border-color] duration-200 hover:bg-card/80 hover:shadow-md hover:border-foreground/20 hover:-translate-y-px cursor-pointer flex flex-col gap-2.5",
         isDragging && !isDragOverlay && "opacity-30",
         isDragOverlay && "shadow-xl border-primary/30"
       )}
@@ -56,7 +56,7 @@ export default function PipelineCard({ lead, isDragOverlay }: PipelineCardProps)
               {lead.call_attempts}
             </div>
           )}
-          <SentimentIndicator sentiment={lead.sentiment} />
+          <SentimentIndicator sentiment={lead.sentiment} sentimentScore={lead.sentiment_score} />
           {lead.lead_grade && (
             <div
               className="flex items-center justify-center w-5 h-5 rounded hover:bg-opacity-80 transition-colors text-[10px] font-bold tracking-wider"

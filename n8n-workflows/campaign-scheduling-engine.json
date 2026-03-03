@@ -102,7 +102,7 @@
         },
         {
             "parameters": {
-                "url": "={{ 'https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/leads?campaign_id=eq.' + $json.campaignId + '&status=in.(queued,attempting,callback_scheduled)&next_call_scheduled_at=is.null&is_dnc=eq.false&call_attempts=lt.' + $json.maxAttempts + '&select=id,phone,call_attempts,caller_name,company&limit=200' }}",
+                "url": "={{ 'https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/leads?campaign_id=eq.' + $json.campaignId + '&or=(outbound_state.is.null,outbound_state.in.(attempting,callback_scheduled))&next_call_scheduled_at=is.null&is_dnc=eq.false&call_attempts=lt.' + $json.maxAttempts + '&select=id,phone,call_attempts,caller_name,company&limit=200' }}",
                 "sendHeaders": true,
                 "headerParameters": {
                     "parameters": [
@@ -464,7 +464,7 @@
             },
             {
                 "parameters": {
-                    "url": "={{ 'https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/leads?campaign_id=eq.' + $json.campaignId + '&status=in.(queued,attempting,callback_scheduled)&next_call_scheduled_at=is.null&is_dnc=eq.false&call_attempts=lt.' + $json.maxAttempts + '&select=id,phone,call_attempts,caller_name,company&limit=200' }}",
+                    "url": "={{ 'https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/leads?campaign_id=eq.' + $json.campaignId + '&or=(outbound_state.is.null,outbound_state.in.(attempting,callback_scheduled))&next_call_scheduled_at=is.null&is_dnc=eq.false&call_attempts=lt.' + $json.maxAttempts + '&select=id,phone,call_attempts,caller_name,company&limit=200' }}",
                     "sendHeaders": true,
                     "headerParameters": {
                         "parameters": [

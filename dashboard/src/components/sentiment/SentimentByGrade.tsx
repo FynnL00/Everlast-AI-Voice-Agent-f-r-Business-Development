@@ -74,7 +74,7 @@ export default function SentimentByGrade({ leads }: SentimentByGradeProps) {
   const hasData = data.some((d) => d.Positiv > 0 || d.Neutral > 0 || d.Negativ > 0);
 
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5 w-full h-full">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full h-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold">Sentiment nach Lead-Grade</CardTitle>
       </CardHeader>

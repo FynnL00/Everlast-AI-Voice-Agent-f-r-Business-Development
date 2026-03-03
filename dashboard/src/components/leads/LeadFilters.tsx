@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import type { LeadFilters as LeadFiltersType, Lead } from "@/lib/types";
 import { STATUS_LABELS, SENTIMENT_LABELS } from "@/lib/types";
 import { useTeam } from "@/lib/team-context";
+import { useCampaigns } from "@/lib/campaigns-context";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface LeadFiltersProps {
@@ -40,6 +41,7 @@ function hasActiveFilters(filters: LeadFiltersType): boolean {
     filters.sentiments.length > 0 ||
     filters.appointmentBooked !== null ||
     filters.assignedTo !== null ||
+    filters.campaignId !== null ||
     filters.dateRange.from !== null ||
     filters.dateRange.to !== null
   );
@@ -53,6 +55,7 @@ function toDateInputValue(isoString: string | null): string {
 
 export default function LeadFilters({ filters, onChange, open, className }: LeadFiltersProps) {
   const { teamMembers } = useTeam();
+  const { campaigns } = useCampaigns();
 
   const customDateFrom = toDateInputValue(filters.dateRange.from);
   const customDateTo = toDateInputValue(filters.dateRange.to);
@@ -107,6 +110,7 @@ export default function LeadFilters({ filters, onChange, open, className }: Lead
     onChange({
       grades: filters.grades, // Keep grades (they're in the toolbar)
       statuses: [],
+      outboundStates: [],
       sentiments: [],
       appointmentBooked: null,
       assignedTo: null,
@@ -139,7 +143,7 @@ export default function LeadFilters({ filters, onChange, open, className }: Lead
         >
           <div className="bg-card/40 backdrop-blur-sm border border-border rounded-xl p-4 space-y-4">
             {/* Row 1: Dropdowns in grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {/* Status */}
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-muted-foreground">Status</label>
@@ -192,6 +196,24 @@ export default function LeadFilters({ filters, onChange, open, className }: Lead
                     <option value="">Alle Mitarbeiter</option>
                     {teamMembers.filter((m) => m.is_active).map((m) => (
                       <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Kampagne */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-muted-foreground">Kampagne</label>
+                <div className="relative">
+                  <select
+                    value={filters.campaignId ?? ""}
+                    onChange={(e) => onChange({ ...filters, campaignId: e.target.value || null })}
+                    className={selectClasses}
+                  >
+                    <option value="">Alle Kampagnen</option>
+                    {campaigns.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                   <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />

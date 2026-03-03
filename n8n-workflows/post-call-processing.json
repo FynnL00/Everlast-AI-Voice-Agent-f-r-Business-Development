@@ -1,1363 +1,1583 @@
 {
-    "updatedAt": "2026-03-03T16:56:53.302Z",
-    "createdAt": "2026-02-28T19:00:03.237Z",
-    "id": "DBgYdLeCL75VL8S6",
-    "name": "Post-Call Processing",
-    "description": null,
-    "active": true,
-    "isArchived": false,
-    "nodes": [
-        {
-            "parameters": {
-                "httpMethod": "POST",
-                "path": "vapi-end-of-call",
-                "options": {}
-            },
-            "id": "wh-end-of-call",
-            "name": "Webhook end_of_call",
-            "type": "n8n-nodes-base.webhook",
-            "typeVersion": 2.1,
-            "position": [
-                0,
-                168
-            ],
-            "webhookId": "c0edc7c4-f8b1-40e6-b962-b2c5c7654ed0"
-        },
-        {
-            "parameters": {
-                "jsCode": "const body = $input.first().json.body;\n\n// Extract call data from Vapi end-of-call-report\nconst call = body.message ? body.message.call : body.call;\nconst callObj = call || {};\n\nconst callId = callObj.id || body.call_id || 'unknown-' + Date.now();\nconst transcript = body.message ? (body.message.artifact && body.message.artifact.transcript) : body.transcript;\nconst transcriptText = transcript || '';\n\n// Check if user actually spoke (not just AI greeting)\nconst userTurns = transcriptText.split('\\n')\n  .filter(line => line.startsWith('User:'))\n  .filter(line => line.replace('User:', '').trim().length > 5);\nconst hasTranscript = userTurns.length >= 1;\n\n// Calculate duration\nlet callDurationSeconds = null;\nlet callStartedAt = null;\nif (callObj.startedAt && callObj.endedAt) {\n  const start = new Date(callObj.startedAt);\n  const end = new Date(callObj.endedAt);\n  callDurationSeconds = Math.round((end - start) / 1000);\n  callStartedAt = callObj.startedAt;\n} else if (callObj.startedAt) {\n  callStartedAt = callObj.startedAt;\n}\n\nconst endedReason = body.message ? body.message.endedReason : (body.endedReason || 'unknown');\nconst phone = callObj.customer ? callObj.customer.number : null;\n\n// NEW: Extract recording URL\nconst recordingUrl = body.message\n  ? (body.message.artifact && body.message.artifact.recordingUrl)\n  : (body.recordingUrl || null);\n\n// NEW: Extract call direction from assistant overrides or metadata\nconst assistantOverrides = callObj.assistantOverrides || {};\nconst variableValues = assistantOverrides.variableValues || {};\nconst callDirection = variableValues.call_direction || 'inbound';\nconst campaignId = variableValues.campaign_id || null;\nconst leadId = variableValues.lead_id || null;\nconst attemptNumber = parseInt(variableValues.attempt_number) || 1;\n\nreturn [{ json: {\n  callId,\n  transcript: transcriptText,\n  hasTranscript,\n  callDurationSeconds,\n  callStartedAt,\n  endedReason,\n  phone,\n  recordingUrl,\n  callDirection,\n  campaignId,\n  leadId,\n  attemptNumber\n} }];"
-            },
-            "id": "code-extract",
-            "name": "Extract Call Data",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                224,
-                168
-            ]
-        },
-        {
-            "parameters": {
-                "conditions": {
-                    "options": {
-                        "caseSensitive": true,
-                        "leftValue": "",
-                        "typeValidation": "strict"
-                    },
-                    "conditions": [
-                        {
-                            "id": "c1",
-                            "leftValue": "={{ $json.hasTranscript }}",
-                            "rightValue": true,
-                            "operator": {
-                                "type": "boolean",
-                                "operation": "equals"
-                            }
-                        }
-                    ],
-                    "combinator": "and"
-                },
-                "options": {}
-            },
-            "id": "if-has-transcript",
-            "name": "Has Transcript?",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 2,
-            "position": [
-                448,
-                168
-            ]
-        },
-        {
-            "parameters": {
-                "jsCode": "const data = $('Extract Call Data').first().json;\nconst transcript = data.transcript || '';\n\nconst prompt = `Analysiere dieses Gespraechstranskript eines Sales-Calls und bewerte den Lead.\nAntworte als JSON mit diesen Feldern:\n- score_company_size (1-3): 1=klein/<10 Mitarbeiter, 2=mittel/10-49 Mitarbeiter, 3=gross/50+ Mitarbeiter\n- score_tech_stack (1-3): 1=keine Automation, 2=erste Erfahrung mit Automation, 3=nutzt Zapier/Make/APIs\n- score_pain_point (1-3): 1=nur Info, 2=allgemeines Interesse, 3=konkreter dringender Use Case\n- score_timeline (1-3): 1=kein Zeitrahmen, 2=1-3 Monate, 3=innerhalb 1 Monat\n- score_engagement (1-3): 1=minimale Beteiligung, einsilbige Antworten. 2=hoefliches Gespraech, grundlegendes Interesse. 3=aktiver Dialog, stellt detaillierte Fragen.\n- conversation_summary (string, max 200 Woerter, auf Deutsch)\n- sentiment (einer von: positiv, neutral, negativ)\n- objections_raised (array of strings, z.B. [\"Kein Budget\", \"Keine Zeit\"])\n- drop_off_point (string oder null): Die Phase, in der der Anrufer abgesprungen ist OHNE Termin zu buchen. Setze null wenn ein Termin erfolgreich gebucht wurde. Moegliche Werte nur bei Abbruch: \"DISCOVERY\", \"QUALIFICATION\", \"DEMO_OFFER\", \"CLOSING\"\n- is_decision_maker (boolean)\n- status (einer von: new, contacted, qualified, appointment_booked, converted, lost, not_reached, rejected, callback_scheduled, dnc)\n- next_steps (array of strings)\n- caller_name (string oder null): Der vollstaendige Name des MENSCHLICHEN Gespraechspartners (NICHT der KI-Assistentin Lisa!). Suche nach typischen Begruessungen wie \"Hier ist [Name]\", \"[Nachname], hallo\", \"Mein Name ist [Name]\", \"[Name] am Apparat\". Setze null falls kein Name erkennbar.\n- company (string oder null): Der Firmenname des menschlichen Gespraechspartners\n- company_size (string oder null): Beschreibung der Unternehmensgroesse\n- current_stack (string oder null): Aktuell verwendete Tools/Systeme\n- pain_point (string oder null): Das Hauptproblem oder der konkrete Use Case\n- timeline (string oder null): Zeitrahmen fuer die Umsetzung\n- dnc_requested (boolean): Hat der Gespraechspartner explizit darum gebeten, NICHT mehr angerufen zu werden? Achte auf Formulierungen wie \"Rufen Sie mich nicht mehr an\", \"Bitte keine Anrufe mehr\", \"Streichen Sie meine Nummer\", \"Ich will nicht mehr kontaktiert werden\".\n- disposition_code (string): Eines von: connected, not_interested, callback, dnc_request, qualified, demo_booked. Waehle basierend auf dem Gespraechsverlauf.\n\nWICHTIG: Die KI-Assistentin heisst Lisa und arbeitet bei n8n. Extrahiere NICHT ihren Namen als caller_name. Der caller_name ist immer die andere Person im Gespraech.\n\nTranscript: ${transcript}`;\n\nconst requestBody = JSON.stringify({\n  model: 'openai/gpt-4o-mini',\n  response_format: { type: 'json_object' },\n  messages: [{ role: 'user', content: prompt }]\n});\n\nreturn [{ json: { requestBody, callId: data.callId, transcript: data.transcript, callDurationSeconds: data.callDurationSeconds, callStartedAt: data.callStartedAt, phone: data.phone, endedReason: data.endedReason, recordingUrl: data.recordingUrl, callDirection: data.callDirection, campaignId: data.campaignId, leadId: data.leadId, attemptNumber: data.attemptNumber } }];"
-            },
-            "id": "code-build-or",
-            "name": "Build OpenRouter Request",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                896,
-                96
-            ]
-        },
-        {
-            "parameters": {
-                "method": "POST",
-                "url": "https://openrouter.ai/api/v1/chat/completions",
-                "authentication": "genericCredentialType",
-                "genericAuthType": "httpHeaderAuth",
-                "sendHeaders": true,
-                "headerParameters": {
-                    "parameters": [
-                        {
-                            "name": "Content-Type",
-                            "value": "application/json"
-                        },
-                        {
-                            "name": "HTTP-Referer",
-                            "value": "https://n8n.srv1169417.hstgr.cloud"
-                        },
-                        {
-                            "name": "X-Title",
-                            "value": "Vapi Lead Scoring"
-                        }
-                    ]
-                },
-                "sendBody": true,
-                "contentType": "raw",
-                "rawContentType": "application/json",
-                "body": "={{ $json.requestBody }}",
-                "options": {}
-            },
-            "id": "http-openrouter",
-            "name": "OpenRouter LLM Scoring",
-            "type": "n8n-nodes-base.httpRequest",
-            "typeVersion": 4.1,
-            "position": [
-                1120,
-                24
-            ],
-            "credentials": {
-                "httpHeaderAuth": {
-                    "id": "1guiLBepx3rJi6mE",
-                    "name": "Header Auth account 2"
-                }
+  "updatedAt": "2026-03-03T19:43:13.462Z",
+  "createdAt": "2026-02-28T19:00:03.237Z",
+  "id": "DBgYdLeCL75VL8S6",
+  "name": "Post-Call Processing",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vapi-end-of-call",
+        "options": {}
+      },
+      "id": "wh-end-of-call",
+      "name": "Webhook end_of_call",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        168
+      ],
+      "webhookId": "c0edc7c4-f8b1-40e6-b962-b2c5c7654ed0"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body;\n\n// Extract call data from Vapi end-of-call-report\nconst call = body.message ? body.message.call : body.call;\nconst callObj = call || {};\n\nconst callId = callObj.id || body.call_id || 'unknown-' + Date.now();\nconst transcript = body.message ? (body.message.artifact && body.message.artifact.transcript) : body.transcript;\nconst transcriptText = transcript || '';\n\n// Check if user actually spoke (not just AI greeting)\nconst userTurns = transcriptText.split('\\n')\n  .filter(line => line.startsWith('User:'))\n  .filter(line => line.replace('User:', '').trim().length > 5);\nconst hasTranscript = userTurns.length >= 1;\n\n// Calculate duration\nlet callDurationSeconds = null;\nlet callStartedAt = null;\nif (callObj.startedAt && callObj.endedAt) {\n  const start = new Date(callObj.startedAt);\n  const end = new Date(callObj.endedAt);\n  callDurationSeconds = Math.round((end - start) / 1000);\n  callStartedAt = callObj.startedAt;\n} else if (callObj.startedAt) {\n  callStartedAt = callObj.startedAt;\n}\n\nconst endedReason = body.message ? body.message.endedReason : (body.endedReason || 'unknown');\nconst phone = callObj.customer ? callObj.customer.number : null;\n\n// NEW: Extract recording URL\nconst recordingUrl = body.message\n  ? (body.message.artifact && body.message.artifact.recordingUrl)\n  : (body.recordingUrl || null);\n\n// NEW: Extract call direction from assistant overrides or metadata\nconst assistantOverrides = callObj.assistantOverrides || {};\nconst variableValues = assistantOverrides.variableValues || {};\nconst callDirection = variableValues.call_direction || 'inbound';\nconst campaignId = variableValues.campaign_id || null;\nconst leadId = variableValues.lead_id || null;\nconst attemptNumber = parseInt(variableValues.attempt_number) || 1;\n\nreturn [{ json: {\n  callId,\n  transcript: transcriptText,\n  hasTranscript,\n  callDurationSeconds,\n  callStartedAt,\n  endedReason,\n  phone,\n  recordingUrl,\n  callDirection,\n  campaignId,\n  leadId,\n  attemptNumber\n} }];"
+      },
+      "id": "code-extract",
+      "name": "Extract Call Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        168
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.hasTranscript }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
             }
+          ],
+          "combinator": "and"
         },
-        {
-            "parameters": {
-                "jsCode": "const data = $input.first().json;\nconst extractData = $('Extract Call Data').first().json;\n\nreturn [{ json: {\n  callId: data.callId || extractData.callId,\n  phone: data.phone || extractData.phone,\n  callDurationSeconds: data.callDurationSeconds || extractData.callDurationSeconds,\n  callStartedAt: data.callStartedAt || extractData.callStartedAt,\n  endedReason: data.endedReason || extractData.endedReason || 'unknown',\n  recordingUrl: data.recordingUrl || extractData.recordingUrl || null,\n  callDirection: data.callDirection || extractData.callDirection || 'inbound',\n  campaignId: data.campaignId || extractData.campaignId || null,\n  leadId: data.leadId || extractData.leadId || null,\n  attemptNumber: data.attemptNumber || extractData.attemptNumber || 1,\n  score_company_size: 1,\n  score_tech_stack: 1,\n  score_pain_point: 1,\n  score_timeline: 1,\n  score_engagement: 1,\n  conversation_summary: 'Kein Transkript verfuegbar.',\n  sentiment: 'neutral',\n  objections_raised: [],\n  drop_off_point: null,\n  is_decision_maker: false,\n  status: 'contacted',\n  next_steps: [],\n  transcript: '',\n  caller_name: null,\n  company: null,\n  company_size: null,\n  current_stack: null,\n  pain_point: null,\n  timeline: null,\n  dnc_requested: false,\n  disposition_code: 'connected'\n} }];"
+        "options": {}
+      },
+      "id": "if-has-transcript",
+      "name": "Has Transcript?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        448,
+        168
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $('Extract Call Data').first().json;\nconst transcript = data.transcript || '';\n\nlet existingCategoryNames = [];\ntry {\n  const catResponse = $('Fetch Categories').first().json;\n  if (Array.isArray(catResponse)) {\n    existingCategoryNames = catResponse.map(c => c.name);\n  }\n} catch(e) {}\n\nconst defaultCategories = ['Kein Budget', 'Keine Zeit', 'Nutze bereits Zapier', 'Muss Team fragen', 'Zu komplex', 'Kein konkreter Bedarf', 'Datenschutzbedenken'];\nconst allCategories = [...new Set([...defaultCategories, ...existingCategoryNames])];\nconst categoryList = allCategories.map(n => `\"${n}\"`).join(', ');\n\nconst prompt = `Analysiere dieses Gespraechstranskript eines Sales-Calls und bewerte den Lead.\nAntworte als JSON mit diesen Feldern:\n\nWICHTIGE SCORING-REGELN:\n- Bewerte NUR basierend auf EXPLIZITEN Aussagen im Transcript\n- Wenn eine Information NICHT erwaehnt wird, setze Score 1 (nicht 2!)\n- Ausweichende Antworten = Score 1\n- company_size Score 3 erfordert KONKRETE Zahl >= 50 oder klare Beschreibung\n- tech_stack Score 3 erfordert NAMENTLICHE Nennung von Automation-Tools\n- pain_point Score 3 erfordert KONKRETEN Use Case mit messbarem Problem\n- timeline Score 3 erfordert EXPLIZITE Zeitangabe innerhalb 1 Monat\n\n- score_company_size (1-3): 1=klein/<10MA, 2=mittel/10-49MA, 3=gross/50+MA\n- score_tech_stack (1-3): 1=keine Automation, 2=erste Erfahrung, 3=nutzt Zapier/Make/APIs\n- score_pain_point (1-3): 1=nur Info, 2=allgemeines Interesse, 3=konkreter dringender Use Case\n- score_timeline (1-3): 1=kein Zeitrahmen, 2=1-3 Monate, 3=innerhalb 1 Monat\n- score_engagement (1-3): 1=minimale Beteiligung, 2=hoefliches Gespraech, 3=aktiver Dialog\n- conversation_summary (string, max 200 Woerter, Deutsch)\n\nSENTIMENT-BEWERTUNG:\n- sentiment_score (0.0-1.0): Stimmung des ANRUFERS gegenueber dem Produkt\n- sentiment_reason (string, max 80 Woerter, Deutsch)\n\n- objections_raised (array of strings): Verwende vordefinierte Namen: ${categoryList}\n- drop_off_point (string oder null): OPENING/DISCOVERY/QUALIFICATION/DEMO_OFFER/CLOSING oder null\n- is_decision_maker (boolean)\n- status (einer von: new, contacted, qualified, appointment_booked, converted, lost, not_reached, rejected, callback_scheduled, dnc)\n- next_steps (array of strings)\n- caller_name (string oder null): Name des MENSCHLICHEN Gespraechspartners (NICHT Lisa!)\n- company (string oder null)\n- company_size (string oder null)\n- current_stack (string oder null)\n- pain_point (string oder null)\n- timeline (string oder null)\n- dnc_requested (boolean): true nur bei explizitem Kontaktverbot\n- disposition_code (string): connected/not_interested/callback/dnc_request/qualified/demo_booked\n\nSCORING EVIDENCE (BEWEIS-ZITATE):\n- scoring_evidence (array of objects): Fuer JEDES der 4 Hauptkriterien MINDESTENS ein Beweis-Zitat:\n  - dimension (string): company_size/tech_stack/pain_point/timeline/engagement/sentiment/objection/drop_off/general\n  - quote_text (string): EXAKTES Zitat aus dem Transcript (woertlich!). Max 2 Saetze.\n  - speaker (string): agent oder caller\n  - reasoning (string): 1-2 Saetze Deutsch, warum dieses Zitat die Bewertung beeinflusst\n  - score_value (int 1-3 oder null): Score den dieses Zitat stuetzt. null fuer sentiment/objection/drop_off/general\n  - sentiment (string): positiv/neutral/negativ\n  REGELN:\n  1. Mindestens 4 Eintraege (je einer pro: company_size, tech_stack, pain_point, timeline)\n  2. Fuer JEDEN Einwand in objections_raised EINEN zusaetzlichen Eintrag mit dimension=objection, quote_text=exaktes Zitat aus dem Transcript wo der Einwand geaeussert wurde, score_value=null, sentiment=negativ. Falls kein exaktes Zitat: quote_text=der Einwand-Text selbst.\n  3. Falls drop_off_point NICHT null: EINEN zusaetzlichen Eintrag mit dimension=drop_off, speaker=caller, quote_text=exaktes Zitat aus dem Transcript das den Abbruchpunkt markiert (letzte Aussage des Anrufers vor Gespraechsende oder erster Satz der Ablehnung), score_value=null, sentiment=negativ.\n  4. Wenn keine Info fuer eine Hauptdimension: score_value=1, quote_text=Keine relevante Aussage im Gespraech\n  5. Zitate EXAKT aus dem Transcript (max 2 Saetze)\n  6. KONSISTENZ: score_value MUSS den Haupt-Scores entsprechen\n\nTranscript: ${transcript}`;\n\nconst requestBody = JSON.stringify({\n  model: 'openai/gpt-4o-mini',\n  response_format: { type: 'json_object' },\n  messages: [{ role: 'user', content: prompt }]\n});\n\nreturn [{ json: { requestBody, existingCategoryNames, callId: data.callId, transcript: data.transcript, callDurationSeconds: data.callDurationSeconds, callStartedAt: data.callStartedAt, phone: data.phone, endedReason: data.endedReason, recordingUrl: data.recordingUrl, callDirection: data.callDirection, campaignId: data.campaignId, leadId: data.leadId, attemptNumber: data.attemptNumber } }];"
+      },
+      "id": "code-build-or",
+      "name": "Build OpenRouter Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
             },
-            "id": "code-fallback",
-            "name": "Fallback Scores",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                1568,
-                288
-            ]
-        },
-        {
-            "parameters": {
-                "jsCode": "const llmResponse = $input.first().json;\nconst extractData = $('Extract Call Data').first().json;\n\nfunction clamp(val, min, max) {\n  const n = parseInt(val);\n  if (isNaN(n)) return min;\n  return Math.min(Math.max(n, min), max);\n}\n\nfunction sanitizeStr(val, maxLen) {\n  if (val === null || val === undefined) return null;\n  const s = String(val).trim();\n  if (s.length === 0) return null;\n  return s.substring(0, maxLen || 500);\n}\n\nlet parsed = {};\ntry {\n  const content = llmResponse.choices && llmResponse.choices[0] && llmResponse.choices[0].message\n    ? llmResponse.choices[0].message.content\n    : JSON.stringify(llmResponse);\n  parsed = JSON.parse(content);\n} catch(e) {\n  parsed = {\n    score_company_size: 1,\n    score_tech_stack: 1,\n    score_pain_point: 1,\n    score_timeline: 1,\n    score_engagement: 1,\n    conversation_summary: 'Analyse nicht verfuegbar.',\n    sentiment: 'neutral',\n    objections_raised: [],\n    drop_off_point: null,\n    is_decision_maker: false,\n    status: 'contacted',\n    next_steps: [],\n    caller_name: null,\n    company: null,\n    company_size: null,\n    current_stack: null,\n    pain_point: null,\n    timeline: null,\n    dnc_requested: false,\n    disposition_code: 'connected'\n  };\n}\n\nconst validStatuses = ['new','contacted','qualified','appointment_booked','converted','lost','not_reached','rejected','callback_scheduled','dnc'];\nconst validDispositions = ['connected','not_interested','callback','dnc_request','qualified','demo_booked'];\n\nconst result = {\n  callId: extractData.callId,\n  phone: extractData.phone,\n  callDurationSeconds: extractData.callDurationSeconds,\n  callStartedAt: extractData.callStartedAt,\n  transcript: extractData.transcript,\n  endedReason: extractData.endedReason,\n  recordingUrl: extractData.recordingUrl,\n  callDirection: extractData.callDirection,\n  campaignId: extractData.campaignId,\n  leadId: extractData.leadId,\n  attemptNumber: extractData.attemptNumber,\n  score_company_size: clamp(parsed.score_company_size, 1, 3),\n  score_tech_stack: clamp(parsed.score_tech_stack, 1, 3),\n  score_pain_point: clamp(parsed.score_pain_point, 1, 3),\n  score_timeline: clamp(parsed.score_timeline, 1, 3),\n  score_engagement: clamp(parsed.score_engagement, 1, 3),\n  conversation_summary: String(parsed.conversation_summary || '').substring(0, 1000),\n  sentiment: ['positiv', 'neutral', 'negativ'].includes(parsed.sentiment) ? parsed.sentiment : 'neutral',\n  objections_raised: Array.isArray(parsed.objections_raised) ? parsed.objections_raised : [],\n  drop_off_point: parsed.drop_off_point || null,\n  is_decision_maker: Boolean(parsed.is_decision_maker),\n  status: validStatuses.includes(parsed.status) ? parsed.status : 'contacted',\n  next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],\n  caller_name: sanitizeStr(parsed.caller_name, 200),\n  company: sanitizeStr(parsed.company, 200),\n  company_size: sanitizeStr(parsed.company_size, 200),\n  current_stack: sanitizeStr(parsed.current_stack, 500),\n  pain_point: sanitizeStr(parsed.pain_point, 500),\n  timeline: sanitizeStr(parsed.timeline, 200),\n  dnc_requested: Boolean(parsed.dnc_requested),\n  disposition_code: validDispositions.includes(parsed.disposition_code) ? parsed.disposition_code : 'connected'\n};\n\nreturn [{ json: result }];"
+            {
+              "name": "HTTP-Referer",
+              "value": "https://n8n.srv1169417.hstgr.cloud"
             },
-            "id": "code-parse-llm",
-            "name": "Parse LLM Response",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                1344,
-                -48
-            ]
-        },
-        {
-            "parameters": {
-                "jsCode": "let d;\ntry {\n  d = $('Smart Cadence').first().json;\n} catch(e) {\n  d = $input.first().json;\n}\n\nreturn [{ json: {\n  callId: d.callId,\n  score_company_size: d.score_company_size,\n  score_tech_stack: d.score_tech_stack,\n  score_pain_point: d.score_pain_point,\n  score_timeline: d.score_timeline,\n  score_engagement: d.score_engagement || null,\n  conversation_summary: d.conversation_summary || '',\n  sentiment: d.sentiment || 'neutral',\n  objections_raised: Array.isArray(d.objections_raised) ? d.objections_raised : [],\n  drop_off_point: d.drop_off_point || null,\n  is_decision_maker: Boolean(d.is_decision_maker),\n  status: d.status || 'contacted',\n  next_steps: Array.isArray(d.next_steps) ? d.next_steps : [],\n  transcript: d.transcript || '',\n  callDurationSeconds: d.callDurationSeconds || null,\n  callStartedAt: d.callStartedAt || null,\n  phone: d.phone || null,\n  caller_name: d.caller_name || null,\n  company: d.company || null,\n  company_size: d.company_size || null,\n  current_stack: d.current_stack || null,\n  pain_point: d.pain_point || null,\n  timeline: d.timeline || null,\n  disposition_code: d.disposition_code || null,\n  recording_url: d.recordingUrl || null,\n  callDirection: d.callDirection || 'inbound',\n  campaignId: d.campaignId || null,\n  leadId: d.leadId || null,\n  attemptNumber: d.attemptNumber || 1,\n  next_call_scheduled_at: d.next_call_scheduled_at || null,\n  follow_up_reason: d.follow_up_reason || null,\n  dnc_requested: Boolean(d.dnc_requested),\n  endedReason: d.endedReason || null\n} }];"
-            },
-            "id": "code-build-sup",
-            "name": "Build Supabase Payload",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                2464,
-                96
-            ]
-        },
-        {
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "INSERT INTO leads (\n  call_id, score_company_size, score_tech_stack, score_pain_point, score_timeline,\n  score_engagement,\n  transcript, conversation_summary, sentiment,\n  objections_raised, drop_off_point,\n  call_duration_seconds, call_started_at,\n  is_decision_maker, status, next_steps, phone,\n  caller_name, company, company_size, current_stack, pain_point, timeline,\n  disposition_code, recording_url, call_direction,\n  last_call_attempt_at, next_call_scheduled_at, follow_up_reason,\n  campaign_id\n) VALUES (\n  $1, $2, $3, $4, $5,\n  $6,\n  $7, $8, $9,\n  $10::text[], $11,\n  $12, $13::timestamptz,\n  $14, $15, $16::text[], $17,\n  $18, $19, $20, $21, $22, $23,\n  $24, $25, $26,\n  now(), $27::timestamptz, $28,\n  $29::uuid\n)\nON CONFLICT (call_id) DO UPDATE SET\n  score_company_size = EXCLUDED.score_company_size,\n  score_tech_stack = EXCLUDED.score_tech_stack,\n  score_pain_point = EXCLUDED.score_pain_point,\n  score_timeline = EXCLUDED.score_timeline,\n  score_engagement = EXCLUDED.score_engagement,\n  transcript = EXCLUDED.transcript,\n  conversation_summary = EXCLUDED.conversation_summary,\n  sentiment = EXCLUDED.sentiment,\n  objections_raised = EXCLUDED.objections_raised,\n  drop_off_point = CASE\n    WHEN leads.appointment_booked = true THEN null\n    ELSE EXCLUDED.drop_off_point\n  END,\n  call_duration_seconds = EXCLUDED.call_duration_seconds,\n  call_started_at = EXCLUDED.call_started_at,\n  is_decision_maker = EXCLUDED.is_decision_maker,\n  status = CASE\n    WHEN leads.appointment_booked = true AND leads.status = 'appointment_booked'\n    THEN leads.status\n    ELSE EXCLUDED.status\n  END,\n  next_steps = EXCLUDED.next_steps,\n  phone = COALESCE(EXCLUDED.phone, leads.phone),\n  caller_name = COALESCE(leads.caller_name, EXCLUDED.caller_name),\n  company = COALESCE(leads.company, EXCLUDED.company),\n  company_size = COALESCE(leads.company_size, EXCLUDED.company_size),\n  current_stack = COALESCE(leads.current_stack, EXCLUDED.current_stack),\n  pain_point = COALESCE(leads.pain_point, EXCLUDED.pain_point),\n  timeline = COALESCE(leads.timeline, EXCLUDED.timeline),\n  disposition_code = EXCLUDED.disposition_code,\n  recording_url = COALESCE(EXCLUDED.recording_url, leads.recording_url),\n  call_direction = COALESCE(EXCLUDED.call_direction, leads.call_direction),\n  call_attempts = CASE\n    WHEN EXCLUDED.call_direction = 'outbound' THEN COALESCE(leads.call_attempts, 0) + 1\n    ELSE leads.call_attempts\n  END,\n  last_call_attempt_at = now(),\n  next_call_scheduled_at = EXCLUDED.next_call_scheduled_at,\n  follow_up_reason = EXCLUDED.follow_up_reason,\n  campaign_id = COALESCE(EXCLUDED.campaign_id, leads.campaign_id)\nRETURNING id, call_id, phone, is_dnc",
-                "options": {
-                    "queryReplacement": "={{ [$json.callId, $json.score_company_size, $json.score_tech_stack, $json.score_pain_point, $json.score_timeline, $json.score_engagement, $json.transcript, $json.conversation_summary, $json.sentiment, $json.objections_raised, $json.drop_off_point, $json.callDurationSeconds, $json.callStartedAt, $json.is_decision_maker, $json.status, $json.next_steps, $json.phone, $json.caller_name, $json.company, $json.company_size, $json.current_stack, $json.pain_point, $json.timeline, $json.disposition_code, $json.recording_url, $json.callDirection, $json.next_call_scheduled_at, $json.follow_up_reason, $json.campaignId] }}"
-                }
-            },
-            "id": "pg-upsert-postcall",
-            "name": "Supabase Upsert Lead Post-Call",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.6,
-            "position": [
-                2688,
-                96
-            ],
-            "credentials": {
-                "postgres": {
-                    "id": "ndhdVpUbeTJZgw1d",
-                    "name": "Voice Agent Database"
-                }
+            {
+              "name": "X-Title",
+              "value": "Vapi Lead Scoring"
             }
+          ]
         },
-        {
-            "parameters": {
-                "url": "https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/objection_categories?select=name,description&is_active=eq.true&order=occurrence_count.desc",
-                "sendHeaders": true,
-                "headerParameters": {
-                    "parameters": [
-                        {
-                            "name": "apikey",
-                            "value": "REDACTED_SUPABASE_SERVICE_KEY"
-                        },
-                        {
-                            "name": "Authorization",
-                            "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
-                        }
-                    ]
-                },
-                "options": {}
-            },
-            "id": "http-fetch-cats",
-            "name": "Fetch Categories",
-            "type": "n8n-nodes-base.httpRequest",
-            "typeVersion": 4.1,
-            "position": [
-                672,
-                96
-            ],
-            "continueOnFail": true
-        },
-        {
-            "parameters": {
-                "jsCode": "const parsed = $input.first().json;\nconst extractData = $('Extract Call Data').first().json;\nlet existingNames = [];\ntry {\n  existingNames = $('Build OpenRouter Request').first().json.existingCategoryNames || [];\n} catch(e) {}\nconst normalize = (s) => s.trim().replace(/\\s+/g, ' ');\nconst objections = Array.isArray(parsed.objections_raised) ? parsed.objections_raised : [];\nconst existingLower = existingNames.map(n => normalize(n).toLowerCase());\nconst newCats = objections.filter(obj => !existingLower.includes(normalize(obj).toLowerCase()));\nconst seen = new Set();\nconst uniqueNew = [];\nfor (const cat of newCats) {\n  const key = normalize(cat).toLowerCase();\n  if (!seen.has(key)) { seen.add(key); uniqueNew.push(normalize(cat)); }\n}\nconst upsertBody = uniqueNew.map(name => ({ name, description: null, counter_argument: null, is_active: true, occurrence_count: 0 }));\nreturn [{ json: {\n  ...parsed,\n  callId: parsed.callId || extractData.callId,\n  phone: parsed.phone || extractData.phone,\n  callDurationSeconds: parsed.callDurationSeconds || extractData.callDurationSeconds,\n  callStartedAt: parsed.callStartedAt || extractData.callStartedAt,\n  transcript: parsed.transcript || extractData.transcript,\n  endedReason: parsed.endedReason || extractData.endedReason,\n  recordingUrl: parsed.recordingUrl || extractData.recordingUrl,\n  callDirection: parsed.callDirection || extractData.callDirection,\n  campaignId: parsed.campaignId || extractData.campaignId,\n  leadId: parsed.leadId || extractData.leadId,\n  attemptNumber: parsed.attemptNumber || extractData.attemptNumber,\n  upsertBody: JSON.stringify(upsertBody),\n  hasNewCategories: uniqueNew.length > 0\n} }];"
-            },
-            "id": "code-detect-new-cats",
-            "name": "Detect New Categories",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                1568,
-                -96
-            ]
-        },
-        {
-            "parameters": {
-                "method": "POST",
-                "url": "https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/objection_categories",
-                "sendHeaders": true,
-                "headerParameters": {
-                    "parameters": [
-                        {
-                            "name": "apikey",
-                            "value": "REDACTED_SUPABASE_SERVICE_KEY"
-                        },
-                        {
-                            "name": "Authorization",
-                            "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
-                        },
-                        {
-                            "name": "Content-Type",
-                            "value": "application/json"
-                        },
-                        {
-                            "name": "Prefer",
-                            "value": "resolution=merge-duplicates,return=minimal"
-                        }
-                    ]
-                },
-                "sendBody": true,
-                "contentType": "raw",
-                "rawContentType": "application/json",
-                "body": "={{ $json.upsertBody }}",
-                "options": {}
-            },
-            "id": "http-upsert-new-cats",
-            "name": "Upsert New Categories",
-            "type": "n8n-nodes-base.httpRequest",
-            "typeVersion": 4.1,
-            "position": [
-                1792,
-                -96
-            ],
-            "continueOnFail": true
-        },
-        {
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "UPDATE objection_categories SET occurrence_count = occurrence_count + 1 WHERE name = ANY($1::text[])",
-                "options": {
-                    "queryReplacement": "={{ [$('Build Supabase Payload').first().json.objections_raised] }}"
-                }
-            },
-            "id": "pg-update-counts",
-            "name": "Update Occurrence Counts",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.6,
-            "position": [
-                3808,
-                96
-            ],
-            "credentials": {
-                "postgres": {
-                    "id": "ndhdVpUbeTJZgw1d",
-                    "name": "Voice Agent Database"
-                }
-            },
-            "continueOnFail": true
-        },
-        {
-            "id": "a47a51b7-8316-4b07-893f-b31c0d1de6c4",
-            "name": "Disposition Inference",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                2016,
-                96
-            ],
-            "parameters": {
-                "jsCode": "// Disposition Inference: map Vapi endedReason + GPT analysis to final disposition_code\nlet d;\ntry {\n  d = $('Detect New Categories').first().json;\n} catch(e) {\n  d = $input.first().json;\n}\n\nconst endedReason = d.endedReason || 'unknown';\nconst gptDisposition = d.disposition_code || 'connected';\nconst dncRequested = Boolean(d.dnc_requested);\nconst scoreEngagement = d.score_engagement || 1;\nconst appointmentBooked = d.status === 'appointment_booked' || d.status === 'converted' || gptDisposition === 'demo_booked';\n\nlet finalDisposition = 'connected';\nlet finalStatus = d.status || 'contacted';\n\n// Non-connected scenarios based on endedReason\nconst nonConnectedReasons = {\n  'no-answer': 'no_answer',\n  'voicemail': 'voicemail',\n  'machine-detected': 'voicemail',\n  'busy': 'busy'\n};\n\nconst technicalErrors = ['system-error', 'pipeline-error-openai', 'pipeline-error-custom-llm', 'pipeline-error-deepgram', 'pipeline-error-eleven-labs', 'pipeline-error-vapi'];\n\nif (nonConnectedReasons[endedReason]) {\n  finalDisposition = nonConnectedReasons[endedReason];\n  finalStatus = 'not_reached';\n} else if (technicalErrors.includes(endedReason)) {\n  finalDisposition = 'technical_error';\n  finalStatus = d.status || 'contacted';\n} else {\n  // Connected call - use GPT analysis\n  if (appointmentBooked) {\n    finalDisposition = 'demo_booked';\n    finalStatus = 'appointment_booked';\n  } else if (dncRequested) {\n    finalDisposition = 'dnc_request';\n    finalStatus = 'dnc';\n  } else if (gptDisposition === 'not_interested' || scoreEngagement <= 1) {\n    finalDisposition = 'not_interested';\n    finalStatus = 'rejected';\n  } else if (gptDisposition === 'callback') {\n    finalDisposition = 'callback';\n    finalStatus = 'callback_scheduled';\n  } else if (gptDisposition === 'qualified') {\n    finalDisposition = 'qualified';\n    finalStatus = 'qualified';\n  } else {\n    finalDisposition = gptDisposition || 'connected';\n  }\n}\n\nreturn [{ json: {\n  ...d,\n  disposition_code: finalDisposition,\n  status: finalStatus,\n  dnc_requested: dncRequested\n} }];"
-            }
-        },
-        {
-            "id": "30bd6d98-2ab3-4d15-a87d-a9d33eaf4f7c",
-            "name": "Smart Cadence",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                2240,
-                96
-            ],
-            "parameters": {
-                "jsCode": "// Smart Cadence: calculate next_call_scheduled_at and follow_up_reason\nconst d = $input.first().json;\nconst disposition = d.disposition_code;\nconst now = new Date();\nconst currentHour = now.getHours();\nconst isMorning = currentHour < 13;\n\nfunction addWorkdays(date, days) {\n  const result = new Date(date);\n  let added = 0;\n  while (added < days) {\n    result.setDate(result.getDate() + 1);\n    const dow = result.getDay();\n    if (dow !== 0 && dow !== 6) added++;\n  }\n  return result;\n}\n\nfunction setTime(date, hours, minutes) {\n  const result = new Date(date);\n  result.setHours(hours, minutes || 0, 0, 0);\n  return result;\n}\n\nlet nextCallScheduledAt = null;\nlet followUpReason = null;\n\nconst terminalDispositions = ['not_interested', 'dnc_request', 'demo_booked', 'wrong_number'];\n\nif (terminalDispositions.includes(disposition)) {\n  nextCallScheduledAt = null;\n  followUpReason = null;\n} else if (disposition === 'no_answer') {\n  if (isMorning) {\n    const next = addWorkdays(now, 1);\n    const hour = 14 + Math.floor(Math.random() * 2);\n    nextCallScheduledAt = setTime(next, hour, Math.floor(Math.random() * 60)).toISOString();\n    followUpReason = 'Vormittags nicht erreicht \\u2014 Nachmittag versuchen';\n  } else {\n    const next = addWorkdays(now, 1);\n    const hour = 9 + Math.floor(Math.random() * 2);\n    nextCallScheduledAt = setTime(next, hour, Math.floor(Math.random() * 60)).toISOString();\n    followUpReason = 'Nachmittags nicht erreicht \\u2014 Vormittag versuchen';\n  }\n} else if (disposition === 'voicemail') {\n  const next = addWorkdays(now, 2);\n  const hour = isMorning ? (14 + Math.floor(Math.random() * 3)) : (9 + Math.floor(Math.random() * 2));\n  nextCallScheduledAt = setTime(next, hour, Math.floor(Math.random() * 60)).toISOString();\n  followUpReason = 'Mailbox erreicht \\u2014 andere Tageszeit versuchen';\n} else if (disposition === 'busy') {\n  const next = new Date(now.getTime() + 2 * 60 * 60 * 1000);\n  nextCallScheduledAt = next.toISOString();\n  followUpReason = 'Besetzt \\u2014 in 2 Stunden erneut versuchen';\n} else if (disposition === 'gatekeeper') {\n  const next = addWorkdays(now, 1);\n  nextCallScheduledAt = setTime(next, 8, 30).toISOString();\n  followUpReason = 'Gatekeeper \\u2014 fr\\u00fch morgens direkt versuchen';\n} else if (disposition === 'callback') {\n  if (d.callback_datetime) {\n    nextCallScheduledAt = d.callback_datetime;\n  } else {\n    const next = addWorkdays(now, 1);\n    nextCallScheduledAt = setTime(next, 10, 0).toISOString();\n  }\n  followUpReason = 'R\\u00fcckruf vereinbart';\n} else if (disposition === 'qualified') {\n  const next = addWorkdays(now, 1);\n  nextCallScheduledAt = setTime(next, 10, 0).toISOString();\n  followUpReason = 'Qualifiziert \\u2014 Follow-up zur Terminvereinbarung';\n} else if (disposition === 'connected') {\n  const next = addWorkdays(now, 3);\n  nextCallScheduledAt = setTime(next, 10, 0).toISOString();\n  followUpReason = 'Gespr\\u00e4ch gef\\u00fchrt \\u2014 Follow-up in 3 Tagen';\n} else if (disposition === 'technical_error') {\n  const next = new Date(now.getTime() + 30 * 60 * 1000);\n  nextCallScheduledAt = next.toISOString();\n  followUpReason = 'Technischer Fehler \\u2014 baldiger Retry';\n}\n\nreturn [{ json: {\n  ...d,\n  next_call_scheduled_at: nextCallScheduledAt,\n  follow_up_reason: followUpReason\n} }];"
-            }
-        },
-        {
-            "id": "7433c02b-8ca0-4faa-8262-94c264f22939",
-            "name": "DNC Check",
-            "type": "n8n-nodes-base.code",
-            "typeVersion": 2,
-            "position": [
-                2912,
-                96
-            ],
-            "parameters": {
-                "jsCode": "// DNC Check: extract lead_id from RETURNING and prepare data for DNC + call_attempt\nconst payload = $('Build Supabase Payload').first().json;\nconst upsertResult = $input.first().json;\n\nconst row = Array.isArray(upsertResult) ? upsertResult[0] : upsertResult;\nconst leadId = (row && row.id) ? row.id : payload.leadId || null;\nconst callId = payload.callId;\nconst phone = payload.phone;\nconst dncRequested = Boolean(payload.dnc_requested);\n\nreturn [{ json: {\n  leadId,\n  callId,\n  phone,\n  dncRequested,\n  disposition_code: payload.disposition_code,\n  recording_url: payload.recording_url,\n  callDirection: payload.callDirection,\n  campaignId: payload.campaignId,\n  attemptNumber: payload.attemptNumber,\n  callDurationSeconds: payload.callDurationSeconds,\n  endedReason: payload.endedReason,\n  objections_raised: payload.objections_raised\n} }];"
-            }
-        },
-        {
-            "id": "10899b7b-198c-4aad-ae0d-cf5f3c51845c",
-            "name": "DNC Requested?",
-            "type": "n8n-nodes-base.if",
-            "typeVersion": 2.2,
-            "position": [
-                3136,
-                96
-            ],
-            "parameters": {
-                "conditions": {
-                    "options": {
-                        "version": 2,
-                        "leftValue": "",
-                        "caseSensitive": true,
-                        "typeValidation": "strict"
-                    },
-                    "conditions": [
-                        {
-                            "id": "dnc1",
-                            "leftValue": "={{ $json.dncRequested }}",
-                            "rightValue": true,
-                            "operator": {
-                                "type": "boolean",
-                                "operation": "equals"
-                            }
-                        }
-                    ],
-                    "combinator": "and"
-                },
-                "options": {}
-            }
-        },
-        {
-            "id": "54ebf931-5bfb-48f4-89d3-44598356cd7c",
-            "name": "Insert DNC + Update Lead",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.5,
-            "position": [
-                3360,
-                -48
-            ],
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "INSERT INTO dnc_list (phone, reason, source_call_id, source_lead_id, notes, is_active)\nVALUES ($1, 'ai_detected', $2, $3::uuid, 'KI-erkannt aus Gespraechsanalyse', true)\nON CONFLICT DO NOTHING;\n\nUPDATE leads SET is_dnc = true, dnc_reason = 'KI-erkannt', status = 'dnc'\nWHERE id = $3::uuid;",
-                "options": {
-                    "queryReplacement": "={{ [$json.phone, $json.callId, $json.leadId] }}"
-                }
-            },
-            "credentials": {
-                "postgres": {
-                    "id": "ndhdVpUbeTJZgw1d",
-                    "name": "Voice Agent Database"
-                }
-            }
-        },
-        {
-            "id": "3b75aedb-33df-44c0-af38-ee26d11a924d",
-            "name": "Insert Call Attempt",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2.5,
-            "position": [
-                3584,
-                96
-            ],
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "INSERT INTO call_attempts (\n  lead_id, campaign_id, call_id, attempt_number,\n  disposition_code, duration_seconds, direction,\n  ended_reason, recording_url\n) VALUES (\n  $1::uuid, $2::uuid, $3, $4,\n  $5, $6, $7,\n  $8, $9\n)",
-                "options": {
-                    "queryReplacement": "={{ [$json.leadId, $json.campaignId, $json.callId, $json.attemptNumber, $json.disposition_code, $json.callDurationSeconds, $json.callDirection, $json.endedReason, $json.recording_url] }}"
-                }
-            },
-            "credentials": {
-                "postgres": {
-                    "id": "ndhdVpUbeTJZgw1d",
-                    "name": "Voice Agent Database"
-                }
-            }
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.requestBody }}",
+        "options": {}
+      },
+      "id": "http-openrouter",
+      "name": "OpenRouter LLM Scoring",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1120,
+        24
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "1guiLBepx3rJi6mE",
+          "name": "Header Auth account 2"
         }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst extractData = $('Extract Call Data').first().json;\n\nreturn [{ json: {\n  callId: data.callId || extractData.callId,\n  phone: data.phone || extractData.phone,\n  callDurationSeconds: data.callDurationSeconds || extractData.callDurationSeconds,\n  callStartedAt: data.callStartedAt || extractData.callStartedAt,\n  endedReason: data.endedReason || extractData.endedReason || 'unknown',\n  recordingUrl: data.recordingUrl || extractData.recordingUrl || null,\n  callDirection: data.callDirection || extractData.callDirection || 'inbound',\n  campaignId: data.campaignId || extractData.campaignId || null,\n  leadId: data.leadId || extractData.leadId || null,\n  attemptNumber: data.attemptNumber || extractData.attemptNumber || 1,\n  score_company_size: 1, score_tech_stack: 1, score_pain_point: 1, score_timeline: 1, score_engagement: 1,\n  conversation_summary: 'Kein Transkript verfuegbar.',\n  sentiment: null, sentiment_score: null, sentiment_reason: null,\n  objections_raised: [], drop_off_point: null, is_decision_maker: false,\n  status: 'contacted', next_steps: [], transcript: '',\n  caller_name: null, company: null, company_size: null, current_stack: null, pain_point: null, timeline: null,\n  dnc_requested: false, disposition_code: 'connected',\n  scoringEvidence: []\n} }];"
+      },
+      "id": "code-fallback",
+      "name": "Fallback Scores",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const llmResponse = $input.first().json;\nconst extractData = $('Extract Call Data').first().json;\n\nfunction clamp(val, min, max) {\n  const n = parseInt(val);\n  if (isNaN(n)) return min;\n  return Math.min(Math.max(n, min), max);\n}\n\nfunction sanitizeStr(val, maxLen) {\n  if (val === null || val === undefined) return null;\n  const s = String(val).trim();\n  if (s.length === 0) return null;\n  return s.substring(0, maxLen || 500);\n}\n\nlet parsed = {};\ntry {\n  const content = llmResponse.choices && llmResponse.choices[0] && llmResponse.choices[0].message\n    ? llmResponse.choices[0].message.content\n    : JSON.stringify(llmResponse);\n  parsed = JSON.parse(content);\n} catch(e) {\n  parsed = {\n    score_company_size: 1, score_tech_stack: 1, score_pain_point: 1, score_timeline: 1, score_engagement: 1,\n    conversation_summary: 'Analyse nicht verfuegbar.',\n    sentiment_score: null, sentiment_reason: 'JSON-Parse fehlgeschlagen',\n    objections_raised: [], drop_off_point: null, is_decision_maker: false,\n    status: 'contacted', next_steps: [],\n    caller_name: null, company: null, company_size: null, current_stack: null, pain_point: null, timeline: null,\n    dnc_requested: false, disposition_code: 'connected', scoring_evidence: []\n  };\n}\n\nconst validStatuses = ['new','contacted','qualified','appointment_booked','converted','lost','not_reached','rejected','callback_scheduled','dnc'];\nconst validDispositions = ['connected','not_interested','callback','dnc_request','qualified','demo_booked'];\n\nconst rawScore = parseFloat(parsed.sentiment_score);\nconst sentimentScore = isNaN(rawScore) ? null : Math.max(0, Math.min(1, rawScore));\nconst sentiment = sentimentScore === null ? null\n  : sentimentScore < 0.35 ? 'negativ'\n  : sentimentScore > 0.65 ? 'positiv'\n  : 'neutral';\n\n// --- Objection Normalization ---\nconst knownCategories = [\n  'Kein Budget', 'Keine Zeit', 'Nutze bereits Zapier', 'Muss Team fragen',\n  'Zu komplex', 'Kein konkreter Bedarf', 'Datenschutzbedenken',\n  'Vertrag mit Wettbewerber', 'Brauche mehr Infos', 'Zu teuer',\n  'IT muss zustimmen', 'Nicht der Entscheider', 'Kein Bedarf aktuell'\n];\nlet allKnown = [...knownCategories];\ntry {\n  const existCats = $('Build OpenRouter Request').first().json.existingCategoryNames;\n  if (Array.isArray(existCats) && existCats.length > 0) {\n    existCats.forEach(c => {\n      if (!allKnown.some(k => k.toLowerCase() === c.toLowerCase())) allKnown.push(c);\n    });\n  }\n} catch(e) {}\n\nconst synonymMap = {\n  'budget': 'Kein Budget', 'teuer': 'Kein Budget', 'kosten': 'Kein Budget', 'preis': 'Kein Budget', 'geld': 'Kein Budget',\n  'zeit': 'Keine Zeit', 'zapier': 'Nutze bereits Zapier', 'make.com': 'Nutze bereits Zapier', 'integromat': 'Nutze bereits Zapier',\n  'team fragen': 'Muss Team fragen', 'chef': 'Muss Team fragen', 'vorstand': 'Muss Team fragen', 'entscheider': 'Muss Team fragen', 'genehmig': 'Muss Team fragen',\n  'komplex': 'Zu komplex', 'kompliziert': 'Zu komplex', 'aufwaendig': 'Zu komplex',\n  'bedarf': 'Kein konkreter Bedarf', 'datenschutz': 'Datenschutzbedenken', 'dsgvo': 'Datenschutzbedenken',\n  'wettbewerber': 'Vertrag mit Wettbewerber', 'konkurrent': 'Vertrag mit Wettbewerber', 'vertrag': 'Vertrag mit Wettbewerber'\n};\n\nfunction normalizeObjToCanonical(obj) {\n  const trimmed = String(obj).trim();\n  if (!trimmed) return null;\n  const lower = trimmed.toLowerCase();\n  const exactMatch = allKnown.find(k => k.toLowerCase() === lower);\n  if (exactMatch) return exactMatch;\n  for (const [keyword, canonical] of Object.entries(synonymMap)) {\n    if (lower.includes(keyword)) return canonical;\n  }\n  const cleaned = trimmed.substring(0, 50).replace(/[.!?]+$/g, '').trim();\n  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);\n}\n\nconst rawObjections = Array.isArray(parsed.objections_raised) ? parsed.objections_raised : [];\nconst normalizedObjections = [];\nconst seenNorm = new Set();\nfor (const obj of rawObjections) {\n  const norm = normalizeObjToCanonical(obj);\n  if (norm && !seenNorm.has(norm.toLowerCase())) { seenNorm.add(norm.toLowerCase()); normalizedObjections.push(norm); }\n}\n\n// --- Drop-off phase validation ---\nconst validPhases = ['OPENING', 'DISCOVERY', 'QUALIFICATION', 'DEMO_OFFER', 'CLOSING'];\nconst rawDropOff = parsed.drop_off_point;\nlet normalizedDropOff = null;\nif (rawDropOff) {\n  const upperDropOff = String(rawDropOff).toUpperCase().trim();\n  if (validPhases.includes(upperDropOff)) normalizedDropOff = upperDropOff;\n  else {\n    const aliases = { 'PAIN_VALIDATION': 'DISCOVERY', 'SOLUTION': 'DEMO_OFFER', 'GREETING': 'OPENING', 'INTRO': 'OPENING' };\n    normalizedDropOff = aliases[upperDropOff] || 'DISCOVERY';\n  }\n}\n\n// --- Parse scoring evidence ---\nconst validDimensions = ['company_size', 'tech_stack', 'pain_point', 'timeline', 'engagement', 'sentiment', 'objection', 'drop_off', 'general'];\nconst validSpeakers = ['agent', 'caller'];\nconst validSentiments = ['positiv', 'neutral', 'negativ'];\n\nlet scoringEvidence = [];\nif (Array.isArray(parsed.scoring_evidence)) {\n  scoringEvidence = parsed.scoring_evidence\n    .filter(e => e && typeof e === 'object' && typeof e.quote_text === 'string' && e.quote_text.trim().length > 0)\n    .map(e => ({\n      dimension: validDimensions.includes(e.dimension) ? e.dimension : 'general',\n      quote_text: String(e.quote_text).substring(0, 1000).trim(),\n      speaker: validSpeakers.includes(e.speaker) ? e.speaker : 'caller',\n      reasoning: sanitizeStr(e.reasoning, 500) || '',\n      score_value: e.score_value != null ? clamp(e.score_value, 1, 3) : null,\n      sentiment: validSentiments.includes(e.sentiment) ? e.sentiment : 'neutral'\n    }));\n}\n\nconst result = {\n  callId: extractData.callId, phone: extractData.phone,\n  callDurationSeconds: extractData.callDurationSeconds, callStartedAt: extractData.callStartedAt,\n  transcript: extractData.transcript, endedReason: extractData.endedReason,\n  recordingUrl: extractData.recordingUrl, callDirection: extractData.callDirection,\n  campaignId: extractData.campaignId, leadId: extractData.leadId, attemptNumber: extractData.attemptNumber,\n  score_company_size: clamp(parsed.score_company_size, 1, 3),\n  score_tech_stack: clamp(parsed.score_tech_stack, 1, 3),\n  score_pain_point: clamp(parsed.score_pain_point, 1, 3),\n  score_timeline: clamp(parsed.score_timeline, 1, 3),\n  score_engagement: clamp(parsed.score_engagement, 1, 3),\n  conversation_summary: String(parsed.conversation_summary || '').substring(0, 1000),\n  sentiment, sentiment_score: sentimentScore,\n  sentiment_reason: sanitizeStr(parsed.sentiment_reason, 500),\n  objections_raised: normalizedObjections,\n  drop_off_point: normalizedDropOff,\n  is_decision_maker: Boolean(parsed.is_decision_maker),\n  status: validStatuses.includes(parsed.status) ? parsed.status : 'contacted',\n  next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],\n  caller_name: sanitizeStr(parsed.caller_name, 200),\n  company: sanitizeStr(parsed.company, 200),\n  company_size: sanitizeStr(parsed.company_size, 200),\n  current_stack: sanitizeStr(parsed.current_stack, 500),\n  pain_point: sanitizeStr(parsed.pain_point, 500),\n  timeline: sanitizeStr(parsed.timeline, 200),\n  dnc_requested: Boolean(parsed.dnc_requested),\n  disposition_code: validDispositions.includes(parsed.disposition_code) ? parsed.disposition_code : 'connected'\n};\n\n// Ensure at least one evidence per main dimension\nconst mainDimensions = ['company_size', 'tech_stack', 'pain_point', 'timeline'];\nconst dimensionScoreMap = { company_size: result.score_company_size, tech_stack: result.score_tech_stack, pain_point: result.score_pain_point, timeline: result.score_timeline };\nfor (const dim of mainDimensions) {\n  if (!scoringEvidence.some(e => e.dimension === dim)) {\n    scoringEvidence.push({ dimension: dim, quote_text: 'Keine relevante Aussage im Gespraech', speaker: 'caller', reasoning: 'Dimension wurde im Gespraech nicht angesprochen, Standardwert vergeben', score_value: dimensionScoreMap[dim], sentiment: 'neutral' });\n  }\n}\n\nresult.scoringEvidence = scoringEvidence;\nreturn [{ json: result }];"
+      },
+      "id": "code-parse-llm",
+      "name": "Parse LLM Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "let d;\ntry {\n  d = $('Smart Cadence').first().json;\n} catch(e) {\n  d = $input.first().json;\n}\n\nreturn [{ json: {\n  callId: d.callId,\n  score_company_size: d.score_company_size,\n  score_tech_stack: d.score_tech_stack,\n  score_pain_point: d.score_pain_point,\n  score_timeline: d.score_timeline,\n  score_engagement: d.score_engagement || null,\n  conversation_summary: d.conversation_summary || '',\n  sentiment: d.sentiment || null,\n  sentiment_score: d.sentiment_score != null ? d.sentiment_score : null,\n  sentiment_reason: d.sentiment_reason || null,\n  objections_raised: Array.isArray(d.objections_raised) ? d.objections_raised : [],\n  drop_off_point: d.drop_off_point || null,\n  is_decision_maker: Boolean(d.is_decision_maker),\n  status: d.status || 'contacted',\n  outbound_state: d.outbound_state || null,\n  next_steps: Array.isArray(d.next_steps) ? d.next_steps : [],\n  transcript: d.transcript || '',\n  callDurationSeconds: d.callDurationSeconds || null,\n  callStartedAt: d.callStartedAt || null,\n  phone: d.phone || null,\n  caller_name: d.caller_name || null,\n  company: d.company || null,\n  company_size: d.company_size || null,\n  current_stack: d.current_stack || null,\n  pain_point: d.pain_point || null,\n  timeline: d.timeline || null,\n  disposition_code: d.disposition_code || null,\n  recording_url: d.recordingUrl || null,\n  callDirection: d.callDirection || 'inbound',\n  campaignId: d.campaignId || null,\n  leadId: d.leadId || null,\n  attemptNumber: d.attemptNumber || 1,\n  next_call_scheduled_at: d.next_call_scheduled_at || null,\n  follow_up_reason: d.follow_up_reason || null,\n  dnc_requested: Boolean(d.dnc_requested),\n  endedReason: d.endedReason || null,\n  scoringEvidence: Array.isArray(d.scoringEvidence) ? d.scoringEvidence : []\n} }];"
+      },
+      "id": "code-build-sup",
+      "name": "Build Supabase Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2464,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO leads (\n  call_id, score_company_size, score_tech_stack, score_pain_point, score_timeline,\n  score_engagement,\n  transcript, conversation_summary, sentiment, sentiment_score, sentiment_reason,\n  objections_raised, drop_off_point,\n  call_duration_seconds, call_started_at,\n  is_decision_maker, status, next_steps, phone,\n  caller_name, company, company_size, current_stack, pain_point, timeline,\n  disposition_code, recording_url, call_direction,\n  last_call_attempt_at, next_call_scheduled_at, follow_up_reason,\n  campaign_id\n) VALUES (\n  $1, $2, $3, $4, $5,\n  $6,\n  $7, $8, $9, $10::real, $11,\n  $12::text[], $13,\n  $14, $15::timestamptz,\n  $16, $17, $18::text[], $19,\n  $20, $21, $22, $23, $24, $25,\n  $26, $27, $28,\n  now(), $29::timestamptz, $30,\n  $31::uuid\n)\nON CONFLICT (call_id) DO UPDATE SET\n  score_company_size = EXCLUDED.score_company_size,\n  score_tech_stack = EXCLUDED.score_tech_stack,\n  score_pain_point = EXCLUDED.score_pain_point,\n  score_timeline = EXCLUDED.score_timeline,\n  score_engagement = EXCLUDED.score_engagement,\n  transcript = EXCLUDED.transcript,\n  conversation_summary = EXCLUDED.conversation_summary,\n  sentiment = EXCLUDED.sentiment,\n  sentiment_score = EXCLUDED.sentiment_score,\n  sentiment_reason = EXCLUDED.sentiment_reason,\n  objections_raised = EXCLUDED.objections_raised,\n  drop_off_point = CASE\n    WHEN leads.appointment_booked = true THEN null\n    ELSE EXCLUDED.drop_off_point\n  END,\n  call_duration_seconds = EXCLUDED.call_duration_seconds,\n  call_started_at = EXCLUDED.call_started_at,\n  is_decision_maker = EXCLUDED.is_decision_maker,\n  status = CASE\n    WHEN leads.appointment_booked = true AND leads.status = 'appointment_booked'\n    THEN leads.status\n    ELSE EXCLUDED.status\n  END,\n  next_steps = EXCLUDED.next_steps,\n  phone = COALESCE(EXCLUDED.phone, leads.phone),\n  caller_name = COALESCE(leads.caller_name, EXCLUDED.caller_name),\n  company = COALESCE(leads.company, EXCLUDED.company),\n  company_size = COALESCE(leads.company_size, EXCLUDED.company_size),\n  current_stack = COALESCE(leads.current_stack, EXCLUDED.current_stack),\n  pain_point = COALESCE(leads.pain_point, EXCLUDED.pain_point),\n  timeline = COALESCE(leads.timeline, EXCLUDED.timeline),\n  disposition_code = EXCLUDED.disposition_code,\n  recording_url = COALESCE(EXCLUDED.recording_url, leads.recording_url),\n  call_direction = COALESCE(EXCLUDED.call_direction, leads.call_direction),\n  call_attempts = CASE\n    WHEN EXCLUDED.call_direction = 'outbound' THEN COALESCE(leads.call_attempts, 0) + 1\n    ELSE leads.call_attempts\n  END,\n  last_call_attempt_at = now(),\n  next_call_scheduled_at = EXCLUDED.next_call_scheduled_at,\n  follow_up_reason = EXCLUDED.follow_up_reason,\n  campaign_id = COALESCE(EXCLUDED.campaign_id, leads.campaign_id)\nRETURNING id, call_id, phone, is_dnc",
+        "options": {
+          "queryReplacement": "={{ [$json.callId, $json.score_company_size, $json.score_tech_stack, $json.score_pain_point, $json.score_timeline, $json.score_engagement, $json.transcript, $json.conversation_summary, $json.sentiment, $json.sentiment_score, $json.sentiment_reason, $json.objections_raised, $json.drop_off_point, $json.callDurationSeconds, $json.callStartedAt, $json.is_decision_maker, $json.status, $json.next_steps, $json.phone, $json.caller_name, $json.company, $json.company_size, $json.current_stack, $json.pain_point, $json.timeline, $json.disposition_code, $json.recording_url, $json.callDirection, $json.next_call_scheduled_at, $json.follow_up_reason, $json.campaignId] }}"
+        }
+      },
+      "id": "pg-upsert-postcall",
+      "name": "Supabase Upsert Lead Post-Call",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2688,
+        96
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ndhdVpUbeTJZgw1d",
+          "name": "Voice Agent Database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/objection_categories?select=name,description&is_active=eq.true&order=occurrence_count.desc",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "REDACTED_SUPABASE_SERVICE_KEY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-fetch-cats",
+      "name": "Fetch Categories",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        672,
+        96
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const parsed = $input.first().json;\nconst extractData = $('Extract Call Data').first().json;\nlet existingNames = [];\ntry {\n  existingNames = $('Build OpenRouter Request').first().json.existingCategoryNames || [];\n} catch(e) {}\n\nconst normalize = (s) => s.trim().replace(/\\s+/g, ' ');\nconst objections = Array.isArray(parsed.objections_raised) ? parsed.objections_raised : [];\n\n// Build lookup with both exact and keyword-based matching\nconst existingLower = existingNames.map(n => normalize(n).toLowerCase());\n\n// Extract keywords from existing names for fuzzy matching\nconst stopwords = ['kein', 'keine', 'keinen', 'keinem', 'zu', 'mit', 'und', 'oder', 'nicht', 'muss', 'bereits', 'nutze', 'der', 'die', 'das', 'ein', 'eine'];\nfunction extractKeywords(name) {\n  return name.toLowerCase()\n    .replace(/[^a-z\\u00e4\\u00f6\\u00fc\\u00df\\s]/g, '')\n    .split(/\\s+/)\n    .filter(w => w.length > 2 && !stopwords.includes(w));\n}\n\nconst existingKeywordSets = existingNames.map(n => ({\n  name: n,\n  keywords: extractKeywords(n)\n}));\n\nfunction isExistingCategory(objection) {\n  const lower = normalize(objection).toLowerCase();\n  // Exact match\n  if (existingLower.includes(lower)) return true;\n  // Keyword overlap: if >=50% of new objection's keywords match an existing category\n  const objKeywords = extractKeywords(objection);\n  if (objKeywords.length === 0) return false;\n  for (const existing of existingKeywordSets) {\n    if (existing.keywords.length === 0) continue;\n    const overlap = objKeywords.filter(k =>\n      existing.keywords.some(ek => ek.includes(k) || k.includes(ek))\n    ).length;\n    if (overlap / Math.max(objKeywords.length, 1) >= 0.5) return true;\n  }\n  return false;\n}\n\nconst newCats = objections.filter(obj => !isExistingCategory(obj));\nconst seen = new Set();\nconst uniqueNew = [];\nfor (const cat of newCats) {\n  const key = normalize(cat).toLowerCase();\n  if (!seen.has(key)) { seen.add(key); uniqueNew.push(normalize(cat)); }\n}\nconst upsertBody = uniqueNew.map(name => ({ name, description: null, counter_argument: null, is_active: true, occurrence_count: 0 }));\nreturn [{ json: {\n  ...parsed,\n  callId: parsed.callId || extractData.callId,\n  phone: parsed.phone || extractData.phone,\n  callDurationSeconds: parsed.callDurationSeconds || extractData.callDurationSeconds,\n  callStartedAt: parsed.callStartedAt || extractData.callStartedAt,\n  transcript: parsed.transcript || extractData.transcript,\n  endedReason: parsed.endedReason || extractData.endedReason,\n  recordingUrl: parsed.recordingUrl || extractData.recordingUrl,\n  callDirection: parsed.callDirection || extractData.callDirection,\n  campaignId: parsed.campaignId || extractData.campaignId,\n  leadId: parsed.leadId || extractData.leadId,\n  attemptNumber: parsed.attemptNumber || extractData.attemptNumber,\n  upsertBody: JSON.stringify(upsertBody),\n  hasNewCategories: uniqueNew.length > 0\n} }];"
+      },
+      "id": "code-detect-new-cats",
+      "name": "Detect New Categories",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1568,
+        -96
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/objection_categories",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "REDACTED_SUPABASE_SERVICE_KEY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "resolution=merge-duplicates,return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.upsertBody }}",
+        "options": {}
+      },
+      "id": "http-upsert-new-cats",
+      "name": "Upsert New Categories",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1792,
+        -96
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE objection_categories SET occurrence_count = occurrence_count + 1 WHERE name = ANY($1::text[])",
+        "options": {
+          "queryReplacement": "={{ [$('Build Supabase Payload').first().json.objections_raised] }}"
+        }
+      },
+      "id": "pg-update-counts",
+      "name": "Update Occurrence Counts",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3808,
+        96
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "ndhdVpUbeTJZgw1d",
+          "name": "Voice Agent Database"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "a47a51b7-8316-4b07-893f-b31c0d1de6c4",
+      "name": "Disposition Inference",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2016,
+        96
+      ],
+      "parameters": {
+        "jsCode": "// Disposition Inference: map Vapi endedReason + GPT analysis to final disposition_code\nlet d;\ntry {\n  d = $('Detect New Categories').first().json;\n} catch(e) {\n  d = $input.first().json;\n}\n\nconst endedReason = d.endedReason || 'unknown';\nconst gptDisposition = d.disposition_code || 'connected';\nconst dncRequested = Boolean(d.dnc_requested);\nconst scoreEngagement = d.score_engagement || 1;\nconst appointmentBooked = d.status === 'appointment_booked' || d.status === 'converted';\n\nlet finalDisposition = 'connected';\nlet finalStatus = d.status || 'contacted';\nlet finalOutboundState = null;\n\nconst nonConnectedReasons = {\n  'no-answer': 'no_answer',\n  'voicemail': 'voicemail',\n  'machine-detected': 'voicemail',\n  'busy': 'busy'\n};\n\nconst technicalErrors = ['system-error', 'pipeline-error-openai', 'pipeline-error-custom-llm', 'pipeline-error-deepgram', 'pipeline-error-eleven-labs', 'pipeline-error-vapi'];\n\nif (nonConnectedReasons[endedReason]) {\n  finalDisposition = nonConnectedReasons[endedReason];\n  finalStatus = d.status === 'new' ? 'new' : 'contacted';\n  finalOutboundState = 'not_reached';\n} else if (technicalErrors.includes(endedReason)) {\n  finalDisposition = 'technical_error';\n  finalStatus = d.status || 'contacted';\n} else {\n  if (appointmentBooked) {\n    finalDisposition = 'connected';\n    finalStatus = 'appointment_booked';\n  } else if (dncRequested) {\n    finalDisposition = 'dnc_request';\n    finalStatus = 'lost';\n  } else if (gptDisposition === 'not_interested' || scoreEngagement <= 1) {\n    finalDisposition = 'not_interested';\n    finalStatus = 'lost';\n  } else if (gptDisposition === 'callback') {\n    finalDisposition = 'callback';\n    finalOutboundState = 'callback_scheduled';\n  } else {\n    finalDisposition = gptDisposition || 'connected';\n  }\n}\n\nreturn [{ json: {\n  ...d,\n  disposition_code: finalDisposition,\n  status: finalStatus,\n  outbound_state: finalOutboundState,\n  dnc_requested: dncRequested\n} }];"
+      }
+    },
+    {
+      "id": "30bd6d98-2ab3-4d15-a87d-a9d33eaf4f7c",
+      "name": "Smart Cadence",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2240,
+        96
+      ],
+      "parameters": {
+        "jsCode": "// Smart Cadence: calculate next_call_scheduled_at and follow_up_reason\nconst d = $input.first().json;\nconst disposition = d.disposition_code;\nconst now = new Date();\nconst currentHour = now.getHours();\nconst isMorning = currentHour < 13;\n\nfunction addWorkdays(date, days) {\n  const result = new Date(date);\n  let added = 0;\n  while (added < days) {\n    result.setDate(result.getDate() + 1);\n    const dow = result.getDay();\n    if (dow !== 0 && dow !== 6) added++;\n  }\n  return result;\n}\n\nfunction setTime(date, hours, minutes) {\n  const result = new Date(date);\n  result.setHours(hours, minutes || 0, 0, 0);\n  return result;\n}\n\nlet nextCallScheduledAt = null;\nlet followUpReason = null;\n\nconst terminalDispositions = ['not_interested', 'dnc_request', 'wrong_number'];\n\nif (terminalDispositions.includes(disposition)) {\n  nextCallScheduledAt = null;\n  followUpReason = null;\n} else if (disposition === 'no_answer') {\n  if (isMorning) {\n    const next = addWorkdays(now, 1);\n    const hour = 14 + Math.floor(Math.random() * 2);\n    nextCallScheduledAt = setTime(next, hour, Math.floor(Math.random() * 60)).toISOString();\n    followUpReason = 'Vormittags nicht erreicht \\u2014 Nachmittag versuchen';\n  } else {\n    const next = addWorkdays(now, 1);\n    const hour = 9 + Math.floor(Math.random() * 2);\n    nextCallScheduledAt = setTime(next, hour, Math.floor(Math.random() * 60)).toISOString();\n    followUpReason = 'Nachmittags nicht erreicht \\u2014 Vormittag versuchen';\n  }\n} else if (disposition === 'voicemail') {\n  const next = addWorkdays(now, 2);\n  const hour = isMorning ? (14 + Math.floor(Math.random() * 3)) : (9 + Math.floor(Math.random() * 2));\n  nextCallScheduledAt = setTime(next, hour, Math.floor(Math.random() * 60)).toISOString();\n  followUpReason = 'Mailbox erreicht \\u2014 andere Tageszeit versuchen';\n} else if (disposition === 'busy') {\n  const next = new Date(now.getTime() + 2 * 60 * 60 * 1000);\n  nextCallScheduledAt = next.toISOString();\n  followUpReason = 'Besetzt \\u2014 in 2 Stunden erneut versuchen';\n} else if (disposition === 'gatekeeper') {\n  const next = addWorkdays(now, 1);\n  nextCallScheduledAt = setTime(next, 8, 30).toISOString();\n  followUpReason = 'Gatekeeper \\u2014 fr\\u00fch morgens direkt versuchen';\n} else if (disposition === 'callback') {\n  if (d.callback_datetime) {\n    nextCallScheduledAt = d.callback_datetime;\n  } else {\n    const next = addWorkdays(now, 1);\n    nextCallScheduledAt = setTime(next, 10, 0).toISOString();\n  }\n  followUpReason = 'R\\u00fcckruf vereinbart';\n} else if (disposition === 'connected') {\n  const next = addWorkdays(now, 3);\n  nextCallScheduledAt = setTime(next, 10, 0).toISOString();\n  followUpReason = 'Gespr\\u00e4ch gef\\u00fchrt \\u2014 Follow-up in 3 Tagen';\n} else if (disposition === 'technical_error') {\n  const next = new Date(now.getTime() + 30 * 60 * 1000);\n  nextCallScheduledAt = next.toISOString();\n  followUpReason = 'Technischer Fehler \\u2014 baldiger Retry';\n}\n\nreturn [{ json: {\n  ...d,\n  next_call_scheduled_at: nextCallScheduledAt,\n  follow_up_reason: followUpReason\n} }];"
+      }
+    },
+    {
+      "id": "7433c02b-8ca0-4faa-8262-94c264f22939",
+      "name": "DNC Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2912,
+        96
+      ],
+      "parameters": {
+        "jsCode": "// DNC Check: extract lead_id from RETURNING and prepare data for DNC + call_attempt\nconst payload = $('Build Supabase Payload').first().json;\nconst upsertResult = $input.first().json;\n\nconst row = Array.isArray(upsertResult) ? upsertResult[0] : upsertResult;\nconst leadId = (row && row.id) ? row.id : payload.leadId || null;\nconst callId = payload.callId;\nconst phone = payload.phone;\nconst dncRequested = Boolean(payload.dnc_requested);\n\nreturn [{ json: {\n  leadId,\n  callId,\n  phone,\n  dncRequested,\n  disposition_code: payload.disposition_code,\n  recording_url: payload.recording_url,\n  callDirection: payload.callDirection,\n  campaignId: payload.campaignId,\n  attemptNumber: payload.attemptNumber,\n  callDurationSeconds: payload.callDurationSeconds,\n  endedReason: payload.endedReason,\n  objections_raised: payload.objections_raised\n} }];"
+      }
+    },
+    {
+      "id": "10899b7b-198c-4aad-ae0d-cf5f3c51845c",
+      "name": "DNC Requested?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3136,
+        96
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "dnc1",
+              "leftValue": "={{ $json.dncRequested }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "54ebf931-5bfb-48f4-89d3-44598356cd7c",
+      "name": "Insert DNC + Update Lead",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        3360,
+        -48
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO dnc_list (phone, reason, source_call_id, source_lead_id, notes, is_active)\nVALUES ($1, 'ai_detected', $2, $3::uuid, 'KI-erkannt aus Gespraechsanalyse', true)\nON CONFLICT DO NOTHING;\n\nUPDATE leads SET is_dnc = true, dnc_reason = 'KI-erkannt', status = 'lost'\nWHERE id = $3::uuid;",
+        "options": {
+          "queryReplacement": "={{ [$json.phone, $json.callId, $json.leadId] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "ndhdVpUbeTJZgw1d",
+          "name": "Voice Agent Database"
+        }
+      }
+    },
+    {
+      "id": "3b75aedb-33df-44c0-af38-ee26d11a924d",
+      "name": "Insert Call Attempt",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        3584,
+        96
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO call_attempts (\n  lead_id, campaign_id, call_id, attempt_number,\n  disposition_code, duration_seconds, direction,\n  ended_reason, recording_url\n) VALUES (\n  $1::uuid, $2::uuid, $3, $4,\n  $5, $6, $7,\n  $8, $9\n)",
+        "options": {
+          "queryReplacement": "={{ [$json.leadId, $json.campaignId, $json.callId, $json.attemptNumber, $json.disposition_code, $json.callDurationSeconds, $json.callDirection, $json.endedReason, $json.recording_url] }}"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "id": "ndhdVpUbeTJZgw1d",
+          "name": "Voice Agent Database"
+        }
+      }
+    },
+    {
+      "id": "code-prep-quotes",
+      "name": "Prepare Quote Inserts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2912,
+        320
+      ],
+      "parameters": {
+        "jsCode": "const upsertResult = $input.first().json;\nconst payload = $('Build Supabase Payload').first().json;\n\nconst row = Array.isArray(upsertResult) ? upsertResult[0] : upsertResult;\nconst leadId = (row && row.id) ? row.id : null;\n\nif (!leadId) return [{ json: { hasQuotes: false, quotesBody: '[]', leadId: null } }];\n\nconst scoringEvidence = payload.scoringEvidence || [];\nif (scoringEvidence.length === 0) return [{ json: { hasQuotes: false, quotesBody: '[]', leadId } }];\n\nconst quotes = scoringEvidence.map(e => ({\n  lead_id: leadId,\n  quote_text: String(e.quote_text || '').substring(0, 1000),\n  speaker: e.speaker || 'caller',\n  topic: e.dimension || 'general',\n  sentiment: e.sentiment || 'neutral',\n  context: e.reasoning || null,\n  scoring_dimension: e.dimension || 'general',\n  score_value: e.score_value\n}));\n\nreturn [{ json: { hasQuotes: true, quotesBody: JSON.stringify(quotes), leadId } }];"
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "http-delete-old-quotes",
+      "name": "Delete Old Quotes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        3136,
+        320
+      ],
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/lead_quotes?lead_id=eq.{{ $json.leadId }}&scoring_dimension=not.is.null",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "REDACTED_SUPABASE_SERVICE_KEY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "http-insert-quotes",
+      "name": "Insert Scoring Quotes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        3360,
+        320
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/lead_quotes",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "REDACTED_SUPABASE_SERVICE_KEY"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $('Prepare Quote Inserts').first().json.quotesBody }}",
+        "options": {}
+      },
+      "continueOnFail": true
+    }
+  ],
+  "connections": {
+    "Webhook end_of_call": {
+      "main": [
+        [
+          {
+            "node": "Extract Call Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Call Data": {
+      "main": [
+        [
+          {
+            "node": "Has Transcript?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Transcript?": {
+      "main": [
+        [
+          {
+            "node": "Fetch Categories",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fallback Scores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build OpenRouter Request": {
+      "main": [
+        [
+          {
+            "node": "OpenRouter LLM Scoring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "error": [
+        [
+          {
+            "node": "Fallback Scores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter LLM Scoring": {
+      "main": [
+        [
+          {
+            "node": "Parse LLM Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "error": [
+        [
+          {
+            "node": "Fallback Scores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse LLM Response": {
+      "error": [
+        [
+          {
+            "node": "Fallback Scores",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "main": [
+        [
+          {
+            "node": "Detect New Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Supabase Payload": {
+      "main": [
+        [
+          {
+            "node": "Supabase Upsert Lead Post-Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Categories": {
+      "main": [
+        [
+          {
+            "node": "Build OpenRouter Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect New Categories": {
+      "main": [
+        [
+          {
+            "node": "Upsert New Categories",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert New Categories": {
+      "main": [
+        [
+          {
+            "node": "Disposition Inference",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fallback Scores": {
+      "main": [
+        [
+          {
+            "node": "Disposition Inference",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Disposition Inference": {
+      "main": [
+        [
+          {
+            "node": "Smart Cadence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Smart Cadence": {
+      "main": [
+        [
+          {
+            "node": "Build Supabase Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Upsert Lead Post-Call": {
+      "main": [
+        [
+          {
+            "node": "DNC Check",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Quote Inserts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DNC Check": {
+      "main": [
+        [
+          {
+            "node": "DNC Requested?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DNC Requested?": {
+      "main": [
+        [
+          {
+            "node": "Insert DNC + Update Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert Call Attempt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert DNC + Update Lead": {
+      "main": [
+        [
+          {
+            "node": "Insert Call Attempt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Call Attempt": {
+      "main": [
+        [
+          {
+            "node": "Update Occurrence Counts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Quote Inserts": {
+      "main": [
+        [
+          {
+            "node": "Delete Old Quotes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Old Quotes": {
+      "main": [
+        [
+          {
+            "node": "Insert Scoring Quotes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "pinData": {},
+  "activeVersionId": "ffe1fe60-dc5c-4991-8e47-a23fd07bc944",
+  "versionCounter": 128,
+  "triggerCount": 1,
+  "shared": [
+    {
+      "updatedAt": "2026-02-28T19:00:03.243Z",
+      "createdAt": "2026-02-28T19:00:03.243Z",
+      "role": "workflow:owner",
+      "workflowId": "DBgYdLeCL75VL8S6",
+      "projectId": "Hb8MCr6jApuP43D1",
+      "project": {
+        "updatedAt": "2025-12-01T16:24:24.630Z",
+        "createdAt": "2025-12-01T16:17:56.703Z",
+        "id": "Hb8MCr6jApuP43D1",
+        "name": "Fynn Loosen <fynn.loosen@outlook.de>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "495728b9-b3cb-456c-9843-b80be60568f8"
+      }
+    }
+  ],
+  "tags": [],
+  "activeVersion": {
+    "updatedAt": "2026-03-03T19:43:13.463Z",
+    "createdAt": "2026-03-03T19:43:13.463Z",
+    "versionId": "ffe1fe60-dc5c-4991-8e47-a23fd07bc944",
+    "workflowId": "DBgYdLeCL75VL8S6",
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "vapi-end-of-call",
+          "options": {}
+        },
+        "id": "wh-end-of-call",
+        "name": "Webhook end_of_call",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2.1,
+        "position": [
+          0,
+          168
+        ],
+        "webhookId": "c0edc7c4-f8b1-40e6-b962-b2c5c7654ed0"
+      },
+      {
+        "parameters": {
+          "jsCode": "const body = $input.first().json.body;\n\n// Extract call data from Vapi end-of-call-report\nconst call = body.message ? body.message.call : body.call;\nconst callObj = call || {};\n\nconst callId = callObj.id || body.call_id || 'unknown-' + Date.now();\nconst transcript = body.message ? (body.message.artifact && body.message.artifact.transcript) : body.transcript;\nconst transcriptText = transcript || '';\n\n// Check if user actually spoke (not just AI greeting)\nconst userTurns = transcriptText.split('\\n')\n  .filter(line => line.startsWith('User:'))\n  .filter(line => line.replace('User:', '').trim().length > 5);\nconst hasTranscript = userTurns.length >= 1;\n\n// Calculate duration\nlet callDurationSeconds = null;\nlet callStartedAt = null;\nif (callObj.startedAt && callObj.endedAt) {\n  const start = new Date(callObj.startedAt);\n  const end = new Date(callObj.endedAt);\n  callDurationSeconds = Math.round((end - start) / 1000);\n  callStartedAt = callObj.startedAt;\n} else if (callObj.startedAt) {\n  callStartedAt = callObj.startedAt;\n}\n\nconst endedReason = body.message ? body.message.endedReason : (body.endedReason || 'unknown');\nconst phone = callObj.customer ? callObj.customer.number : null;\n\n// NEW: Extract recording URL\nconst recordingUrl = body.message\n  ? (body.message.artifact && body.message.artifact.recordingUrl)\n  : (body.recordingUrl || null);\n\n// NEW: Extract call direction from assistant overrides or metadata\nconst assistantOverrides = callObj.assistantOverrides || {};\nconst variableValues = assistantOverrides.variableValues || {};\nconst callDirection = variableValues.call_direction || 'inbound';\nconst campaignId = variableValues.campaign_id || null;\nconst leadId = variableValues.lead_id || null;\nconst attemptNumber = parseInt(variableValues.attempt_number) || 1;\n\nreturn [{ json: {\n  callId,\n  transcript: transcriptText,\n  hasTranscript,\n  callDurationSeconds,\n  callStartedAt,\n  endedReason,\n  phone,\n  recordingUrl,\n  callDirection,\n  campaignId,\n  leadId,\n  attemptNumber\n} }];"
+        },
+        "id": "code-extract",
+        "name": "Extract Call Data",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          224,
+          168
+        ]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "c1",
+                "leftValue": "={{ $json.hasTranscript }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        },
+        "id": "if-has-transcript",
+        "name": "Has Transcript?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [
+          448,
+          168
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const data = $('Extract Call Data').first().json;\nconst transcript = data.transcript || '';\n\nlet existingCategoryNames = [];\ntry {\n  const catResponse = $('Fetch Categories').first().json;\n  if (Array.isArray(catResponse)) {\n    existingCategoryNames = catResponse.map(c => c.name);\n  }\n} catch(e) {}\n\nconst defaultCategories = ['Kein Budget', 'Keine Zeit', 'Nutze bereits Zapier', 'Muss Team fragen', 'Zu komplex', 'Kein konkreter Bedarf', 'Datenschutzbedenken'];\nconst allCategories = [...new Set([...defaultCategories, ...existingCategoryNames])];\nconst categoryList = allCategories.map(n => `\"${n}\"`).join(', ');\n\nconst prompt = `Analysiere dieses Gespraechstranskript eines Sales-Calls und bewerte den Lead.\nAntworte als JSON mit diesen Feldern:\n\nWICHTIGE SCORING-REGELN:\n- Bewerte NUR basierend auf EXPLIZITEN Aussagen im Transcript\n- Wenn eine Information NICHT erwaehnt wird, setze Score 1 (nicht 2!)\n- Ausweichende Antworten = Score 1\n- company_size Score 3 erfordert KONKRETE Zahl >= 50 oder klare Beschreibung\n- tech_stack Score 3 erfordert NAMENTLICHE Nennung von Automation-Tools\n- pain_point Score 3 erfordert KONKRETEN Use Case mit messbarem Problem\n- timeline Score 3 erfordert EXPLIZITE Zeitangabe innerhalb 1 Monat\n\n- score_company_size (1-3): 1=klein/<10MA, 2=mittel/10-49MA, 3=gross/50+MA\n- score_tech_stack (1-3): 1=keine Automation, 2=erste Erfahrung, 3=nutzt Zapier/Make/APIs\n- score_pain_point (1-3): 1=nur Info, 2=allgemeines Interesse, 3=konkreter dringender Use Case\n- score_timeline (1-3): 1=kein Zeitrahmen, 2=1-3 Monate, 3=innerhalb 1 Monat\n- score_engagement (1-3): 1=minimale Beteiligung, 2=hoefliches Gespraech, 3=aktiver Dialog\n- conversation_summary (string, max 200 Woerter, Deutsch)\n\nSENTIMENT-BEWERTUNG:\n- sentiment_score (0.0-1.0): Stimmung des ANRUFERS gegenueber dem Produkt\n- sentiment_reason (string, max 80 Woerter, Deutsch)\n\n- objections_raised (array of strings): Verwende vordefinierte Namen: ${categoryList}\n- drop_off_point (string oder null): OPENING/DISCOVERY/QUALIFICATION/DEMO_OFFER/CLOSING oder null\n- is_decision_maker (boolean)\n- status (einer von: new, contacted, qualified, appointment_booked, converted, lost, not_reached, rejected, callback_scheduled, dnc)\n- next_steps (array of strings)\n- caller_name (string oder null): Name des MENSCHLICHEN Gespraechspartners (NICHT Lisa!)\n- company (string oder null)\n- company_size (string oder null)\n- current_stack (string oder null)\n- pain_point (string oder null)\n- timeline (string oder null)\n- dnc_requested (boolean): true nur bei explizitem Kontaktverbot\n- disposition_code (string): connected/not_interested/callback/dnc_request/qualified/demo_booked\n\nSCORING EVIDENCE (BEWEIS-ZITATE):\n- scoring_evidence (array of objects): Fuer JEDES der 4 Hauptkriterien MINDESTENS ein Beweis-Zitat:\n  - dimension (string): company_size/tech_stack/pain_point/timeline/engagement/sentiment/objection/drop_off/general\n  - quote_text (string): EXAKTES Zitat aus dem Transcript (woertlich!). Max 2 Saetze.\n  - speaker (string): agent oder caller\n  - reasoning (string): 1-2 Saetze Deutsch, warum dieses Zitat die Bewertung beeinflusst\n  - score_value (int 1-3 oder null): Score den dieses Zitat stuetzt. null fuer sentiment/objection/drop_off/general\n  - sentiment (string): positiv/neutral/negativ\n  REGELN:\n  1. Mindestens 4 Eintraege (je einer pro: company_size, tech_stack, pain_point, timeline)\n  2. Fuer JEDEN Einwand in objections_raised EINEN zusaetzlichen Eintrag mit dimension=objection, quote_text=exaktes Zitat aus dem Transcript wo der Einwand geaeussert wurde, score_value=null, sentiment=negativ. Falls kein exaktes Zitat: quote_text=der Einwand-Text selbst.\n  3. Falls drop_off_point NICHT null: EINEN zusaetzlichen Eintrag mit dimension=drop_off, speaker=caller, quote_text=exaktes Zitat aus dem Transcript das den Abbruchpunkt markiert (letzte Aussage des Anrufers vor Gespraechsende oder erster Satz der Ablehnung), score_value=null, sentiment=negativ.\n  4. Wenn keine Info fuer eine Hauptdimension: score_value=1, quote_text=Keine relevante Aussage im Gespraech\n  5. Zitate EXAKT aus dem Transcript (max 2 Saetze)\n  6. KONSISTENZ: score_value MUSS den Haupt-Scores entsprechen\n\nTranscript: ${transcript}`;\n\nconst requestBody = JSON.stringify({\n  model: 'openai/gpt-4o-mini',\n  response_format: { type: 'json_object' },\n  messages: [{ role: 'user', content: prompt }]\n});\n\nreturn [{ json: { requestBody, existingCategoryNames, callId: data.callId, transcript: data.transcript, callDurationSeconds: data.callDurationSeconds, callStartedAt: data.callStartedAt, phone: data.phone, endedReason: data.endedReason, recordingUrl: data.recordingUrl, callDirection: data.callDirection, campaignId: data.campaignId, leadId: data.leadId, attemptNumber: data.attemptNumber } }];"
+        },
+        "id": "code-build-or",
+        "name": "Build OpenRouter Request",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          896,
+          96
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://openrouter.ai/api/v1/chat/completions",
+          "authentication": "genericCredentialType",
+          "genericAuthType": "httpHeaderAuth",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "HTTP-Referer",
+                "value": "https://n8n.srv1169417.hstgr.cloud"
+              },
+              {
+                "name": "X-Title",
+                "value": "Vapi Lead Scoring"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ $json.requestBody }}",
+          "options": {}
+        },
+        "id": "http-openrouter",
+        "name": "OpenRouter LLM Scoring",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          1120,
+          24
+        ],
+        "credentials": {
+          "httpHeaderAuth": {
+            "id": "1guiLBepx3rJi6mE",
+            "name": "Header Auth account 2"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "jsCode": "const data = $input.first().json;\nconst extractData = $('Extract Call Data').first().json;\n\nreturn [{ json: {\n  callId: data.callId || extractData.callId,\n  phone: data.phone || extractData.phone,\n  callDurationSeconds: data.callDurationSeconds || extractData.callDurationSeconds,\n  callStartedAt: data.callStartedAt || extractData.callStartedAt,\n  endedReason: data.endedReason || extractData.endedReason || 'unknown',\n  recordingUrl: data.recordingUrl || extractData.recordingUrl || null,\n  callDirection: data.callDirection || extractData.callDirection || 'inbound',\n  campaignId: data.campaignId || extractData.campaignId || null,\n  leadId: data.leadId || extractData.leadId || null,\n  attemptNumber: data.attemptNumber || extractData.attemptNumber || 1,\n  score_company_size: 1, score_tech_stack: 1, score_pain_point: 1, score_timeline: 1, score_engagement: 1,\n  conversation_summary: 'Kein Transkript verfuegbar.',\n  sentiment: null, sentiment_score: null, sentiment_reason: null,\n  objections_raised: [], drop_off_point: null, is_decision_maker: false,\n  status: 'contacted', next_steps: [], transcript: '',\n  caller_name: null, company: null, company_size: null, current_stack: null, pain_point: null, timeline: null,\n  dnc_requested: false, disposition_code: 'connected',\n  scoringEvidence: []\n} }];"
+        },
+        "id": "code-fallback",
+        "name": "Fallback Scores",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1568,
+          288
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "const llmResponse = $input.first().json;\nconst extractData = $('Extract Call Data').first().json;\n\nfunction clamp(val, min, max) {\n  const n = parseInt(val);\n  if (isNaN(n)) return min;\n  return Math.min(Math.max(n, min), max);\n}\n\nfunction sanitizeStr(val, maxLen) {\n  if (val === null || val === undefined) return null;\n  const s = String(val).trim();\n  if (s.length === 0) return null;\n  return s.substring(0, maxLen || 500);\n}\n\nlet parsed = {};\ntry {\n  const content = llmResponse.choices && llmResponse.choices[0] && llmResponse.choices[0].message\n    ? llmResponse.choices[0].message.content\n    : JSON.stringify(llmResponse);\n  parsed = JSON.parse(content);\n} catch(e) {\n  parsed = {\n    score_company_size: 1, score_tech_stack: 1, score_pain_point: 1, score_timeline: 1, score_engagement: 1,\n    conversation_summary: 'Analyse nicht verfuegbar.',\n    sentiment_score: null, sentiment_reason: 'JSON-Parse fehlgeschlagen',\n    objections_raised: [], drop_off_point: null, is_decision_maker: false,\n    status: 'contacted', next_steps: [],\n    caller_name: null, company: null, company_size: null, current_stack: null, pain_point: null, timeline: null,\n    dnc_requested: false, disposition_code: 'connected', scoring_evidence: []\n  };\n}\n\nconst validStatuses = ['new','contacted','qualified','appointment_booked','converted','lost','not_reached','rejected','callback_scheduled','dnc'];\nconst validDispositions = ['connected','not_interested','callback','dnc_request','qualified','demo_booked'];\n\nconst rawScore = parseFloat(parsed.sentiment_score);\nconst sentimentScore = isNaN(rawScore) ? null : Math.max(0, Math.min(1, rawScore));\nconst sentiment = sentimentScore === null ? null\n  : sentimentScore < 0.35 ? 'negativ'\n  : sentimentScore > 0.65 ? 'positiv'\n  : 'neutral';\n\n// --- Objection Normalization ---\nconst knownCategories = [\n  'Kein Budget', 'Keine Zeit', 'Nutze bereits Zapier', 'Muss Team fragen',\n  'Zu komplex', 'Kein konkreter Bedarf', 'Datenschutzbedenken',\n  'Vertrag mit Wettbewerber', 'Brauche mehr Infos', 'Zu teuer',\n  'IT muss zustimmen', 'Nicht der Entscheider', 'Kein Bedarf aktuell'\n];\nlet allKnown = [...knownCategories];\ntry {\n  const existCats = $('Build OpenRouter Request').first().json.existingCategoryNames;\n  if (Array.isArray(existCats) && existCats.length > 0) {\n    existCats.forEach(c => {\n      if (!allKnown.some(k => k.toLowerCase() === c.toLowerCase())) allKnown.push(c);\n    });\n  }\n} catch(e) {}\n\nconst synonymMap = {\n  'budget': 'Kein Budget', 'teuer': 'Kein Budget', 'kosten': 'Kein Budget', 'preis': 'Kein Budget', 'geld': 'Kein Budget',\n  'zeit': 'Keine Zeit', 'zapier': 'Nutze bereits Zapier', 'make.com': 'Nutze bereits Zapier', 'integromat': 'Nutze bereits Zapier',\n  'team fragen': 'Muss Team fragen', 'chef': 'Muss Team fragen', 'vorstand': 'Muss Team fragen', 'entscheider': 'Muss Team fragen', 'genehmig': 'Muss Team fragen',\n  'komplex': 'Zu komplex', 'kompliziert': 'Zu komplex', 'aufwaendig': 'Zu komplex',\n  'bedarf': 'Kein konkreter Bedarf', 'datenschutz': 'Datenschutzbedenken', 'dsgvo': 'Datenschutzbedenken',\n  'wettbewerber': 'Vertrag mit Wettbewerber', 'konkurrent': 'Vertrag mit Wettbewerber', 'vertrag': 'Vertrag mit Wettbewerber'\n};\n\nfunction normalizeObjToCanonical(obj) {\n  const trimmed = String(obj).trim();\n  if (!trimmed) return null;\n  const lower = trimmed.toLowerCase();\n  const exactMatch = allKnown.find(k => k.toLowerCase() === lower);\n  if (exactMatch) return exactMatch;\n  for (const [keyword, canonical] of Object.entries(synonymMap)) {\n    if (lower.includes(keyword)) return canonical;\n  }\n  const cleaned = trimmed.substring(0, 50).replace(/[.!?]+$/g, '').trim();\n  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);\n}\n\nconst rawObjections = Array.isArray(parsed.objections_raised) ? parsed.objections_raised : [];\nconst normalizedObjections = [];\nconst seenNorm = new Set();\nfor (const obj of rawObjections) {\n  const norm = normalizeObjToCanonical(obj);\n  if (norm && !seenNorm.has(norm.toLowerCase())) { seenNorm.add(norm.toLowerCase()); normalizedObjections.push(norm); }\n}\n\n// --- Drop-off phase validation ---\nconst validPhases = ['OPENING', 'DISCOVERY', 'QUALIFICATION', 'DEMO_OFFER', 'CLOSING'];\nconst rawDropOff = parsed.drop_off_point;\nlet normalizedDropOff = null;\nif (rawDropOff) {\n  const upperDropOff = String(rawDropOff).toUpperCase().trim();\n  if (validPhases.includes(upperDropOff)) normalizedDropOff = upperDropOff;\n  else {\n    const aliases = { 'PAIN_VALIDATION': 'DISCOVERY', 'SOLUTION': 'DEMO_OFFER', 'GREETING': 'OPENING', 'INTRO': 'OPENING' };\n    normalizedDropOff = aliases[upperDropOff] || 'DISCOVERY';\n  }\n}\n\n// --- Parse scoring evidence ---\nconst validDimensions = ['company_size', 'tech_stack', 'pain_point', 'timeline', 'engagement', 'sentiment', 'objection', 'drop_off', 'general'];\nconst validSpeakers = ['agent', 'caller'];\nconst validSentiments = ['positiv', 'neutral', 'negativ'];\n\nlet scoringEvidence = [];\nif (Array.isArray(parsed.scoring_evidence)) {\n  scoringEvidence = parsed.scoring_evidence\n    .filter(e => e && typeof e === 'object' && typeof e.quote_text === 'string' && e.quote_text.trim().length > 0)\n    .map(e => ({\n      dimension: validDimensions.includes(e.dimension) ? e.dimension : 'general',\n      quote_text: String(e.quote_text).substring(0, 1000).trim(),\n      speaker: validSpeakers.includes(e.speaker) ? e.speaker : 'caller',\n      reasoning: sanitizeStr(e.reasoning, 500) || '',\n      score_value: e.score_value != null ? clamp(e.score_value, 1, 3) : null,\n      sentiment: validSentiments.includes(e.sentiment) ? e.sentiment : 'neutral'\n    }));\n}\n\nconst result = {\n  callId: extractData.callId, phone: extractData.phone,\n  callDurationSeconds: extractData.callDurationSeconds, callStartedAt: extractData.callStartedAt,\n  transcript: extractData.transcript, endedReason: extractData.endedReason,\n  recordingUrl: extractData.recordingUrl, callDirection: extractData.callDirection,\n  campaignId: extractData.campaignId, leadId: extractData.leadId, attemptNumber: extractData.attemptNumber,\n  score_company_size: clamp(parsed.score_company_size, 1, 3),\n  score_tech_stack: clamp(parsed.score_tech_stack, 1, 3),\n  score_pain_point: clamp(parsed.score_pain_point, 1, 3),\n  score_timeline: clamp(parsed.score_timeline, 1, 3),\n  score_engagement: clamp(parsed.score_engagement, 1, 3),\n  conversation_summary: String(parsed.conversation_summary || '').substring(0, 1000),\n  sentiment, sentiment_score: sentimentScore,\n  sentiment_reason: sanitizeStr(parsed.sentiment_reason, 500),\n  objections_raised: normalizedObjections,\n  drop_off_point: normalizedDropOff,\n  is_decision_maker: Boolean(parsed.is_decision_maker),\n  status: validStatuses.includes(parsed.status) ? parsed.status : 'contacted',\n  next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],\n  caller_name: sanitizeStr(parsed.caller_name, 200),\n  company: sanitizeStr(parsed.company, 200),\n  company_size: sanitizeStr(parsed.company_size, 200),\n  current_stack: sanitizeStr(parsed.current_stack, 500),\n  pain_point: sanitizeStr(parsed.pain_point, 500),\n  timeline: sanitizeStr(parsed.timeline, 200),\n  dnc_requested: Boolean(parsed.dnc_requested),\n  disposition_code: validDispositions.includes(parsed.disposition_code) ? parsed.disposition_code : 'connected'\n};\n\n// Ensure at least one evidence per main dimension\nconst mainDimensions = ['company_size', 'tech_stack', 'pain_point', 'timeline'];\nconst dimensionScoreMap = { company_size: result.score_company_size, tech_stack: result.score_tech_stack, pain_point: result.score_pain_point, timeline: result.score_timeline };\nfor (const dim of mainDimensions) {\n  if (!scoringEvidence.some(e => e.dimension === dim)) {\n    scoringEvidence.push({ dimension: dim, quote_text: 'Keine relevante Aussage im Gespraech', speaker: 'caller', reasoning: 'Dimension wurde im Gespraech nicht angesprochen, Standardwert vergeben', score_value: dimensionScoreMap[dim], sentiment: 'neutral' });\n  }\n}\n\nresult.scoringEvidence = scoringEvidence;\nreturn [{ json: result }];"
+        },
+        "id": "code-parse-llm",
+        "name": "Parse LLM Response",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1344,
+          -48
+        ]
+      },
+      {
+        "parameters": {
+          "jsCode": "let d;\ntry {\n  d = $('Smart Cadence').first().json;\n} catch(e) {\n  d = $input.first().json;\n}\n\nreturn [{ json: {\n  callId: d.callId,\n  score_company_size: d.score_company_size,\n  score_tech_stack: d.score_tech_stack,\n  score_pain_point: d.score_pain_point,\n  score_timeline: d.score_timeline,\n  score_engagement: d.score_engagement || null,\n  conversation_summary: d.conversation_summary || '',\n  sentiment: d.sentiment || null,\n  sentiment_score: d.sentiment_score != null ? d.sentiment_score : null,\n  sentiment_reason: d.sentiment_reason || null,\n  objections_raised: Array.isArray(d.objections_raised) ? d.objections_raised : [],\n  drop_off_point: d.drop_off_point || null,\n  is_decision_maker: Boolean(d.is_decision_maker),\n  status: d.status || 'contacted',\n  outbound_state: d.outbound_state || null,\n  next_steps: Array.isArray(d.next_steps) ? d.next_steps : [],\n  transcript: d.transcript || '',\n  callDurationSeconds: d.callDurationSeconds || null,\n  callStartedAt: d.callStartedAt || null,\n  phone: d.phone || null,\n  caller_name: d.caller_name || null,\n  company: d.company || null,\n  company_size: d.company_size || null,\n  current_stack: d.current_stack || null,\n  pain_point: d.pain_point || null,\n  timeline: d.timeline || null,\n  disposition_code: d.disposition_code || null,\n  recording_url: d.recordingUrl || null,\n  callDirection: d.callDirection || 'inbound',\n  campaignId: d.campaignId || null,\n  leadId: d.leadId || null,\n  attemptNumber: d.attemptNumber || 1,\n  next_call_scheduled_at: d.next_call_scheduled_at || null,\n  follow_up_reason: d.follow_up_reason || null,\n  dnc_requested: Boolean(d.dnc_requested),\n  endedReason: d.endedReason || null,\n  scoringEvidence: Array.isArray(d.scoringEvidence) ? d.scoringEvidence : []\n} }];"
+        },
+        "id": "code-build-sup",
+        "name": "Build Supabase Payload",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2464,
+          96
+        ]
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT INTO leads (\n  call_id, score_company_size, score_tech_stack, score_pain_point, score_timeline,\n  score_engagement,\n  transcript, conversation_summary, sentiment, sentiment_score, sentiment_reason,\n  objections_raised, drop_off_point,\n  call_duration_seconds, call_started_at,\n  is_decision_maker, status, next_steps, phone,\n  caller_name, company, company_size, current_stack, pain_point, timeline,\n  disposition_code, recording_url, call_direction,\n  last_call_attempt_at, next_call_scheduled_at, follow_up_reason,\n  campaign_id\n) VALUES (\n  $1, $2, $3, $4, $5,\n  $6,\n  $7, $8, $9, $10::real, $11,\n  $12::text[], $13,\n  $14, $15::timestamptz,\n  $16, $17, $18::text[], $19,\n  $20, $21, $22, $23, $24, $25,\n  $26, $27, $28,\n  now(), $29::timestamptz, $30,\n  $31::uuid\n)\nON CONFLICT (call_id) DO UPDATE SET\n  score_company_size = EXCLUDED.score_company_size,\n  score_tech_stack = EXCLUDED.score_tech_stack,\n  score_pain_point = EXCLUDED.score_pain_point,\n  score_timeline = EXCLUDED.score_timeline,\n  score_engagement = EXCLUDED.score_engagement,\n  transcript = EXCLUDED.transcript,\n  conversation_summary = EXCLUDED.conversation_summary,\n  sentiment = EXCLUDED.sentiment,\n  sentiment_score = EXCLUDED.sentiment_score,\n  sentiment_reason = EXCLUDED.sentiment_reason,\n  objections_raised = EXCLUDED.objections_raised,\n  drop_off_point = CASE\n    WHEN leads.appointment_booked = true THEN null\n    ELSE EXCLUDED.drop_off_point\n  END,\n  call_duration_seconds = EXCLUDED.call_duration_seconds,\n  call_started_at = EXCLUDED.call_started_at,\n  is_decision_maker = EXCLUDED.is_decision_maker,\n  status = CASE\n    WHEN leads.appointment_booked = true AND leads.status = 'appointment_booked'\n    THEN leads.status\n    ELSE EXCLUDED.status\n  END,\n  next_steps = EXCLUDED.next_steps,\n  phone = COALESCE(EXCLUDED.phone, leads.phone),\n  caller_name = COALESCE(leads.caller_name, EXCLUDED.caller_name),\n  company = COALESCE(leads.company, EXCLUDED.company),\n  company_size = COALESCE(leads.company_size, EXCLUDED.company_size),\n  current_stack = COALESCE(leads.current_stack, EXCLUDED.current_stack),\n  pain_point = COALESCE(leads.pain_point, EXCLUDED.pain_point),\n  timeline = COALESCE(leads.timeline, EXCLUDED.timeline),\n  disposition_code = EXCLUDED.disposition_code,\n  recording_url = COALESCE(EXCLUDED.recording_url, leads.recording_url),\n  call_direction = COALESCE(EXCLUDED.call_direction, leads.call_direction),\n  call_attempts = CASE\n    WHEN EXCLUDED.call_direction = 'outbound' THEN COALESCE(leads.call_attempts, 0) + 1\n    ELSE leads.call_attempts\n  END,\n  last_call_attempt_at = now(),\n  next_call_scheduled_at = EXCLUDED.next_call_scheduled_at,\n  follow_up_reason = EXCLUDED.follow_up_reason,\n  campaign_id = COALESCE(EXCLUDED.campaign_id, leads.campaign_id)\nRETURNING id, call_id, phone, is_dnc",
+          "options": {
+            "queryReplacement": "={{ [$json.callId, $json.score_company_size, $json.score_tech_stack, $json.score_pain_point, $json.score_timeline, $json.score_engagement, $json.transcript, $json.conversation_summary, $json.sentiment, $json.sentiment_score, $json.sentiment_reason, $json.objections_raised, $json.drop_off_point, $json.callDurationSeconds, $json.callStartedAt, $json.is_decision_maker, $json.status, $json.next_steps, $json.phone, $json.caller_name, $json.company, $json.company_size, $json.current_stack, $json.pain_point, $json.timeline, $json.disposition_code, $json.recording_url, $json.callDirection, $json.next_call_scheduled_at, $json.follow_up_reason, $json.campaignId] }}"
+          }
+        },
+        "id": "pg-upsert-postcall",
+        "name": "Supabase Upsert Lead Post-Call",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          2688,
+          96
+        ],
+        "credentials": {
+          "postgres": {
+            "id": "ndhdVpUbeTJZgw1d",
+            "name": "Voice Agent Database"
+          }
+        }
+      },
+      {
+        "parameters": {
+          "url": "https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/objection_categories?select=name,description&is_active=eq.true&order=occurrence_count.desc",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "id": "http-fetch-cats",
+        "name": "Fetch Categories",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          672,
+          96
+        ],
+        "continueOnFail": true
+      },
+      {
+        "parameters": {
+          "jsCode": "const parsed = $input.first().json;\nconst extractData = $('Extract Call Data').first().json;\nlet existingNames = [];\ntry {\n  existingNames = $('Build OpenRouter Request').first().json.existingCategoryNames || [];\n} catch(e) {}\n\nconst normalize = (s) => s.trim().replace(/\\s+/g, ' ');\nconst objections = Array.isArray(parsed.objections_raised) ? parsed.objections_raised : [];\n\n// Build lookup with both exact and keyword-based matching\nconst existingLower = existingNames.map(n => normalize(n).toLowerCase());\n\n// Extract keywords from existing names for fuzzy matching\nconst stopwords = ['kein', 'keine', 'keinen', 'keinem', 'zu', 'mit', 'und', 'oder', 'nicht', 'muss', 'bereits', 'nutze', 'der', 'die', 'das', 'ein', 'eine'];\nfunction extractKeywords(name) {\n  return name.toLowerCase()\n    .replace(/[^a-z\\u00e4\\u00f6\\u00fc\\u00df\\s]/g, '')\n    .split(/\\s+/)\n    .filter(w => w.length > 2 && !stopwords.includes(w));\n}\n\nconst existingKeywordSets = existingNames.map(n => ({\n  name: n,\n  keywords: extractKeywords(n)\n}));\n\nfunction isExistingCategory(objection) {\n  const lower = normalize(objection).toLowerCase();\n  // Exact match\n  if (existingLower.includes(lower)) return true;\n  // Keyword overlap: if >=50% of new objection's keywords match an existing category\n  const objKeywords = extractKeywords(objection);\n  if (objKeywords.length === 0) return false;\n  for (const existing of existingKeywordSets) {\n    if (existing.keywords.length === 0) continue;\n    const overlap = objKeywords.filter(k =>\n      existing.keywords.some(ek => ek.includes(k) || k.includes(ek))\n    ).length;\n    if (overlap / Math.max(objKeywords.length, 1) >= 0.5) return true;\n  }\n  return false;\n}\n\nconst newCats = objections.filter(obj => !isExistingCategory(obj));\nconst seen = new Set();\nconst uniqueNew = [];\nfor (const cat of newCats) {\n  const key = normalize(cat).toLowerCase();\n  if (!seen.has(key)) { seen.add(key); uniqueNew.push(normalize(cat)); }\n}\nconst upsertBody = uniqueNew.map(name => ({ name, description: null, counter_argument: null, is_active: true, occurrence_count: 0 }));\nreturn [{ json: {\n  ...parsed,\n  callId: parsed.callId || extractData.callId,\n  phone: parsed.phone || extractData.phone,\n  callDurationSeconds: parsed.callDurationSeconds || extractData.callDurationSeconds,\n  callStartedAt: parsed.callStartedAt || extractData.callStartedAt,\n  transcript: parsed.transcript || extractData.transcript,\n  endedReason: parsed.endedReason || extractData.endedReason,\n  recordingUrl: parsed.recordingUrl || extractData.recordingUrl,\n  callDirection: parsed.callDirection || extractData.callDirection,\n  campaignId: parsed.campaignId || extractData.campaignId,\n  leadId: parsed.leadId || extractData.leadId,\n  attemptNumber: parsed.attemptNumber || extractData.attemptNumber,\n  upsertBody: JSON.stringify(upsertBody),\n  hasNewCategories: uniqueNew.length > 0\n} }];"
+        },
+        "id": "code-detect-new-cats",
+        "name": "Detect New Categories",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          1568,
+          -96
+        ]
+      },
+      {
+        "parameters": {
+          "method": "POST",
+          "url": "https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/objection_categories",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Prefer",
+                "value": "resolution=merge-duplicates,return=minimal"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ $json.upsertBody }}",
+          "options": {}
+        },
+        "id": "http-upsert-new-cats",
+        "name": "Upsert New Categories",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          1792,
+          -96
+        ],
+        "continueOnFail": true
+      },
+      {
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "UPDATE objection_categories SET occurrence_count = occurrence_count + 1 WHERE name = ANY($1::text[])",
+          "options": {
+            "queryReplacement": "={{ [$('Build Supabase Payload').first().json.objections_raised] }}"
+          }
+        },
+        "id": "pg-update-counts",
+        "name": "Update Occurrence Counts",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.6,
+        "position": [
+          3808,
+          96
+        ],
+        "credentials": {
+          "postgres": {
+            "id": "ndhdVpUbeTJZgw1d",
+            "name": "Voice Agent Database"
+          }
+        },
+        "continueOnFail": true
+      },
+      {
+        "id": "a47a51b7-8316-4b07-893f-b31c0d1de6c4",
+        "name": "Disposition Inference",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2016,
+          96
+        ],
+        "parameters": {
+          "jsCode": "// Disposition Inference: map Vapi endedReason + GPT analysis to final disposition_code\nlet d;\ntry {\n  d = $('Detect New Categories').first().json;\n} catch(e) {\n  d = $input.first().json;\n}\n\nconst endedReason = d.endedReason || 'unknown';\nconst gptDisposition = d.disposition_code || 'connected';\nconst dncRequested = Boolean(d.dnc_requested);\nconst scoreEngagement = d.score_engagement || 1;\nconst appointmentBooked = d.status === 'appointment_booked' || d.status === 'converted';\n\nlet finalDisposition = 'connected';\nlet finalStatus = d.status || 'contacted';\nlet finalOutboundState = null;\n\nconst nonConnectedReasons = {\n  'no-answer': 'no_answer',\n  'voicemail': 'voicemail',\n  'machine-detected': 'voicemail',\n  'busy': 'busy'\n};\n\nconst technicalErrors = ['system-error', 'pipeline-error-openai', 'pipeline-error-custom-llm', 'pipeline-error-deepgram', 'pipeline-error-eleven-labs', 'pipeline-error-vapi'];\n\nif (nonConnectedReasons[endedReason]) {\n  finalDisposition = nonConnectedReasons[endedReason];\n  finalStatus = d.status === 'new' ? 'new' : 'contacted';\n  finalOutboundState = 'not_reached';\n} else if (technicalErrors.includes(endedReason)) {\n  finalDisposition = 'technical_error';\n  finalStatus = d.status || 'contacted';\n} else {\n  if (appointmentBooked) {\n    finalDisposition = 'connected';\n    finalStatus = 'appointment_booked';\n  } else if (dncRequested) {\n    finalDisposition = 'dnc_request';\n    finalStatus = 'lost';\n  } else if (gptDisposition === 'not_interested' || scoreEngagement <= 1) {\n    finalDisposition = 'not_interested';\n    finalStatus = 'lost';\n  } else if (gptDisposition === 'callback') {\n    finalDisposition = 'callback';\n    finalOutboundState = 'callback_scheduled';\n  } else {\n    finalDisposition = gptDisposition || 'connected';\n  }\n}\n\nreturn [{ json: {\n  ...d,\n  disposition_code: finalDisposition,\n  status: finalStatus,\n  outbound_state: finalOutboundState,\n  dnc_requested: dncRequested\n} }];"
+        }
+      },
+      {
+        "id": "30bd6d98-2ab3-4d15-a87d-a9d33eaf4f7c",
+        "name": "Smart Cadence",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2240,
+          96
+        ],
+        "parameters": {
+          "jsCode": "// Smart Cadence: calculate next_call_scheduled_at and follow_up_reason\nconst d = $input.first().json;\nconst disposition = d.disposition_code;\nconst now = new Date();\nconst currentHour = now.getHours();\nconst isMorning = currentHour < 13;\n\nfunction addWorkdays(date, days) {\n  const result = new Date(date);\n  let added = 0;\n  while (added < days) {\n    result.setDate(result.getDate() + 1);\n    const dow = result.getDay();\n    if (dow !== 0 && dow !== 6) added++;\n  }\n  return result;\n}\n\nfunction setTime(date, hours, minutes) {\n  const result = new Date(date);\n  result.setHours(hours, minutes || 0, 0, 0);\n  return result;\n}\n\nlet nextCallScheduledAt = null;\nlet followUpReason = null;\n\nconst terminalDispositions = ['not_interested', 'dnc_request', 'wrong_number'];\n\nif (terminalDispositions.includes(disposition)) {\n  nextCallScheduledAt = null;\n  followUpReason = null;\n} else if (disposition === 'no_answer') {\n  if (isMorning) {\n    const next = addWorkdays(now, 1);\n    const hour = 14 + Math.floor(Math.random() * 2);\n    nextCallScheduledAt = setTime(next, hour, Math.floor(Math.random() * 60)).toISOString();\n    followUpReason = 'Vormittags nicht erreicht \\u2014 Nachmittag versuchen';\n  } else {\n    const next = addWorkdays(now, 1);\n    const hour = 9 + Math.floor(Math.random() * 2);\n    nextCallScheduledAt = setTime(next, hour, Math.floor(Math.random() * 60)).toISOString();\n    followUpReason = 'Nachmittags nicht erreicht \\u2014 Vormittag versuchen';\n  }\n} else if (disposition === 'voicemail') {\n  const next = addWorkdays(now, 2);\n  const hour = isMorning ? (14 + Math.floor(Math.random() * 3)) : (9 + Math.floor(Math.random() * 2));\n  nextCallScheduledAt = setTime(next, hour, Math.floor(Math.random() * 60)).toISOString();\n  followUpReason = 'Mailbox erreicht \\u2014 andere Tageszeit versuchen';\n} else if (disposition === 'busy') {\n  const next = new Date(now.getTime() + 2 * 60 * 60 * 1000);\n  nextCallScheduledAt = next.toISOString();\n  followUpReason = 'Besetzt \\u2014 in 2 Stunden erneut versuchen';\n} else if (disposition === 'gatekeeper') {\n  const next = addWorkdays(now, 1);\n  nextCallScheduledAt = setTime(next, 8, 30).toISOString();\n  followUpReason = 'Gatekeeper \\u2014 fr\\u00fch morgens direkt versuchen';\n} else if (disposition === 'callback') {\n  if (d.callback_datetime) {\n    nextCallScheduledAt = d.callback_datetime;\n  } else {\n    const next = addWorkdays(now, 1);\n    nextCallScheduledAt = setTime(next, 10, 0).toISOString();\n  }\n  followUpReason = 'R\\u00fcckruf vereinbart';\n} else if (disposition === 'connected') {\n  const next = addWorkdays(now, 3);\n  nextCallScheduledAt = setTime(next, 10, 0).toISOString();\n  followUpReason = 'Gespr\\u00e4ch gef\\u00fchrt \\u2014 Follow-up in 3 Tagen';\n} else if (disposition === 'technical_error') {\n  const next = new Date(now.getTime() + 30 * 60 * 1000);\n  nextCallScheduledAt = next.toISOString();\n  followUpReason = 'Technischer Fehler \\u2014 baldiger Retry';\n}\n\nreturn [{ json: {\n  ...d,\n  next_call_scheduled_at: nextCallScheduledAt,\n  follow_up_reason: followUpReason\n} }];"
+        }
+      },
+      {
+        "id": "7433c02b-8ca0-4faa-8262-94c264f22939",
+        "name": "DNC Check",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2912,
+          96
+        ],
+        "parameters": {
+          "jsCode": "// DNC Check: extract lead_id from RETURNING and prepare data for DNC + call_attempt\nconst payload = $('Build Supabase Payload').first().json;\nconst upsertResult = $input.first().json;\n\nconst row = Array.isArray(upsertResult) ? upsertResult[0] : upsertResult;\nconst leadId = (row && row.id) ? row.id : payload.leadId || null;\nconst callId = payload.callId;\nconst phone = payload.phone;\nconst dncRequested = Boolean(payload.dnc_requested);\n\nreturn [{ json: {\n  leadId,\n  callId,\n  phone,\n  dncRequested,\n  disposition_code: payload.disposition_code,\n  recording_url: payload.recording_url,\n  callDirection: payload.callDirection,\n  campaignId: payload.campaignId,\n  attemptNumber: payload.attemptNumber,\n  callDurationSeconds: payload.callDurationSeconds,\n  endedReason: payload.endedReason,\n  objections_raised: payload.objections_raised\n} }];"
+        }
+      },
+      {
+        "id": "10899b7b-198c-4aad-ae0d-cf5f3c51845c",
+        "name": "DNC Requested?",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2.2,
+        "position": [
+          3136,
+          96
+        ],
+        "parameters": {
+          "conditions": {
+            "options": {
+              "version": 2,
+              "leftValue": "",
+              "caseSensitive": true,
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "dnc1",
+                "leftValue": "={{ $json.dncRequested }}",
+                "rightValue": true,
+                "operator": {
+                  "type": "boolean",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          },
+          "options": {}
+        }
+      },
+      {
+        "id": "54ebf931-5bfb-48f4-89d3-44598356cd7c",
+        "name": "Insert DNC + Update Lead",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [
+          3360,
+          -48
+        ],
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT INTO dnc_list (phone, reason, source_call_id, source_lead_id, notes, is_active)\nVALUES ($1, 'ai_detected', $2, $3::uuid, 'KI-erkannt aus Gespraechsanalyse', true)\nON CONFLICT DO NOTHING;\n\nUPDATE leads SET is_dnc = true, dnc_reason = 'KI-erkannt', status = 'lost'\nWHERE id = $3::uuid;",
+          "options": {
+            "queryReplacement": "={{ [$json.phone, $json.callId, $json.leadId] }}"
+          }
+        },
+        "credentials": {
+          "postgres": {
+            "id": "ndhdVpUbeTJZgw1d",
+            "name": "Voice Agent Database"
+          }
+        }
+      },
+      {
+        "id": "3b75aedb-33df-44c0-af38-ee26d11a924d",
+        "name": "Insert Call Attempt",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [
+          3584,
+          96
+        ],
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "INSERT INTO call_attempts (\n  lead_id, campaign_id, call_id, attempt_number,\n  disposition_code, duration_seconds, direction,\n  ended_reason, recording_url\n) VALUES (\n  $1::uuid, $2::uuid, $3, $4,\n  $5, $6, $7,\n  $8, $9\n)",
+          "options": {
+            "queryReplacement": "={{ [$json.leadId, $json.campaignId, $json.callId, $json.attemptNumber, $json.disposition_code, $json.callDurationSeconds, $json.callDirection, $json.endedReason, $json.recording_url] }}"
+          }
+        },
+        "credentials": {
+          "postgres": {
+            "id": "ndhdVpUbeTJZgw1d",
+            "name": "Voice Agent Database"
+          }
+        }
+      },
+      {
+        "id": "code-prep-quotes",
+        "name": "Prepare Quote Inserts",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          2912,
+          320
+        ],
+        "parameters": {
+          "jsCode": "const upsertResult = $input.first().json;\nconst payload = $('Build Supabase Payload').first().json;\n\nconst row = Array.isArray(upsertResult) ? upsertResult[0] : upsertResult;\nconst leadId = (row && row.id) ? row.id : null;\n\nif (!leadId) return [{ json: { hasQuotes: false, quotesBody: '[]', leadId: null } }];\n\nconst scoringEvidence = payload.scoringEvidence || [];\nif (scoringEvidence.length === 0) return [{ json: { hasQuotes: false, quotesBody: '[]', leadId } }];\n\nconst quotes = scoringEvidence.map(e => ({\n  lead_id: leadId,\n  quote_text: String(e.quote_text || '').substring(0, 1000),\n  speaker: e.speaker || 'caller',\n  topic: e.dimension || 'general',\n  sentiment: e.sentiment || 'neutral',\n  context: e.reasoning || null,\n  scoring_dimension: e.dimension || 'general',\n  score_value: e.score_value\n}));\n\nreturn [{ json: { hasQuotes: true, quotesBody: JSON.stringify(quotes), leadId } }];"
+        },
+        "continueOnFail": true
+      },
+      {
+        "id": "http-delete-old-quotes",
+        "name": "Delete Old Quotes",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          3136,
+          320
+        ],
+        "parameters": {
+          "method": "DELETE",
+          "url": "=https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/lead_quotes?lead_id=eq.{{ $json.leadId }}&scoring_dimension=not.is.null",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+              }
+            ]
+          },
+          "options": {}
+        },
+        "continueOnFail": true
+      },
+      {
+        "id": "http-insert-quotes",
+        "name": "Insert Scoring Quotes",
+        "type": "n8n-nodes-base.httpRequest",
+        "typeVersion": 4.1,
+        "position": [
+          3360,
+          320
+        ],
+        "parameters": {
+          "method": "POST",
+          "url": "https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/lead_quotes",
+          "sendHeaders": true,
+          "headerParameters": {
+            "parameters": [
+              {
+                "name": "apikey",
+                "value": "REDACTED_SUPABASE_SERVICE_KEY"
+              },
+              {
+                "name": "Authorization",
+                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Prefer",
+                "value": "return=minimal"
+              }
+            ]
+          },
+          "sendBody": true,
+          "contentType": "raw",
+          "rawContentType": "application/json",
+          "body": "={{ $('Prepare Quote Inserts').first().json.quotesBody }}",
+          "options": {}
+        },
+        "continueOnFail": true
+      }
     ],
     "connections": {
-        "Webhook end_of_call": {
-            "main": [
-                [
-                    {
-                        "node": "Extract Call Data",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Extract Call Data": {
-            "main": [
-                [
-                    {
-                        "node": "Has Transcript?",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Has Transcript?": {
-            "main": [
-                [
-                    {
-                        "node": "Fetch Categories",
-                        "type": "main",
-                        "index": 0
-                    }
-                ],
-                [
-                    {
-                        "node": "Fallback Scores",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Build OpenRouter Request": {
-            "main": [
-                [
-                    {
-                        "node": "OpenRouter LLM Scoring",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ],
-            "error": [
-                [
-                    {
-                        "node": "Fallback Scores",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "OpenRouter LLM Scoring": {
-            "main": [
-                [
-                    {
-                        "node": "Parse LLM Response",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ],
-            "error": [
-                [
-                    {
-                        "node": "Fallback Scores",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Parse LLM Response": {
-            "error": [
-                [
-                    {
-                        "node": "Fallback Scores",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ],
-            "main": [
-                [
-                    {
-                        "node": "Detect New Categories",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Build Supabase Payload": {
-            "main": [
-                [
-                    {
-                        "node": "Supabase Upsert Lead Post-Call",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Fetch Categories": {
-            "main": [
-                [
-                    {
-                        "node": "Build OpenRouter Request",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Detect New Categories": {
-            "main": [
-                [
-                    {
-                        "node": "Upsert New Categories",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Upsert New Categories": {
-            "main": [
-                [
-                    {
-                        "node": "Disposition Inference",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Fallback Scores": {
-            "main": [
-                [
-                    {
-                        "node": "Disposition Inference",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Disposition Inference": {
-            "main": [
-                [
-                    {
-                        "node": "Smart Cadence",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Smart Cadence": {
-            "main": [
-                [
-                    {
-                        "node": "Build Supabase Payload",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Supabase Upsert Lead Post-Call": {
-            "main": [
-                [
-                    {
-                        "node": "DNC Check",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "DNC Check": {
-            "main": [
-                [
-                    {
-                        "node": "DNC Requested?",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "DNC Requested?": {
-            "main": [
-                [
-                    {
-                        "node": "Insert DNC + Update Lead",
-                        "type": "main",
-                        "index": 0
-                    }
-                ],
-                [
-                    {
-                        "node": "Insert Call Attempt",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Insert DNC + Update Lead": {
-            "main": [
-                [
-                    {
-                        "node": "Insert Call Attempt",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        },
-        "Insert Call Attempt": {
-            "main": [
-                [
-                    {
-                        "node": "Update Occurrence Counts",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
-        }
-    },
-    "settings": {
-        "executionOrder": "v1",
-        "callerPolicy": "workflowsFromSameOwner",
-        "availableInMCP": false
-    },
-    "staticData": null,
-    "meta": null,
-    "pinData": {},
-    "versionId": "ee99f196-25af-4632-baf3-a82e6ad1763b",
-    "activeVersionId": "ee99f196-25af-4632-baf3-a82e6ad1763b",
-    "versionCounter": 88,
-    "triggerCount": 1,
-    "shared": [
-        {
-            "updatedAt": "2026-02-28T19:00:03.243Z",
-            "createdAt": "2026-02-28T19:00:03.243Z",
-            "role": "workflow:owner",
-            "workflowId": "DBgYdLeCL75VL8S6",
-            "projectId": "Hb8MCr6jApuP43D1",
-            "project": {
-                "updatedAt": "2025-12-01T16:24:24.630Z",
-                "createdAt": "2025-12-01T16:17:56.703Z",
-                "id": "Hb8MCr6jApuP43D1",
-                "name": "Fynn Loosen <fynn.loosen@outlook.de>",
-                "type": "personal",
-                "icon": null,
-                "description": null,
-                "creatorId": "495728b9-b3cb-456c-9843-b80be60568f8"
+      "Webhook end_of_call": {
+        "main": [
+          [
+            {
+              "node": "Extract Call Data",
+              "type": "main",
+              "index": 0
             }
-        }
-    ],
-    "tags": [],
-    "activeVersion": {
-        "updatedAt": "2026-03-03T16:56:53.303Z",
-        "createdAt": "2026-03-03T16:56:53.303Z",
-        "versionId": "ee99f196-25af-4632-baf3-a82e6ad1763b",
-        "workflowId": "DBgYdLeCL75VL8S6",
-        "nodes": [
-            {
-                "parameters": {
-                    "httpMethod": "POST",
-                    "path": "vapi-end-of-call",
-                    "options": {}
-                },
-                "id": "wh-end-of-call",
-                "name": "Webhook end_of_call",
-                "type": "n8n-nodes-base.webhook",
-                "typeVersion": 2.1,
-                "position": [
-                    0,
-                    168
-                ],
-                "webhookId": "c0edc7c4-f8b1-40e6-b962-b2c5c7654ed0"
-            },
-            {
-                "parameters": {
-                    "jsCode": "const body = $input.first().json.body;\n\n// Extract call data from Vapi end-of-call-report\nconst call = body.message ? body.message.call : body.call;\nconst callObj = call || {};\n\nconst callId = callObj.id || body.call_id || 'unknown-' + Date.now();\nconst transcript = body.message ? (body.message.artifact && body.message.artifact.transcript) : body.transcript;\nconst transcriptText = transcript || '';\n\n// Check if user actually spoke (not just AI greeting)\nconst userTurns = transcriptText.split('\\n')\n  .filter(line => line.startsWith('User:'))\n  .filter(line => line.replace('User:', '').trim().length > 5);\nconst hasTranscript = userTurns.length >= 1;\n\n// Calculate duration\nlet callDurationSeconds = null;\nlet callStartedAt = null;\nif (callObj.startedAt && callObj.endedAt) {\n  const start = new Date(callObj.startedAt);\n  const end = new Date(callObj.endedAt);\n  callDurationSeconds = Math.round((end - start) / 1000);\n  callStartedAt = callObj.startedAt;\n} else if (callObj.startedAt) {\n  callStartedAt = callObj.startedAt;\n}\n\nconst endedReason = body.message ? body.message.endedReason : (body.endedReason || 'unknown');\nconst phone = callObj.customer ? callObj.customer.number : null;\n\n// NEW: Extract recording URL\nconst recordingUrl = body.message\n  ? (body.message.artifact && body.message.artifact.recordingUrl)\n  : (body.recordingUrl || null);\n\n// NEW: Extract call direction from assistant overrides or metadata\nconst assistantOverrides = callObj.assistantOverrides || {};\nconst variableValues = assistantOverrides.variableValues || {};\nconst callDirection = variableValues.call_direction || 'inbound';\nconst campaignId = variableValues.campaign_id || null;\nconst leadId = variableValues.lead_id || null;\nconst attemptNumber = parseInt(variableValues.attempt_number) || 1;\n\nreturn [{ json: {\n  callId,\n  transcript: transcriptText,\n  hasTranscript,\n  callDurationSeconds,\n  callStartedAt,\n  endedReason,\n  phone,\n  recordingUrl,\n  callDirection,\n  campaignId,\n  leadId,\n  attemptNumber\n} }];"
-                },
-                "id": "code-extract",
-                "name": "Extract Call Data",
-                "type": "n8n-nodes-base.code",
-                "typeVersion": 2,
-                "position": [
-                    224,
-                    168
-                ]
-            },
-            {
-                "parameters": {
-                    "conditions": {
-                        "options": {
-                            "caseSensitive": true,
-                            "leftValue": "",
-                            "typeValidation": "strict"
-                        },
-                        "conditions": [
-                            {
-                                "id": "c1",
-                                "leftValue": "={{ $json.hasTranscript }}",
-                                "rightValue": true,
-                                "operator": {
-                                    "type": "boolean",
-                                    "operation": "equals"
-                                }
-                            }
-                        ],
-                        "combinator": "and"
-                    },
-                    "options": {}
-                },
-                "id": "if-has-transcript",
-                "name": "Has Transcript?",
-                "type": "n8n-nodes-base.if",
-                "typeVersion": 2,
-                "position": [
-                    448,
-                    168
-                ]
-            },
-            {
-                "parameters": {
-                    "jsCode": "const data = $('Extract Call Data').first().json;\nconst transcript = data.transcript || '';\n\nconst prompt = `Analysiere dieses Gespraechstranskript eines Sales-Calls und bewerte den Lead.\nAntworte als JSON mit diesen Feldern:\n- score_company_size (1-3): 1=klein/<10 Mitarbeiter, 2=mittel/10-49 Mitarbeiter, 3=gross/50+ Mitarbeiter\n- score_tech_stack (1-3): 1=keine Automation, 2=erste Erfahrung mit Automation, 3=nutzt Zapier/Make/APIs\n- score_pain_point (1-3): 1=nur Info, 2=allgemeines Interesse, 3=konkreter dringender Use Case\n- score_timeline (1-3): 1=kein Zeitrahmen, 2=1-3 Monate, 3=innerhalb 1 Monat\n- score_engagement (1-3): 1=minimale Beteiligung, einsilbige Antworten. 2=hoefliches Gespraech, grundlegendes Interesse. 3=aktiver Dialog, stellt detaillierte Fragen.\n- conversation_summary (string, max 200 Woerter, auf Deutsch)\n- sentiment (einer von: positiv, neutral, negativ)\n- objections_raised (array of strings, z.B. [\"Kein Budget\", \"Keine Zeit\"])\n- drop_off_point (string oder null): Die Phase, in der der Anrufer abgesprungen ist OHNE Termin zu buchen. Setze null wenn ein Termin erfolgreich gebucht wurde. Moegliche Werte nur bei Abbruch: \"DISCOVERY\", \"QUALIFICATION\", \"DEMO_OFFER\", \"CLOSING\"\n- is_decision_maker (boolean)\n- status (einer von: new, contacted, qualified, appointment_booked, converted, lost, not_reached, rejected, callback_scheduled, dnc)\n- next_steps (array of strings)\n- caller_name (string oder null): Der vollstaendige Name des MENSCHLICHEN Gespraechspartners (NICHT der KI-Assistentin Lisa!). Suche nach typischen Begruessungen wie \"Hier ist [Name]\", \"[Nachname], hallo\", \"Mein Name ist [Name]\", \"[Name] am Apparat\". Setze null falls kein Name erkennbar.\n- company (string oder null): Der Firmenname des menschlichen Gespraechspartners\n- company_size (string oder null): Beschreibung der Unternehmensgroesse\n- current_stack (string oder null): Aktuell verwendete Tools/Systeme\n- pain_point (string oder null): Das Hauptproblem oder der konkrete Use Case\n- timeline (string oder null): Zeitrahmen fuer die Umsetzung\n- dnc_requested (boolean): Hat der Gespraechspartner explizit darum gebeten, NICHT mehr angerufen zu werden? Achte auf Formulierungen wie \"Rufen Sie mich nicht mehr an\", \"Bitte keine Anrufe mehr\", \"Streichen Sie meine Nummer\", \"Ich will nicht mehr kontaktiert werden\".\n- disposition_code (string): Eines von: connected, not_interested, callback, dnc_request, qualified, demo_booked. Waehle basierend auf dem Gespraechsverlauf.\n\nWICHTIG: Die KI-Assistentin heisst Lisa und arbeitet bei n8n. Extrahiere NICHT ihren Namen als caller_name. Der caller_name ist immer die andere Person im Gespraech.\n\nTranscript: ${transcript}`;\n\nconst requestBody = JSON.stringify({\n  model: 'openai/gpt-4o-mini',\n  response_format: { type: 'json_object' },\n  messages: [{ role: 'user', content: prompt }]\n});\n\nreturn [{ json: { requestBody, callId: data.callId, transcript: data.transcript, callDurationSeconds: data.callDurationSeconds, callStartedAt: data.callStartedAt, phone: data.phone, endedReason: data.endedReason, recordingUrl: data.recordingUrl, callDirection: data.callDirection, campaignId: data.campaignId, leadId: data.leadId, attemptNumber: data.attemptNumber } }];"
-                },
-                "id": "code-build-or",
-                "name": "Build OpenRouter Request",
-                "type": "n8n-nodes-base.code",
-                "typeVersion": 2,
-                "position": [
-                    896,
-                    96
-                ]
-            },
-            {
-                "parameters": {
-                    "method": "POST",
-                    "url": "https://openrouter.ai/api/v1/chat/completions",
-                    "authentication": "genericCredentialType",
-                    "genericAuthType": "httpHeaderAuth",
-                    "sendHeaders": true,
-                    "headerParameters": {
-                        "parameters": [
-                            {
-                                "name": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "name": "HTTP-Referer",
-                                "value": "https://n8n.srv1169417.hstgr.cloud"
-                            },
-                            {
-                                "name": "X-Title",
-                                "value": "Vapi Lead Scoring"
-                            }
-                        ]
-                    },
-                    "sendBody": true,
-                    "contentType": "raw",
-                    "rawContentType": "application/json",
-                    "body": "={{ $json.requestBody }}",
-                    "options": {}
-                },
-                "id": "http-openrouter",
-                "name": "OpenRouter LLM Scoring",
-                "type": "n8n-nodes-base.httpRequest",
-                "typeVersion": 4.1,
-                "position": [
-                    1120,
-                    24
-                ],
-                "credentials": {
-                    "httpHeaderAuth": {
-                        "id": "1guiLBepx3rJi6mE",
-                        "name": "Header Auth account 2"
-                    }
-                }
-            },
-            {
-                "parameters": {
-                    "jsCode": "const data = $input.first().json;\nconst extractData = $('Extract Call Data').first().json;\n\nreturn [{ json: {\n  callId: data.callId || extractData.callId,\n  phone: data.phone || extractData.phone,\n  callDurationSeconds: data.callDurationSeconds || extractData.callDurationSeconds,\n  callStartedAt: data.callStartedAt || extractData.callStartedAt,\n  endedReason: data.endedReason || extractData.endedReason || 'unknown',\n  recordingUrl: data.recordingUrl || extractData.recordingUrl || null,\n  callDirection: data.callDirection || extractData.callDirection || 'inbound',\n  campaignId: data.campaignId || extractData.campaignId || null,\n  leadId: data.leadId || extractData.leadId || null,\n  attemptNumber: data.attemptNumber || extractData.attemptNumber || 1,\n  score_company_size: 1,\n  score_tech_stack: 1,\n  score_pain_point: 1,\n  score_timeline: 1,\n  score_engagement: 1,\n  conversation_summary: 'Kein Transkript verfuegbar.',\n  sentiment: 'neutral',\n  objections_raised: [],\n  drop_off_point: null,\n  is_decision_maker: false,\n  status: 'contacted',\n  next_steps: [],\n  transcript: '',\n  caller_name: null,\n  company: null,\n  company_size: null,\n  current_stack: null,\n  pain_point: null,\n  timeline: null,\n  dnc_requested: false,\n  disposition_code: 'connected'\n} }];"
-                },
-                "id": "code-fallback",
-                "name": "Fallback Scores",
-                "type": "n8n-nodes-base.code",
-                "typeVersion": 2,
-                "position": [
-                    1568,
-                    288
-                ]
-            },
-            {
-                "parameters": {
-                    "jsCode": "const llmResponse = $input.first().json;\nconst extractData = $('Extract Call Data').first().json;\n\nfunction clamp(val, min, max) {\n  const n = parseInt(val);\n  if (isNaN(n)) return min;\n  return Math.min(Math.max(n, min), max);\n}\n\nfunction sanitizeStr(val, maxLen) {\n  if (val === null || val === undefined) return null;\n  const s = String(val).trim();\n  if (s.length === 0) return null;\n  return s.substring(0, maxLen || 500);\n}\n\nlet parsed = {};\ntry {\n  const content = llmResponse.choices && llmResponse.choices[0] && llmResponse.choices[0].message\n    ? llmResponse.choices[0].message.content\n    : JSON.stringify(llmResponse);\n  parsed = JSON.parse(content);\n} catch(e) {\n  parsed = {\n    score_company_size: 1,\n    score_tech_stack: 1,\n    score_pain_point: 1,\n    score_timeline: 1,\n    score_engagement: 1,\n    conversation_summary: 'Analyse nicht verfuegbar.',\n    sentiment: 'neutral',\n    objections_raised: [],\n    drop_off_point: null,\n    is_decision_maker: false,\n    status: 'contacted',\n    next_steps: [],\n    caller_name: null,\n    company: null,\n    company_size: null,\n    current_stack: null,\n    pain_point: null,\n    timeline: null,\n    dnc_requested: false,\n    disposition_code: 'connected'\n  };\n}\n\nconst validStatuses = ['new','contacted','qualified','appointment_booked','converted','lost','not_reached','rejected','callback_scheduled','dnc'];\nconst validDispositions = ['connected','not_interested','callback','dnc_request','qualified','demo_booked'];\n\nconst result = {\n  callId: extractData.callId,\n  phone: extractData.phone,\n  callDurationSeconds: extractData.callDurationSeconds,\n  callStartedAt: extractData.callStartedAt,\n  transcript: extractData.transcript,\n  endedReason: extractData.endedReason,\n  recordingUrl: extractData.recordingUrl,\n  callDirection: extractData.callDirection,\n  campaignId: extractData.campaignId,\n  leadId: extractData.leadId,\n  attemptNumber: extractData.attemptNumber,\n  score_company_size: clamp(parsed.score_company_size, 1, 3),\n  score_tech_stack: clamp(parsed.score_tech_stack, 1, 3),\n  score_pain_point: clamp(parsed.score_pain_point, 1, 3),\n  score_timeline: clamp(parsed.score_timeline, 1, 3),\n  score_engagement: clamp(parsed.score_engagement, 1, 3),\n  conversation_summary: String(parsed.conversation_summary || '').substring(0, 1000),\n  sentiment: ['positiv', 'neutral', 'negativ'].includes(parsed.sentiment) ? parsed.sentiment : 'neutral',\n  objections_raised: Array.isArray(parsed.objections_raised) ? parsed.objections_raised : [],\n  drop_off_point: parsed.drop_off_point || null,\n  is_decision_maker: Boolean(parsed.is_decision_maker),\n  status: validStatuses.includes(parsed.status) ? parsed.status : 'contacted',\n  next_steps: Array.isArray(parsed.next_steps) ? parsed.next_steps : [],\n  caller_name: sanitizeStr(parsed.caller_name, 200),\n  company: sanitizeStr(parsed.company, 200),\n  company_size: sanitizeStr(parsed.company_size, 200),\n  current_stack: sanitizeStr(parsed.current_stack, 500),\n  pain_point: sanitizeStr(parsed.pain_point, 500),\n  timeline: sanitizeStr(parsed.timeline, 200),\n  dnc_requested: Boolean(parsed.dnc_requested),\n  disposition_code: validDispositions.includes(parsed.disposition_code) ? parsed.disposition_code : 'connected'\n};\n\nreturn [{ json: result }];"
-                },
-                "id": "code-parse-llm",
-                "name": "Parse LLM Response",
-                "type": "n8n-nodes-base.code",
-                "typeVersion": 2,
-                "position": [
-                    1344,
-                    -48
-                ]
-            },
-            {
-                "parameters": {
-                    "jsCode": "let d;\ntry {\n  d = $('Smart Cadence').first().json;\n} catch(e) {\n  d = $input.first().json;\n}\n\nreturn [{ json: {\n  callId: d.callId,\n  score_company_size: d.score_company_size,\n  score_tech_stack: d.score_tech_stack,\n  score_pain_point: d.score_pain_point,\n  score_timeline: d.score_timeline,\n  score_engagement: d.score_engagement || null,\n  conversation_summary: d.conversation_summary || '',\n  sentiment: d.sentiment || 'neutral',\n  objections_raised: Array.isArray(d.objections_raised) ? d.objections_raised : [],\n  drop_off_point: d.drop_off_point || null,\n  is_decision_maker: Boolean(d.is_decision_maker),\n  status: d.status || 'contacted',\n  next_steps: Array.isArray(d.next_steps) ? d.next_steps : [],\n  transcript: d.transcript || '',\n  callDurationSeconds: d.callDurationSeconds || null,\n  callStartedAt: d.callStartedAt || null,\n  phone: d.phone || null,\n  caller_name: d.caller_name || null,\n  company: d.company || null,\n  company_size: d.company_size || null,\n  current_stack: d.current_stack || null,\n  pain_point: d.pain_point || null,\n  timeline: d.timeline || null,\n  disposition_code: d.disposition_code || null,\n  recording_url: d.recordingUrl || null,\n  callDirection: d.callDirection || 'inbound',\n  campaignId: d.campaignId || null,\n  leadId: d.leadId || null,\n  attemptNumber: d.attemptNumber || 1,\n  next_call_scheduled_at: d.next_call_scheduled_at || null,\n  follow_up_reason: d.follow_up_reason || null,\n  dnc_requested: Boolean(d.dnc_requested),\n  endedReason: d.endedReason || null\n} }];"
-                },
-                "id": "code-build-sup",
-                "name": "Build Supabase Payload",
-                "type": "n8n-nodes-base.code",
-                "typeVersion": 2,
-                "position": [
-                    2464,
-                    96
-                ]
-            },
-            {
-                "parameters": {
-                    "operation": "executeQuery",
-                    "query": "INSERT INTO leads (\n  call_id, score_company_size, score_tech_stack, score_pain_point, score_timeline,\n  score_engagement,\n  transcript, conversation_summary, sentiment,\n  objections_raised, drop_off_point,\n  call_duration_seconds, call_started_at,\n  is_decision_maker, status, next_steps, phone,\n  caller_name, company, company_size, current_stack, pain_point, timeline,\n  disposition_code, recording_url, call_direction,\n  last_call_attempt_at, next_call_scheduled_at, follow_up_reason,\n  campaign_id\n) VALUES (\n  $1, $2, $3, $4, $5,\n  $6,\n  $7, $8, $9,\n  $10::text[], $11,\n  $12, $13::timestamptz,\n  $14, $15, $16::text[], $17,\n  $18, $19, $20, $21, $22, $23,\n  $24, $25, $26,\n  now(), $27::timestamptz, $28,\n  $29::uuid\n)\nON CONFLICT (call_id) DO UPDATE SET\n  score_company_size = EXCLUDED.score_company_size,\n  score_tech_stack = EXCLUDED.score_tech_stack,\n  score_pain_point = EXCLUDED.score_pain_point,\n  score_timeline = EXCLUDED.score_timeline,\n  score_engagement = EXCLUDED.score_engagement,\n  transcript = EXCLUDED.transcript,\n  conversation_summary = EXCLUDED.conversation_summary,\n  sentiment = EXCLUDED.sentiment,\n  objections_raised = EXCLUDED.objections_raised,\n  drop_off_point = CASE\n    WHEN leads.appointment_booked = true THEN null\n    ELSE EXCLUDED.drop_off_point\n  END,\n  call_duration_seconds = EXCLUDED.call_duration_seconds,\n  call_started_at = EXCLUDED.call_started_at,\n  is_decision_maker = EXCLUDED.is_decision_maker,\n  status = CASE\n    WHEN leads.appointment_booked = true AND leads.status = 'appointment_booked'\n    THEN leads.status\n    ELSE EXCLUDED.status\n  END,\n  next_steps = EXCLUDED.next_steps,\n  phone = COALESCE(EXCLUDED.phone, leads.phone),\n  caller_name = COALESCE(leads.caller_name, EXCLUDED.caller_name),\n  company = COALESCE(leads.company, EXCLUDED.company),\n  company_size = COALESCE(leads.company_size, EXCLUDED.company_size),\n  current_stack = COALESCE(leads.current_stack, EXCLUDED.current_stack),\n  pain_point = COALESCE(leads.pain_point, EXCLUDED.pain_point),\n  timeline = COALESCE(leads.timeline, EXCLUDED.timeline),\n  disposition_code = EXCLUDED.disposition_code,\n  recording_url = COALESCE(EXCLUDED.recording_url, leads.recording_url),\n  call_direction = COALESCE(EXCLUDED.call_direction, leads.call_direction),\n  call_attempts = CASE\n    WHEN EXCLUDED.call_direction = 'outbound' THEN COALESCE(leads.call_attempts, 0) + 1\n    ELSE leads.call_attempts\n  END,\n  last_call_attempt_at = now(),\n  next_call_scheduled_at = EXCLUDED.next_call_scheduled_at,\n  follow_up_reason = EXCLUDED.follow_up_reason,\n  campaign_id = COALESCE(EXCLUDED.campaign_id, leads.campaign_id)\nRETURNING id, call_id, phone, is_dnc",
-                    "options": {
-                        "queryReplacement": "={{ [$json.callId, $json.score_company_size, $json.score_tech_stack, $json.score_pain_point, $json.score_timeline, $json.score_engagement, $json.transcript, $json.conversation_summary, $json.sentiment, $json.objections_raised, $json.drop_off_point, $json.callDurationSeconds, $json.callStartedAt, $json.is_decision_maker, $json.status, $json.next_steps, $json.phone, $json.caller_name, $json.company, $json.company_size, $json.current_stack, $json.pain_point, $json.timeline, $json.disposition_code, $json.recording_url, $json.callDirection, $json.next_call_scheduled_at, $json.follow_up_reason, $json.campaignId] }}"
-                    }
-                },
-                "id": "pg-upsert-postcall",
-                "name": "Supabase Upsert Lead Post-Call",
-                "type": "n8n-nodes-base.postgres",
-                "typeVersion": 2.6,
-                "position": [
-                    2688,
-                    96
-                ],
-                "credentials": {
-                    "postgres": {
-                        "id": "ndhdVpUbeTJZgw1d",
-                        "name": "Voice Agent Database"
-                    }
-                }
-            },
-            {
-                "parameters": {
-                    "url": "https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/objection_categories?select=name,description&is_active=eq.true&order=occurrence_count.desc",
-                    "sendHeaders": true,
-                    "headerParameters": {
-                        "parameters": [
-                            {
-                                "name": "apikey",
-                                "value": "REDACTED_SUPABASE_SERVICE_KEY"
-                            },
-                            {
-                                "name": "Authorization",
-                                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
-                            }
-                        ]
-                    },
-                    "options": {}
-                },
-                "id": "http-fetch-cats",
-                "name": "Fetch Categories",
-                "type": "n8n-nodes-base.httpRequest",
-                "typeVersion": 4.1,
-                "position": [
-                    672,
-                    96
-                ],
-                "continueOnFail": true
-            },
-            {
-                "parameters": {
-                    "jsCode": "const parsed = $input.first().json;\nconst extractData = $('Extract Call Data').first().json;\nlet existingNames = [];\ntry {\n  existingNames = $('Build OpenRouter Request').first().json.existingCategoryNames || [];\n} catch(e) {}\nconst normalize = (s) => s.trim().replace(/\\s+/g, ' ');\nconst objections = Array.isArray(parsed.objections_raised) ? parsed.objections_raised : [];\nconst existingLower = existingNames.map(n => normalize(n).toLowerCase());\nconst newCats = objections.filter(obj => !existingLower.includes(normalize(obj).toLowerCase()));\nconst seen = new Set();\nconst uniqueNew = [];\nfor (const cat of newCats) {\n  const key = normalize(cat).toLowerCase();\n  if (!seen.has(key)) { seen.add(key); uniqueNew.push(normalize(cat)); }\n}\nconst upsertBody = uniqueNew.map(name => ({ name, description: null, counter_argument: null, is_active: true, occurrence_count: 0 }));\nreturn [{ json: {\n  ...parsed,\n  callId: parsed.callId || extractData.callId,\n  phone: parsed.phone || extractData.phone,\n  callDurationSeconds: parsed.callDurationSeconds || extractData.callDurationSeconds,\n  callStartedAt: parsed.callStartedAt || extractData.callStartedAt,\n  transcript: parsed.transcript || extractData.transcript,\n  endedReason: parsed.endedReason || extractData.endedReason,\n  recordingUrl: parsed.recordingUrl || extractData.recordingUrl,\n  callDirection: parsed.callDirection || extractData.callDirection,\n  campaignId: parsed.campaignId || extractData.campaignId,\n  leadId: parsed.leadId || extractData.leadId,\n  attemptNumber: parsed.attemptNumber || extractData.attemptNumber,\n  upsertBody: JSON.stringify(upsertBody),\n  hasNewCategories: uniqueNew.length > 0\n} }];"
-                },
-                "id": "code-detect-new-cats",
-                "name": "Detect New Categories",
-                "type": "n8n-nodes-base.code",
-                "typeVersion": 2,
-                "position": [
-                    1568,
-                    -96
-                ]
-            },
-            {
-                "parameters": {
-                    "method": "POST",
-                    "url": "https://ltarsnseyhtfbsxjrhdu.supabase.co/rest/v1/objection_categories",
-                    "sendHeaders": true,
-                    "headerParameters": {
-                        "parameters": [
-                            {
-                                "name": "apikey",
-                                "value": "REDACTED_SUPABASE_SERVICE_KEY"
-                            },
-                            {
-                                "name": "Authorization",
-                                "value": "Bearer REDACTED_SUPABASE_SERVICE_KEY"
-                            },
-                            {
-                                "name": "Content-Type",
-                                "value": "application/json"
-                            },
-                            {
-                                "name": "Prefer",
-                                "value": "resolution=merge-duplicates,return=minimal"
-                            }
-                        ]
-                    },
-                    "sendBody": true,
-                    "contentType": "raw",
-                    "rawContentType": "application/json",
-                    "body": "={{ $json.upsertBody }}",
-                    "options": {}
-                },
-                "id": "http-upsert-new-cats",
-                "name": "Upsert New Categories",
-                "type": "n8n-nodes-base.httpRequest",
-                "typeVersion": 4.1,
-                "position": [
-                    1792,
-                    -96
-                ],
-                "continueOnFail": true
-            },
-            {
-                "parameters": {
-                    "operation": "executeQuery",
-                    "query": "UPDATE objection_categories SET occurrence_count = occurrence_count + 1 WHERE name = ANY($1::text[])",
-                    "options": {
-                        "queryReplacement": "={{ [$('Build Supabase Payload').first().json.objections_raised] }}"
-                    }
-                },
-                "id": "pg-update-counts",
-                "name": "Update Occurrence Counts",
-                "type": "n8n-nodes-base.postgres",
-                "typeVersion": 2.6,
-                "position": [
-                    3808,
-                    96
-                ],
-                "credentials": {
-                    "postgres": {
-                        "id": "ndhdVpUbeTJZgw1d",
-                        "name": "Voice Agent Database"
-                    }
-                },
-                "continueOnFail": true
-            },
-            {
-                "id": "a47a51b7-8316-4b07-893f-b31c0d1de6c4",
-                "name": "Disposition Inference",
-                "type": "n8n-nodes-base.code",
-                "typeVersion": 2,
-                "position": [
-                    2016,
-                    96
-                ],
-                "parameters": {
-                    "jsCode": "// Disposition Inference: map Vapi endedReason + GPT analysis to final disposition_code\nlet d;\ntry {\n  d = $('Detect New Categories').first().json;\n} catch(e) {\n  d = $input.first().json;\n}\n\nconst endedReason = d.endedReason || 'unknown';\nconst gptDisposition = d.disposition_code || 'connected';\nconst dncRequested = Boolean(d.dnc_requested);\nconst scoreEngagement = d.score_engagement || 1;\nconst appointmentBooked = d.status === 'appointment_booked' || d.status === 'converted' || gptDisposition === 'demo_booked';\n\nlet finalDisposition = 'connected';\nlet finalStatus = d.status || 'contacted';\n\n// Non-connected scenarios based on endedReason\nconst nonConnectedReasons = {\n  'no-answer': 'no_answer',\n  'voicemail': 'voicemail',\n  'machine-detected': 'voicemail',\n  'busy': 'busy'\n};\n\nconst technicalErrors = ['system-error', 'pipeline-error-openai', 'pipeline-error-custom-llm', 'pipeline-error-deepgram', 'pipeline-error-eleven-labs', 'pipeline-error-vapi'];\n\nif (nonConnectedReasons[endedReason]) {\n  finalDisposition = nonConnectedReasons[endedReason];\n  finalStatus = 'not_reached';\n} else if (technicalErrors.includes(endedReason)) {\n  finalDisposition = 'technical_error';\n  finalStatus = d.status || 'contacted';\n} else {\n  // Connected call - use GPT analysis\n  if (appointmentBooked) {\n    finalDisposition = 'demo_booked';\n    finalStatus = 'appointment_booked';\n  } else if (dncRequested) {\n    finalDisposition = 'dnc_request';\n    finalStatus = 'dnc';\n  } else if (gptDisposition === 'not_interested' || scoreEngagement <= 1) {\n    finalDisposition = 'not_interested';\n    finalStatus = 'rejected';\n  } else if (gptDisposition === 'callback') {\n    finalDisposition = 'callback';\n    finalStatus = 'callback_scheduled';\n  } else if (gptDisposition === 'qualified') {\n    finalDisposition = 'qualified';\n    finalStatus = 'qualified';\n  } else {\n    finalDisposition = gptDisposition || 'connected';\n  }\n}\n\nreturn [{ json: {\n  ...d,\n  disposition_code: finalDisposition,\n  status: finalStatus,\n  dnc_requested: dncRequested\n} }];"
-                }
-            },
-            {
-                "id": "30bd6d98-2ab3-4d15-a87d-a9d33eaf4f7c",
-                "name": "Smart Cadence",
-                "type": "n8n-nodes-base.code",
-                "typeVersion": 2,
-                "position": [
-                    2240,
-                    96
-                ],
-                "parameters": {
-                    "jsCode": "// Smart Cadence: calculate next_call_scheduled_at and follow_up_reason\nconst d = $input.first().json;\nconst disposition = d.disposition_code;\nconst now = new Date();\nconst currentHour = now.getHours();\nconst isMorning = currentHour < 13;\n\nfunction addWorkdays(date, days) {\n  const result = new Date(date);\n  let added = 0;\n  while (added < days) {\n    result.setDate(result.getDate() + 1);\n    const dow = result.getDay();\n    if (dow !== 0 && dow !== 6) added++;\n  }\n  return result;\n}\n\nfunction setTime(date, hours, minutes) {\n  const result = new Date(date);\n  result.setHours(hours, minutes || 0, 0, 0);\n  return result;\n}\n\nlet nextCallScheduledAt = null;\nlet followUpReason = null;\n\nconst terminalDispositions = ['not_interested', 'dnc_request', 'demo_booked', 'wrong_number'];\n\nif (terminalDispositions.includes(disposition)) {\n  nextCallScheduledAt = null;\n  followUpReason = null;\n} else if (disposition === 'no_answer') {\n  if (isMorning) {\n    const next = addWorkdays(now, 1);\n    const hour = 14 + Math.floor(Math.random() * 2);\n    nextCallScheduledAt = setTime(next, hour, Math.floor(Math.random() * 60)).toISOString();\n    followUpReason = 'Vormittags nicht erreicht \\u2014 Nachmittag versuchen';\n  } else {\n    const next = addWorkdays(now, 1);\n    const hour = 9 + Math.floor(Math.random() * 2);\n    nextCallScheduledAt = setTime(next, hour, Math.floor(Math.random() * 60)).toISOString();\n    followUpReason = 'Nachmittags nicht erreicht \\u2014 Vormittag versuchen';\n  }\n} else if (disposition === 'voicemail') {\n  const next = addWorkdays(now, 2);\n  const hour = isMorning ? (14 + Math.floor(Math.random() * 3)) : (9 + Math.floor(Math.random() * 2));\n  nextCallScheduledAt = setTime(next, hour, Math.floor(Math.random() * 60)).toISOString();\n  followUpReason = 'Mailbox erreicht \\u2014 andere Tageszeit versuchen';\n} else if (disposition === 'busy') {\n  const next = new Date(now.getTime() + 2 * 60 * 60 * 1000);\n  nextCallScheduledAt = next.toISOString();\n  followUpReason = 'Besetzt \\u2014 in 2 Stunden erneut versuchen';\n} else if (disposition === 'gatekeeper') {\n  const next = addWorkdays(now, 1);\n  nextCallScheduledAt = setTime(next, 8, 30).toISOString();\n  followUpReason = 'Gatekeeper \\u2014 fr\\u00fch morgens direkt versuchen';\n} else if (disposition === 'callback') {\n  if (d.callback_datetime) {\n    nextCallScheduledAt = d.callback_datetime;\n  } else {\n    const next = addWorkdays(now, 1);\n    nextCallScheduledAt = setTime(next, 10, 0).toISOString();\n  }\n  followUpReason = 'R\\u00fcckruf vereinbart';\n} else if (disposition === 'qualified') {\n  const next = addWorkdays(now, 1);\n  nextCallScheduledAt = setTime(next, 10, 0).toISOString();\n  followUpReason = 'Qualifiziert \\u2014 Follow-up zur Terminvereinbarung';\n} else if (disposition === 'connected') {\n  const next = addWorkdays(now, 3);\n  nextCallScheduledAt = setTime(next, 10, 0).toISOString();\n  followUpReason = 'Gespr\\u00e4ch gef\\u00fchrt \\u2014 Follow-up in 3 Tagen';\n} else if (disposition === 'technical_error') {\n  const next = new Date(now.getTime() + 30 * 60 * 1000);\n  nextCallScheduledAt = next.toISOString();\n  followUpReason = 'Technischer Fehler \\u2014 baldiger Retry';\n}\n\nreturn [{ json: {\n  ...d,\n  next_call_scheduled_at: nextCallScheduledAt,\n  follow_up_reason: followUpReason\n} }];"
-                }
-            },
-            {
-                "id": "7433c02b-8ca0-4faa-8262-94c264f22939",
-                "name": "DNC Check",
-                "type": "n8n-nodes-base.code",
-                "typeVersion": 2,
-                "position": [
-                    2912,
-                    96
-                ],
-                "parameters": {
-                    "jsCode": "// DNC Check: extract lead_id from RETURNING and prepare data for DNC + call_attempt\nconst payload = $('Build Supabase Payload').first().json;\nconst upsertResult = $input.first().json;\n\nconst row = Array.isArray(upsertResult) ? upsertResult[0] : upsertResult;\nconst leadId = (row && row.id) ? row.id : payload.leadId || null;\nconst callId = payload.callId;\nconst phone = payload.phone;\nconst dncRequested = Boolean(payload.dnc_requested);\n\nreturn [{ json: {\n  leadId,\n  callId,\n  phone,\n  dncRequested,\n  disposition_code: payload.disposition_code,\n  recording_url: payload.recording_url,\n  callDirection: payload.callDirection,\n  campaignId: payload.campaignId,\n  attemptNumber: payload.attemptNumber,\n  callDurationSeconds: payload.callDurationSeconds,\n  endedReason: payload.endedReason,\n  objections_raised: payload.objections_raised\n} }];"
-                }
-            },
-            {
-                "id": "10899b7b-198c-4aad-ae0d-cf5f3c51845c",
-                "name": "DNC Requested?",
-                "type": "n8n-nodes-base.if",
-                "typeVersion": 2.2,
-                "position": [
-                    3136,
-                    96
-                ],
-                "parameters": {
-                    "conditions": {
-                        "options": {
-                            "version": 2,
-                            "leftValue": "",
-                            "caseSensitive": true,
-                            "typeValidation": "strict"
-                        },
-                        "conditions": [
-                            {
-                                "id": "dnc1",
-                                "leftValue": "={{ $json.dncRequested }}",
-                                "rightValue": true,
-                                "operator": {
-                                    "type": "boolean",
-                                    "operation": "equals"
-                                }
-                            }
-                        ],
-                        "combinator": "and"
-                    },
-                    "options": {}
-                }
-            },
-            {
-                "id": "54ebf931-5bfb-48f4-89d3-44598356cd7c",
-                "name": "Insert DNC + Update Lead",
-                "type": "n8n-nodes-base.postgres",
-                "typeVersion": 2.5,
-                "position": [
-                    3360,
-                    -48
-                ],
-                "parameters": {
-                    "operation": "executeQuery",
-                    "query": "INSERT INTO dnc_list (phone, reason, source_call_id, source_lead_id, notes, is_active)\nVALUES ($1, 'ai_detected', $2, $3::uuid, 'KI-erkannt aus Gespraechsanalyse', true)\nON CONFLICT DO NOTHING;\n\nUPDATE leads SET is_dnc = true, dnc_reason = 'KI-erkannt', status = 'dnc'\nWHERE id = $3::uuid;",
-                    "options": {
-                        "queryReplacement": "={{ [$json.phone, $json.callId, $json.leadId] }}"
-                    }
-                },
-                "credentials": {
-                    "postgres": {
-                        "id": "ndhdVpUbeTJZgw1d",
-                        "name": "Voice Agent Database"
-                    }
-                }
-            },
-            {
-                "id": "3b75aedb-33df-44c0-af38-ee26d11a924d",
-                "name": "Insert Call Attempt",
-                "type": "n8n-nodes-base.postgres",
-                "typeVersion": 2.5,
-                "position": [
-                    3584,
-                    96
-                ],
-                "parameters": {
-                    "operation": "executeQuery",
-                    "query": "INSERT INTO call_attempts (\n  lead_id, campaign_id, call_id, attempt_number,\n  disposition_code, duration_seconds, direction,\n  ended_reason, recording_url\n) VALUES (\n  $1::uuid, $2::uuid, $3, $4,\n  $5, $6, $7,\n  $8, $9\n)",
-                    "options": {
-                        "queryReplacement": "={{ [$json.leadId, $json.campaignId, $json.callId, $json.attemptNumber, $json.disposition_code, $json.callDurationSeconds, $json.callDirection, $json.endedReason, $json.recording_url] }}"
-                    }
-                },
-                "credentials": {
-                    "postgres": {
-                        "id": "ndhdVpUbeTJZgw1d",
-                        "name": "Voice Agent Database"
-                    }
-                }
-            }
-        ],
-        "connections": {
-            "Webhook end_of_call": {
-                "main": [
-                    [
-                        {
-                            "node": "Extract Call Data",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "Extract Call Data": {
-                "main": [
-                    [
-                        {
-                            "node": "Has Transcript?",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "Has Transcript?": {
-                "main": [
-                    [
-                        {
-                            "node": "Fetch Categories",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ],
-                    [
-                        {
-                            "node": "Fallback Scores",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "Build OpenRouter Request": {
-                "main": [
-                    [
-                        {
-                            "node": "OpenRouter LLM Scoring",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ],
-                "error": [
-                    [
-                        {
-                            "node": "Fallback Scores",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "OpenRouter LLM Scoring": {
-                "main": [
-                    [
-                        {
-                            "node": "Parse LLM Response",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ],
-                "error": [
-                    [
-                        {
-                            "node": "Fallback Scores",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "Parse LLM Response": {
-                "error": [
-                    [
-                        {
-                            "node": "Fallback Scores",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ],
-                "main": [
-                    [
-                        {
-                            "node": "Detect New Categories",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "Build Supabase Payload": {
-                "main": [
-                    [
-                        {
-                            "node": "Supabase Upsert Lead Post-Call",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "Fetch Categories": {
-                "main": [
-                    [
-                        {
-                            "node": "Build OpenRouter Request",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "Detect New Categories": {
-                "main": [
-                    [
-                        {
-                            "node": "Upsert New Categories",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "Upsert New Categories": {
-                "main": [
-                    [
-                        {
-                            "node": "Disposition Inference",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "Fallback Scores": {
-                "main": [
-                    [
-                        {
-                            "node": "Disposition Inference",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "Disposition Inference": {
-                "main": [
-                    [
-                        {
-                            "node": "Smart Cadence",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "Smart Cadence": {
-                "main": [
-                    [
-                        {
-                            "node": "Build Supabase Payload",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "Supabase Upsert Lead Post-Call": {
-                "main": [
-                    [
-                        {
-                            "node": "DNC Check",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "DNC Check": {
-                "main": [
-                    [
-                        {
-                            "node": "DNC Requested?",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "DNC Requested?": {
-                "main": [
-                    [
-                        {
-                            "node": "Insert DNC + Update Lead",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ],
-                    [
-                        {
-                            "node": "Insert Call Attempt",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "Insert DNC + Update Lead": {
-                "main": [
-                    [
-                        {
-                            "node": "Insert Call Attempt",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            },
-            "Insert Call Attempt": {
-                "main": [
-                    [
-                        {
-                            "node": "Update Occurrence Counts",
-                            "type": "main",
-                            "index": 0
-                        }
-                    ]
-                ]
-            }
-        },
-        "authors": "Fynn Loosen",
-        "name": null,
-        "description": null,
-        "autosaved": false,
-        "workflowPublishHistory": [
-            {
-                "createdAt": "2026-03-03T16:56:53.351Z",
-                "id": 472,
-                "workflowId": "DBgYdLeCL75VL8S6",
-                "versionId": "ee99f196-25af-4632-baf3-a82e6ad1763b",
-                "event": "activated",
-                "userId": "495728b9-b3cb-456c-9843-b80be60568f8"
-            },
-            {
-                "createdAt": "2026-03-03T16:56:53.338Z",
-                "id": 471,
-                "workflowId": "DBgYdLeCL75VL8S6",
-                "versionId": "ee99f196-25af-4632-baf3-a82e6ad1763b",
-                "event": "deactivated",
-                "userId": "495728b9-b3cb-456c-9843-b80be60568f8"
-            }
+          ]
         ]
-    }
+      },
+      "Extract Call Data": {
+        "main": [
+          [
+            {
+              "node": "Has Transcript?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Has Transcript?": {
+        "main": [
+          [
+            {
+              "node": "Fetch Categories",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Fallback Scores",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build OpenRouter Request": {
+        "main": [
+          [
+            {
+              "node": "OpenRouter LLM Scoring",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ],
+        "error": [
+          [
+            {
+              "node": "Fallback Scores",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenRouter LLM Scoring": {
+        "main": [
+          [
+            {
+              "node": "Parse LLM Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ],
+        "error": [
+          [
+            {
+              "node": "Fallback Scores",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse LLM Response": {
+        "error": [
+          [
+            {
+              "node": "Fallback Scores",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ],
+        "main": [
+          [
+            {
+              "node": "Detect New Categories",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Build Supabase Payload": {
+        "main": [
+          [
+            {
+              "node": "Supabase Upsert Lead Post-Call",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fetch Categories": {
+        "main": [
+          [
+            {
+              "node": "Build OpenRouter Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Detect New Categories": {
+        "main": [
+          [
+            {
+              "node": "Upsert New Categories",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Upsert New Categories": {
+        "main": [
+          [
+            {
+              "node": "Disposition Inference",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Fallback Scores": {
+        "main": [
+          [
+            {
+              "node": "Disposition Inference",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Disposition Inference": {
+        "main": [
+          [
+            {
+              "node": "Smart Cadence",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Smart Cadence": {
+        "main": [
+          [
+            {
+              "node": "Build Supabase Payload",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Supabase Upsert Lead Post-Call": {
+        "main": [
+          [
+            {
+              "node": "DNC Check",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Prepare Quote Inserts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "DNC Check": {
+        "main": [
+          [
+            {
+              "node": "DNC Requested?",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "DNC Requested?": {
+        "main": [
+          [
+            {
+              "node": "Insert DNC + Update Lead",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Insert Call Attempt",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Insert DNC + Update Lead": {
+        "main": [
+          [
+            {
+              "node": "Insert Call Attempt",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Insert Call Attempt": {
+        "main": [
+          [
+            {
+              "node": "Update Occurrence Counts",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Quote Inserts": {
+        "main": [
+          [
+            {
+              "node": "Delete Old Quotes",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Delete Old Quotes": {
+        "main": [
+          [
+            {
+              "node": "Insert Scoring Quotes",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "authors": "Fynn Loosen",
+    "name": null,
+    "description": null,
+    "autosaved": false,
+    "workflowPublishHistory": [
+      {
+        "createdAt": "2026-03-03T19:43:13.522Z",
+        "id": 506,
+        "workflowId": "DBgYdLeCL75VL8S6",
+        "versionId": "ffe1fe60-dc5c-4991-8e47-a23fd07bc944",
+        "event": "activated",
+        "userId": "495728b9-b3cb-456c-9843-b80be60568f8"
+      },
+      {
+        "createdAt": "2026-03-03T19:43:13.502Z",
+        "id": 505,
+        "workflowId": "DBgYdLeCL75VL8S6",
+        "versionId": "ffe1fe60-dc5c-4991-8e47-a23fd07bc944",
+        "event": "deactivated",
+        "userId": "495728b9-b3cb-456c-9843-b80be60568f8"
+      }
+    ]
+  }
 }

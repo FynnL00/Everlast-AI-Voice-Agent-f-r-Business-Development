@@ -39,20 +39,20 @@ export default function OutboundFunnel({ leads }: OutboundFunnelProps) {
     // 1. Versuche: all outbound leads with at least 1 call_attempt
     const attempts = outboundLeads.filter((l) => l.call_attempts > 0);
 
-    // 2. Erreicht: disposition = connected, qualified, demo_booked, callback
-    const connectedDispositions = new Set(["connected", "qualified", "demo_booked", "callback"]);
+    // 2. Erreicht: disposition = connected, callback
+    const connectedDispositions = new Set(["connected", "callback"]);
     const reached = outboundLeads.filter(
       (l) => l.disposition_code !== null && connectedDispositions.has(l.disposition_code)
     );
 
-    // 3. Qualifiziert: status = qualified OR disposition = qualified
+    // 3. Qualifiziert: status = qualified or further in pipeline
     const qualified = outboundLeads.filter(
-      (l) => l.status === "qualified" || l.disposition_code === "qualified"
+      (l) => l.status === "qualified" || l.status === "appointment_booked" || l.status === "converted"
     );
 
-    // 4. Demo gebucht: disposition = demo_booked
+    // 4. Demo gebucht: appointment_booked = true
     const demoBooked = outboundLeads.filter(
-      (l) => l.disposition_code === "demo_booked"
+      (l) => l.appointment_booked === true
     );
 
     // 5. Konvertiert: status = converted
@@ -73,7 +73,7 @@ export default function OutboundFunnel({ leads }: OutboundFunnelProps) {
   const totalAttempts = stages[0]?.count ?? 0;
 
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full flex flex-col">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px w-full h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-base font-semibold">Outbound Funnel</CardTitle>
         <CardDescription>

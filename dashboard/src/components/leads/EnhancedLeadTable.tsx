@@ -9,11 +9,9 @@ import {
   Users,
   CalendarCheck,
 } from "lucide-react";
-import { cn, formatDuration, formatDate, getGradeColor } from "@/lib/utils";
+import { cn, formatDate, getGradeColor } from "@/lib/utils";
 import type { Lead, SortField, SortDirection } from "@/lib/types";
 import StatusBadge from "@/components/leads/StatusBadge";
-import SentimentIndicator from "@/components/leads/SentimentIndicator";
-import DispositionBadge from "@/components/ui/DispositionBadge";
 import EmptyState from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 
@@ -25,19 +23,21 @@ interface EnhancedLeadTableProps {
 }
 
 interface ColumnDef {
-  field: SortField;
+  key: string;
+  field?: SortField;
   label: string;
   sortable: boolean;
   className?: string;
 }
 
 const COLUMNS: ColumnDef[] = [
-  { field: "caller_name", label: "Name / Firma", sortable: true },
-  { field: "total_score", label: "Score", sortable: true, className: "text-center" },
-  { field: "status", label: "Status", sortable: true },
-  { field: "call_attempts", label: "Versuche", sortable: true, className: "text-center" },
-  { field: "disposition_code", label: "Disposition", sortable: true },
-  { field: "appointment_booked", label: "Termin", sortable: true, className: "text-center" },
+  { key: "name", field: "caller_name", label: "Name", sortable: true },
+  { key: "company", field: "company", label: "Unternehmen", sortable: true },
+  { key: "status", field: "status", label: "Status", sortable: true },
+  { key: "score", field: "total_score", label: "Score", sortable: true, className: "text-center" },
+  { key: "email", label: "E-Mail", sortable: false },
+  { key: "phone", label: "Telefon", sortable: false },
+  { key: "appointment", field: "appointment_booked", label: "Termin", sortable: true },
 ];
 
 function SortIcon({ field, currentField, direction }: {
@@ -46,11 +46,11 @@ function SortIcon({ field, currentField, direction }: {
   direction: SortDirection;
 }) {
   if (field !== currentField) {
-    return <ArrowUpDown size={14} className="text-muted-foreground opacity-50 transition-opacity hover:opacity-100" />;
+    return <ArrowUpDown size={12} className="text-muted-foreground/40 group-hover:text-muted-foreground transition-opacity" />;
   }
   return direction === "asc"
-    ? <ArrowUp size={14} className="text-primary" />
-    : <ArrowDown size={14} className="text-primary" />;
+    ? <ArrowUp size={12} className="text-primary" />
+    : <ArrowDown size={12} className="text-primary" />;
 }
 
 export default function EnhancedLeadTable({
@@ -70,26 +70,25 @@ export default function EnhancedLeadTable({
   }
 
   return (
-    <div className="overflow-x-auto w-full px-4 sm:px-6">
+    <div className="overflow-x-auto w-full">
       <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-border/60">
+        <thead className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm">
+          <tr className="border-b border-border/50">
             {COLUMNS.map((col) => (
               <th
-                key={col.field}
+                key={col.key}
                 className={cn(
-                  "px-4 py-4 text-left text-xs font-semibold text-muted-foreground tracking-wider uppercase",
+                  "px-5 py-3.5 text-left text-sm font-medium text-muted-foreground",
                   col.className,
                   col.sortable && "cursor-pointer select-none hover:text-foreground transition-colors group"
                 )}
-                onClick={() => col.sortable && onSort(col.field)}
+                onClick={() => col.sortable && col.field && onSort(col.field)}
               >
                 <div className={cn("inline-flex items-center gap-1.5",
-                  col.className?.includes("text-right") && "justify-end",
                   col.className?.includes("text-center") && "justify-center"
                 )}>
                   {col.label}
-                  {col.sortable && (
+                  {col.sortable && col.field && (
                     <SortIcon
                       field={col.field}
                       currentField={sortField}
@@ -99,7 +98,6 @@ export default function EnhancedLeadTable({
                 </div>
               </th>
             ))}
-            {/* Arrow column */}
             <th className="w-10" />
           </tr>
         </thead>
@@ -107,32 +105,37 @@ export default function EnhancedLeadTable({
           {leads.map((lead) => (
               <tr
                 key={lead.id}
-                className="group/row hover:bg-muted/50 border-b border-border/40 transition-colors duration-200 cursor-pointer"
+                className="group/row even:bg-muted/20 hover:bg-muted/40 border-b border-border/30 transition-colors duration-150 cursor-pointer"
               >
-                {/* Name / Firma (merged) */}
-                <td className="px-4 py-4 align-middle">
+                {/* Name */}
+                <td className="px-5 py-5 align-middle">
                   <Link href={`/leads/${lead.id}`} className="block">
-                    <div className="font-semibold text-foreground group-hover/row:text-primary transition-colors">
+                    <span className="font-medium text-foreground group-hover/row:text-primary transition-colors">
                       {lead.caller_name || "Unbekannt"}
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-0.5">
-                      {lead.company || "\u2014"}
-                      {lead.company_size && (
-                        <span className="text-[11px] uppercase tracking-wider"> · {lead.company_size}</span>
-                      )}
-                    </div>
-                    {lead.phone && (
-                      <div className="text-xs text-muted-foreground mt-0.5 tracking-wide font-mono">{lead.phone}</div>
-                    )}
+                    </span>
                   </Link>
                 </td>
 
-                {/* Score / Grade */}
-                <td className="px-4 py-4 text-center align-middle">
+                {/* Unternehmen */}
+                <td className="px-5 py-5 align-middle">
+                  <Link href={`/leads/${lead.id}`} className="block text-muted-foreground">
+                    {lead.company || "\u2014"}
+                  </Link>
+                </td>
+
+                {/* Status */}
+                <td className="px-5 py-5 align-middle">
+                  <Link href={`/leads/${lead.id}`} className="block">
+                    <StatusBadge status={lead.status} outboundState={lead.outbound_state} />
+                  </Link>
+                </td>
+
+                {/* Score */}
+                <td className="px-5 py-5 text-center align-middle">
                   <Link href={`/leads/${lead.id}`} className="block">
                     {lead.lead_grade ? (
                       <span
-                        className="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold shadow-sm ring-1 ring-inset"
+                        className="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ring-1 ring-inset"
                         style={{
                           backgroundColor: `${getGradeColor(lead.lead_grade)}15`,
                           color: getGradeColor(lead.lead_grade),
@@ -147,60 +150,32 @@ export default function EnhancedLeadTable({
                   </Link>
                 </td>
 
-                {/* Status + Sentiment + Duration (merged) */}
-                <td className="px-4 py-4 align-middle">
-                  <Link href={`/leads/${lead.id}`} className="block">
-                    <StatusBadge status={lead.status} />
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <SentimentIndicator sentiment={lead.sentiment} showLabel />
-                      {lead.call_duration_seconds != null && (
-                        <>
-                          <span className="text-border">·</span>
-                          <span className="text-xs text-muted-foreground font-mono">
-                            {formatDuration(lead.call_duration_seconds)}
-                          </span>
-                        </>
-                      )}
-                    </div>
+                {/* E-Mail */}
+                <td className="px-5 py-5 align-middle">
+                  <Link href={`/leads/${lead.id}`} className="block text-muted-foreground text-sm truncate max-w-[200px]">
+                    {lead.email || "\u2014"}
                   </Link>
                 </td>
 
-                {/* Versuche */}
-                <td className="px-4 py-4 align-middle text-center">
-                  <Link href={`/leads/${lead.id}`} className="block">
-                    {lead.call_direction === 'outbound' && lead.call_attempts > 0 ? (
-                      <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-full text-xs font-bold bg-muted/60 text-foreground">
-                        {lead.call_attempts}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">&mdash;</span>
-                    )}
-                  </Link>
-                </td>
-
-                {/* Disposition */}
-                <td className="px-4 py-4 align-middle">
-                  <Link href={`/leads/${lead.id}`} className="block">
-                    {lead.disposition_code ? (
-                      <DispositionBadge disposition={lead.disposition_code} size="sm" />
-                    ) : (
-                      <span className="text-muted-foreground">&mdash;</span>
-                    )}
+                {/* Telefon */}
+                <td className="px-5 py-5 align-middle">
+                  <Link href={`/leads/${lead.id}`} className="block text-muted-foreground tabular-nums">
+                    {lead.phone || "\u2014"}
                   </Link>
                 </td>
 
                 {/* Termin */}
-                <td className="px-4 py-4 align-middle text-center">
+                <td className="px-5 py-5 align-middle">
                   <Link href={`/leads/${lead.id}`} className="block">
                     {lead.appointment_booked && lead.appointment_datetime ? (
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                          {formatDate(lead.appointment_datetime)}
-                        </span>
-                        <Badge className="bg-score-good-bg text-score-good hover:bg-score-good-bg shrink-0">
+                      <div className="flex flex-col items-start gap-1">
+                        <Badge className="bg-score-good-bg text-score-good hover:bg-score-good-bg whitespace-nowrap">
                           <CalendarCheck size={12} className="mr-1" />
                           Gebucht
                         </Badge>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">
+                          {formatDate(lead.appointment_datetime)}
+                        </span>
                       </div>
                     ) : (
                       <span className="text-muted-foreground">&mdash;</span>
@@ -209,11 +184,11 @@ export default function EnhancedLeadTable({
                 </td>
 
                 {/* Arrow */}
-                <td className="px-2 py-4 text-right align-middle">
+                <td className="px-2 py-5 text-right align-middle">
                   <Link href={`/leads/${lead.id}`} className="block">
                     <ChevronRight
                       size={16}
-                      className="text-muted-foreground group-hover/row:text-primary transition-colors opacity-0 group-hover/row:opacity-100"
+                      className="text-muted-foreground/30 group-hover/row:text-primary transition-colors group-hover/row:opacity-100"
                     />
                   </Link>
                 </td>

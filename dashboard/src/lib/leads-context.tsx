@@ -14,11 +14,12 @@ import type { Lead, LeadFilters } from "@/lib/types";
 
 // Fields fetched for the list view (no transcript for performance)
 const CONTEXT_FIELDS =
-  "id, created_at, updated_at, caller_name, company, email, phone, company_size, current_stack, pain_point, timeline, score_company_size, score_tech_stack, score_pain_point, score_timeline, score_engagement, total_score, lead_grade, call_id, call_duration_seconds, call_started_at, conversation_summary, sentiment, objections_raised, drop_off_point, appointment_booked, appointment_datetime, is_decision_maker, status, next_steps, notes, briefing, briefing_generated_at, assigned_to, campaign_id, call_direction, disposition_code, call_attempts, last_call_attempt_at, next_call_scheduled_at, voicemail_left, gatekeeper_name, callback_datetime, is_dnc, dnc_reason, recording_url, lead_source, follow_up_reason";
+  "id, created_at, updated_at, caller_name, company, email, phone, company_size, current_stack, pain_point, timeline, score_company_size, score_tech_stack, score_pain_point, score_timeline, score_engagement, total_score, lead_grade, call_id, call_duration_seconds, call_started_at, conversation_summary, sentiment, objections_raised, drop_off_point, appointment_booked, appointment_datetime, is_decision_maker, status, outbound_state, next_steps, notes, briefing, briefing_generated_at, assigned_to, campaign_id, call_direction, disposition_code, call_attempts, last_call_attempt_at, next_call_scheduled_at, voicemail_left, gatekeeper_name, callback_datetime, is_dnc, dnc_reason, recording_url, lead_source, follow_up_reason";
 
 const DEFAULT_FILTERS: LeadFilters = {
   grades: [],
   statuses: [],
+  outboundStates: [],
   sentiments: [],
   appointmentBooked: null,
   dateRange: { from: null, to: null },
@@ -33,6 +34,8 @@ interface LeadsContextValue {
   leads: Lead[];
   loading: boolean;
   isLive: boolean;
+  isMockMode: boolean;
+  setMockMode: (on: boolean) => void;
   filteredLeads: Lead[];
   filters: LeadFilters;
   setFilters: React.Dispatch<React.SetStateAction<LeadFilters>>;
@@ -57,6 +60,38 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
   const [isLive, setIsLive] = useState(true);
   const [filters, setFilters] = useState<LeadFilters>(DEFAULT_FILTERS);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // ---- Mock mode ----
+  const [isMockMode, setIsMockModeState] = useState(false);
+  const [mockLeads, setMockLeads] = useState<Lead[] | null>(null);
+
+  // Read persisted mock mode on mount (avoids SSR hydration mismatch)
+  useEffect(() => {
+    if (typeof window !== "undefined" && localStorage.getItem("dashboard-mock-mode") === "true") {
+      setIsMockModeState(true);
+    }
+  }, []);
+
+  const setMockMode = useCallback((on: boolean) => {
+    setIsMockModeState(on);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("dashboard-mock-mode", String(on));
+    }
+  }, []);
+
+  // Lazy-load mock data when mode is activated
+  useEffect(() => {
+    if (isMockMode && !mockLeads) {
+      import("@/lib/mock-data").then((mod) => {
+        setMockLeads(mod.generateMockLeads());
+      });
+    }
+  }, [isMockMode, mockLeads]);
+
+  // Effective values based on mock mode
+  const effectiveLeads = isMockMode ? (mockLeads ?? []) : leads;
+  const effectiveIsLive = isMockMode ? false : isLive;
+  const effectiveLoading = isMockMode ? (mockLeads === null) : loading;
 
   // Cache for full lead details (includes transcript)
   const detailCache = useRef<Map<string, Lead>>(new Map());
@@ -137,6 +172,11 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
 
   // ---- Fetch single lead with ALL fields (including transcript) ----
   const fetchLeadDetail = useCallback(async (id: string): Promise<Lead | null> => {
+    // In mock mode, return lead from mock data directly
+    if (isMockMode) {
+      return mockLeads?.find((l) => l.id === id) ?? null;
+    }
+
     const cached = detailCache.current.get(id);
     if (cached) return cached;
 
@@ -156,11 +196,12 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
     const lead = data as Lead;
     detailCache.current.set(id, lead);
     return lead;
-  }, []);
+  }, [isMockMode, mockLeads]);
 
   // ---- Update a lead via API route ----
   const updateLead = useCallback(
     async (id: string, fields: Record<string, unknown>): Promise<Lead | null> => {
+      if (isMockMode) return null; // No mutations in demo mode
       try {
         const res = await fetch(`/api/leads/${id}`, {
           method: "PATCH",
@@ -193,6 +234,7 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
 
   // ---- Generate briefing via API route ----
   const generateBriefing = useCallback(async (id: string): Promise<string | null> => {
+    if (isMockMode) return null; // No mutations in demo mode
     try {
       const res = await fetch(`/api/leads/${id}/briefing`);
       if (!res.ok) {
@@ -222,7 +264,7 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
 
   // ---- Client-side filtering + search ----
   const filteredLeads = useMemo(() => {
-    let result = leads;
+    let result = effectiveLeads;
 
     // Team member filter (from LeadFilters)
     if (filters.assignedTo) {
@@ -239,6 +281,15 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
     // Status filter
     if (filters.statuses.length > 0) {
       result = result.filter((l) => filters.statuses.includes(l.status));
+    }
+
+    // Outbound state filter
+    if (filters.outboundStates.length > 0) {
+      result = result.filter(
+        (l) =>
+          l.outbound_state !== null &&
+          filters.outboundStates.includes(l.outbound_state as Lead["outbound_state"] & string)
+      );
     }
 
     // Sentiment filter
@@ -304,13 +355,15 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
     }
 
     return result;
-  }, [leads, filters, searchQuery]);
+  }, [effectiveLeads, filters, searchQuery]);
 
   const value = useMemo<LeadsContextValue>(
     () => ({
-      leads,
-      loading,
-      isLive,
+      leads: effectiveLeads,
+      loading: effectiveLoading,
+      isLive: effectiveIsLive,
+      isMockMode,
+      setMockMode,
       filteredLeads,
       filters,
       setFilters,
@@ -321,9 +374,11 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
       generateBriefing,
     }),
     [
-      leads,
-      loading,
-      isLive,
+      effectiveLeads,
+      effectiveLoading,
+      effectiveIsLive,
+      isMockMode,
+      setMockMode,
       filteredLeads,
       filters,
       searchQuery,

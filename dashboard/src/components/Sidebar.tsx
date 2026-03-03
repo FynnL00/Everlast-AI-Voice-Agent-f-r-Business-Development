@@ -7,23 +7,21 @@ import {
   LayoutDashboard,
   Users,
   Kanban,
-  BarChart3,
   Menu,
   X,
   User,
   ChevronRight,
   Sun,
   Moon,
-  AlertTriangle,
   UserCog,
   Megaphone,
   ShieldBan,
+  Heart,
+  ShieldAlert,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
-import { useLeads } from "@/lib/leads-context";
-import { useAlerts } from "@/lib/hooks/useAlerts";
 
 interface NavItem {
   href: string;
@@ -37,22 +35,17 @@ interface NavSection {
   items: NavItem[];
 }
 
-function useSidebarAlertCount(): number {
-  const { leads } = useLeads();
-  const alerts = useAlerts(leads);
-  return useMemo(() => alerts.filter((a) => a.riskLevel === "high").length, [alerts]);
-}
-
 interface SidebarProps {
   isLive?: boolean;
+  isMockMode?: boolean;
+  onToggleMockMode?: (on: boolean) => void;
 }
 
-export default function Sidebar({ isLive = false }: SidebarProps) {
+export default function Sidebar({ isLive = false, isMockMode = false, onToggleMockMode }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const highAlertCount = useSidebarAlertCount();
 
   useEffect(() => {
     setMounted(true);
@@ -61,44 +54,30 @@ export default function Sidebar({ isLive = false }: SidebarProps) {
   const NAV_SECTIONS: NavSection[] = useMemo(
     () => [
       {
-        label: "ÜBERSICHT",
-        items: [{ href: "/", label: "Dashboard", icon: LayoutDashboard }],
-      },
-      {
-        label: "OUTBOUND",
+        label: "DISCOVER",
         items: [
-          { href: "/campaigns", label: "Kampagnen", icon: Megaphone },
+          { href: "/", label: "Dashboard", icon: LayoutDashboard },
+          { href: "/leads", label: "Leads", icon: Users },
           { href: "/pipeline", label: "Pipeline", icon: Kanban },
         ],
       },
       {
-        label: "DATEN",
-        items: [
-          { href: "/leads", label: "Leads", icon: Users },
-          { href: "/dnc", label: "DNC-Liste", icon: ShieldBan },
-        ],
-      },
-      {
         label: "ANALYSE",
-        items: [{ href: "/analytics", label: "Analytik", icon: BarChart3 }],
-      },
-      {
-        label: "TOOLS",
         items: [
-          {
-            href: "/alerts",
-            label: "Frühwarnsystem",
-            icon: AlertTriangle,
-            badge: highAlertCount > 0 ? highAlertCount : undefined,
-          },
+          { href: "/sentiment", label: "Sentiment", icon: Heart },
+          { href: "/objections", label: "Gesprächshürden", icon: ShieldAlert },
         ],
       },
       {
-        label: "TEAM",
-        items: [{ href: "/team", label: "Team-Verwaltung", icon: UserCog }],
+        label: "EINSTELLUNGEN",
+        items: [
+          { href: "/campaigns", label: "Kampagnen", icon: Megaphone },
+          { href: "/dnc", label: "DNC-Liste", icon: ShieldBan },
+          { href: "/team", label: "Teamverwaltung", icon: UserCog },
+        ],
       },
     ],
-    [highAlertCount]
+    []
   );
 
   const isActive = (href: string) => {
@@ -165,25 +144,46 @@ export default function Sidebar({ isLive = false }: SidebarProps) {
 
       {/* Bottom section */}
       <div className="px-4 pb-6 pt-4 space-y-4">
-        {/* Live indicator */}
+        {/* Demo/Live toggle + theme */}
         <div className="flex items-center justify-between px-2">
-          <div className="flex items-center gap-2">
-            <span
+          <div className="flex items-center gap-1 p-0.5 rounded-lg bg-muted/50 border border-border/50">
+            <button
+              onClick={() => onToggleMockMode?.(true)}
               className={cn(
-                "w-2 h-2 rounded-full shrink-0 shadow-[0_0_8px_currentColor]",
-                isLive ? "bg-status-completed text-status-completed animate-pulse" : "bg-muted-foreground text-muted-foreground"
+                "px-2.5 py-1 text-[10px] font-semibold rounded-md transition-all duration-200",
+                isMockMode
+                  ? "bg-chart-5 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
               )}
-            />
-            <span className="text-xs font-medium text-muted-foreground">
-              {isLive ? "System Live" : "Offline"}
-            </span>
+            >
+              Demo
+            </button>
+            <button
+              onClick={() => onToggleMockMode?.(false)}
+              className={cn(
+                "px-2.5 py-1 text-[10px] font-semibold rounded-md transition-all duration-200 flex items-center gap-1.5",
+                !isMockMode
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              {!isMockMode && (
+                <span
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full shrink-0",
+                    isLive ? "bg-status-completed animate-pulse" : "bg-muted-foreground"
+                  )}
+                />
+              )}
+              Live
+            </button>
           </div>
 
           {mounted && (
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="p-1.5 rounded-lg text-muted-foreground hover:bg-sidebar-accent hover:text-foreground transition-colors"
-              aria-label="Toggle theme"
+              aria-label="Design wechseln"
             >
               {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
             </button>

@@ -2,11 +2,13 @@
 
 import type { Lead } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
-import { getSentimentColor } from "@/lib/utils";
+import { getSentimentColor, getSentimentScoreColor } from "@/lib/utils";
 
 interface ConversationSummaryProps {
   summary: string | null;
   sentiment: Lead["sentiment"];
+  sentimentScore?: number | null;
+  sentimentReason?: string | null;
 }
 
 const SENTIMENT_LABELS: Record<string, string> = {
@@ -18,9 +20,12 @@ const SENTIMENT_LABELS: Record<string, string> = {
 export default function ConversationSummary({
   summary,
   sentiment,
+  sentimentScore,
+  sentimentReason,
 }: ConversationSummaryProps) {
   const sentimentColor = sentiment ? getSentimentColor(sentiment) : null;
   const sentimentLabel = sentiment ? SENTIMENT_LABELS[sentiment] : null;
+  const hasScore = sentimentScore != null;
 
   return (
     <Card className="shadow-sm border border-border">
@@ -42,12 +47,34 @@ export default function ConversationSummary({
                 style={{ backgroundColor: sentimentColor }}
               />
               {sentimentLabel}
+              {hasScore && (
+                <span className="ml-1 font-mono text-[10px] opacity-75">
+                  {(sentimentScore * 100).toFixed(0)}%
+                </span>
+              )}
             </div>
           )}
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="pt-4">
+      <CardContent className="pt-4 space-y-4">
+        {/* Sentiment reason */}
+        {sentimentReason && (
+          <div
+            className="text-xs leading-relaxed rounded-lg px-3 py-2 border"
+            style={{
+              backgroundColor: sentimentColor ? `${sentimentColor}08` : undefined,
+              borderColor: sentimentColor ? `${sentimentColor}20` : "var(--border)",
+              color: "var(--muted-foreground)",
+            }}
+          >
+            <span className="font-semibold" style={{ color: sentimentColor ?? undefined }}>
+              Sentiment-Begründung:
+            </span>{" "}
+            {sentimentReason}
+          </div>
+        )}
+
         {/* Summary text */}
         {summary ? (
           <div className="text-sm text-foreground/90 leading-relaxed space-y-3 font-medium">

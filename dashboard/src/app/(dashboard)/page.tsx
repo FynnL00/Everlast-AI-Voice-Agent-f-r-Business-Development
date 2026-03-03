@@ -13,7 +13,6 @@ import { LayoutDashboard } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import { cn, normalizeObjection } from "@/lib/utils";
 import AppointmentCalendar from "@/components/dashboard/AppointmentCalendar";
-import AlertBanner from "@/components/dashboard/AlertBanner";
 
 type TimeRange = "today" | "7d" | "30d" | "total";
 
@@ -56,36 +55,37 @@ export default function Dashboard() {
     return leads.filter(l => new Date(l.created_at) >= cutoff);
   }, [leads, timeRange]);
 
-  // Calculate outbound KPIs from time-filtered leads
-  const { attempts, connectionRate, voicemailRate, avgDuration, demoBookingRate, callsPerHour } = useMemo(() => {
-    const outboundLeads = timeFilteredLeads.filter(l => l.call_direction === 'outbound');
-    const attempts = outboundLeads.reduce((sum, l) => sum + (l.call_attempts || 0), 0);
+  // Calculate KPIs from time-filtered leads (inbound + outbound)
+  const { attempts, connectionRate, avgDuration, demoBookingRate } = useMemo(() => {
+    const attempts = timeFilteredLeads.reduce((sum, l) => {
+      const a = l.call_attempts || 0;
+      return sum + (a > 0 ? a : 1);
+    }, 0);
 
-    const connected = outboundLeads.filter(l =>
-      l.disposition_code && ['connected', 'qualified', 'demo_booked', 'callback'].includes(l.disposition_code)
+    const connected = timeFilteredLeads.filter(l =>
+      l.disposition_code && ['connected', 'callback'].includes(l.disposition_code)
     ).length;
     const connectionRate = attempts > 0 ? Math.round((connected / attempts) * 100) : 0;
 
-    const voicemails = outboundLeads.filter(l => l.disposition_code === 'voicemail').length;
+    const voicemails = timeFilteredLeads.filter(l => l.disposition_code === 'voicemail').length;
     const voicemailRate = attempts > 0 ? Math.round((voicemails / attempts) * 100) : 0;
 
-    const demosBooked = outboundLeads.filter(l => l.disposition_code === 'demo_booked').length;
+    const demosBooked = timeFilteredLeads.filter(l => l.appointment_booked).length;
     const demoBookingRate = connected > 0 ? Math.round((demosBooked / connected) * 100) : 0;
 
     // avgDuration: only connected leads with duration
-    const connectedLeads = outboundLeads.filter(l => l.call_duration_seconds && l.call_duration_seconds > 0);
+    const connectedLeads = timeFilteredLeads.filter(l => l.call_duration_seconds && l.call_duration_seconds > 0);
     const avgDuration = connectedLeads.length > 0
       ? Math.round(connectedLeads.reduce((sum, l) => sum + (l.call_duration_seconds || 0), 0) / connectedLeads.length)
       : 0;
 
-    // Calls per hour: attempts today / hours since midnight
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const attemptsToday = outboundLeads.filter(l => l.last_call_attempt_at && new Date(l.last_call_attempt_at) >= today).length;
-    const hoursSinceMidnight = Math.max(new Date().getHours(), 1);
-    const callsPerHour = Math.round(attemptsToday / hoursSinceMidnight * 10) / 10;
+    // Average sentiment score in filtered time range
+    const withScore = timeFilteredLeads.filter(l => l.sentiment_score != null);
+    const avgSentimentScore = withScore.length > 0
+      ? withScore.reduce((sum, l) => sum + (l.sentiment_score ?? 0), 0) / withScore.length
+      : null;
 
-    return { attempts, connectionRate, voicemailRate, avgDuration, demoBookingRate, callsPerHour };
+    return { attempts, connectionRate, voicemailRate, avgDuration, demoBookingRate, avgSentimentScore };
   }, [timeFilteredLeads]);
 
   // KPI label
@@ -200,21 +200,16 @@ export default function Dashboard() {
         }
       />
 
-      {/* Alert Banner */}
-      <AlertBanner leads={leads} />
-
       {/* KPI Cards */}
-      <div className="glass p-6 rounded-2xl w-full transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5">
+      <div className="glass p-6 rounded-2xl w-full transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px">
         <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 block">
           MAIN KPIS
         </span>
         <KPICards
           attempts={attempts}
           connectionRate={connectionRate}
-          voicemailRate={voicemailRate}
           avgDuration={avgDuration}
           demoBookingRate={demoBookingRate}
-          callsPerHour={callsPerHour}
           callLabel={kpiCallLabel}
         />
       </div>

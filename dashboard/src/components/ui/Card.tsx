@@ -26,7 +26,7 @@ const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElemen
         onMouseMove={handleMouseMove}
         data-slot="card"
         className={cn(
-          "group relative bg-card/60 backdrop-blur-xl text-card-foreground flex flex-col rounded-xl border shadow-sm transition-[background-color,border-color,box-shadow,transform] duration-200 hover:bg-card/80 hover:shadow-md overflow-hidden",
+          "group relative bg-card/60 backdrop-blur-xl text-card-foreground flex flex-col rounded-xl border shadow-sm transition-[background-color,border-color,box-shadow,transform] duration-200 hover:bg-card/80 hover:shadow-lg hover:shadow-black/10 hover:border-foreground/20 hover:-translate-y-px overflow-hidden",
           className
         )}
         {...props}

@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
           ...(campaignId ? { campaign_id: campaignId } : {}),
           lead_source: "csv_import",
           call_direction: "outbound",
-          status: "queued",
+          status: "new",
           call_attempts: 0,
         },
         {

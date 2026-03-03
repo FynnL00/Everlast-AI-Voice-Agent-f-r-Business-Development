@@ -3,7 +3,6 @@
 import { useMemo } from "react";
 import {
   KanbanSquare,
-  ListTodo,
   PhoneCall,
   CalendarCheck,
   Repeat,
@@ -18,16 +17,14 @@ export default function PipelinePage() {
   const { filteredLeads, loading } = useLeads();
 
   const kpis = useMemo(() => {
-    const queued = filteredLeads.filter((l) => l.status === "queued").length;
-
     const outbound = filteredLeads.filter((l) => l.call_direction === "outbound");
     const attempts = outbound.reduce((sum, l) => sum + (l.call_attempts || 0), 0);
     const connected = outbound.filter(
-      (l) => l.disposition_code && ["connected", "qualified", "demo_booked", "callback"].includes(l.disposition_code)
+      (l) => l.disposition_code && ["connected", "callback"].includes(l.disposition_code)
     ).length;
     const connectionRate = attempts > 0 ? Math.round((connected / attempts) * 100) : 0;
 
-    const demosBooked = outbound.filter((l) => l.disposition_code === "demo_booked").length;
+    const demosBooked = outbound.filter((l) => l.appointment_booked).length;
     const demoRate = connected > 0 ? Math.round((demosBooked / connected) * 100) : 0;
 
     const leadsWithAttempts = outbound.filter((l) => l.call_attempts > 0);
@@ -37,7 +34,7 @@ export default function PipelinePage() {
         ) / 10
       : 0;
 
-    return { queued, connectionRate, demoRate, avgAttempts };
+    return { connectionRate, demoRate, avgAttempts };
   }, [filteredLeads]);
 
   return (
@@ -55,19 +52,11 @@ export default function PipelinePage() {
       ) : (
         <>
           {/* KPI Row */}
-          <div className="glass p-6 rounded-2xl w-full transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5">
+          <div className="glass p-6 rounded-2xl w-full transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px">
             <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 block">
               Pipeline KPIs
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <KPICard
-                label="Warteschlange"
-                numericValue={kpis.queued}
-                icon={ListTodo}
-                colorClass="text-blue-400"
-                bgClass="bg-blue-500/10"
-                tooltip="Anzahl der Leads, die in der Warteschlange auf einen Anruf warten."
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <KPICard
                 label="Connection Rate"
                 numericValue={kpis.connectionRate}

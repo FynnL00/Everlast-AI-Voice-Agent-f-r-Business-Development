@@ -535,8 +535,48 @@
   }
 }
 
+/* Cadence Timeline */
+
+@keyframes cadence-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--primary);
+    transform: scale(1);
+  }
+
+  50% {
+    box-shadow: 0 0 0 6px oklch(0.55 0.22 260 / 0);
+    transform: scale(1.05);
+  }
+}
+
+.animate-cadence-pulse {
+  animation: cadence-pulse 2s ease-in-out infinite;
+}
+
+@keyframes cadence-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-cadence-step {
+  animation: cadence-fade-in 0.4s ease-out forwards;
+  opacity: 0;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .ambient-orb {
+
+  .ambient-orb,
+  .animate-cadence-pulse,
+  .animate-cadence-step {
     animation: none !important;
+    opacity: 1 !important;
   }
 }

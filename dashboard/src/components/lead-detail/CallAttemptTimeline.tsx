@@ -17,8 +17,6 @@ const DOT_COLORS: Record<string, string> = {
   no_answer: "var(--muted-foreground)",
   voicemail: "var(--score-warning)",
   dnc_request: "var(--destructive)",
-  demo_booked: "var(--score-good)",
-  qualified: "var(--chart-5)",
   busy: "var(--chart-3)",
   wrong_number: "var(--destructive)",
   gatekeeper: "var(--chart-4)",

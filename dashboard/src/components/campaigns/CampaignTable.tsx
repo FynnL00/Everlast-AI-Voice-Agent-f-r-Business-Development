@@ -25,7 +25,7 @@ export default function CampaignTable({ campaigns }: CampaignTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
-        <thead>
+        <thead className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm">
           <tr className="border-b border-border/50">
             <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
               Name
@@ -58,7 +58,7 @@ export default function CampaignTable({ campaigns }: CampaignTableProps) {
               <tr
                 key={campaign.id}
                 onClick={() => router.push(`/campaigns/${campaign.id}`)}
-                className="border-b border-border/30 hover:bg-sidebar-accent/50 cursor-pointer transition-colors"
+                className="border-b border-border/30 even:bg-muted/20 hover:bg-muted/40 cursor-pointer transition-colors duration-150"
               >
                 <td className="px-4 py-3 font-medium text-foreground">
                   {campaign.name}

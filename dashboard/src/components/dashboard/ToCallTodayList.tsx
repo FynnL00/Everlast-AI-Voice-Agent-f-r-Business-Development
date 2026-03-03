@@ -16,8 +16,6 @@ interface ToCallTodayListProps {
 const TERMINAL_STATUSES: Lead["status"][] = [
   "converted",
   "lost",
-  "dnc",
-  "exhausted",
 ];
 
 export default function ToCallTodayList({ leads }: ToCallTodayListProps) {
@@ -39,7 +37,7 @@ export default function ToCallTodayList({ leads }: ToCallTodayListProps) {
           !l.is_dnc &&
           l.call_direction === "outbound" &&
           !TERMINAL_STATUSES.includes(l.status) &&
-          l.status !== "demo_booked" as Lead["status"]
+          l.outbound_state !== "exhausted"
       )
       .sort((a, b) => {
         // A-Leads first
@@ -68,7 +66,7 @@ export default function ToCallTodayList({ leads }: ToCallTodayListProps) {
   };
 
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px w-full h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <div className="flex items-center gap-2">
           <PhoneOutgoing size={16} className="text-primary" />

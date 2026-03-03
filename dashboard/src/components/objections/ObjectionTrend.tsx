@@ -139,7 +139,7 @@ export default function ObjectionTrend({ leads }: ObjectionTrendProps) {
   }, [leads]);
 
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5 w-full h-full">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full h-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold">Einwand-Trend</CardTitle>
       </CardHeader>

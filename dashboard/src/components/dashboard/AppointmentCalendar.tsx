@@ -153,7 +153,7 @@ export default function AppointmentCalendar({
   }, [events, weekDays]);
 
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5 w-full">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full">
       <CardHeader
         className="!flex-row !items-center !justify-between !py-4 cursor-pointer select-none"
         onClick={() => setOpen((v) => !v)}

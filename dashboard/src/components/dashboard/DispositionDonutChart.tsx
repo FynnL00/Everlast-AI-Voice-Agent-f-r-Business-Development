@@ -122,7 +122,7 @@ export default function DispositionDonutChart({ leads, subtitle }: DispositionDo
 
   if (chartData.length === 0) {
     return (
-      <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full">
+      <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px w-full h-full">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-base font-semibold">Disposition</CardTitle>
           <CardDescription>{subtitle ?? "Gesamt"}</CardDescription>
@@ -138,7 +138,7 @@ export default function DispositionDonutChart({ leads, subtitle }: DispositionDo
 
   return (
     <Card
-      className={`transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-0.5 w-full h-full overflow-visible relative ${
+      className={`transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px w-full h-full overflow-visible relative ${
         activeIndex !== null ? "z-50" : "z-0"
       }`}
     >

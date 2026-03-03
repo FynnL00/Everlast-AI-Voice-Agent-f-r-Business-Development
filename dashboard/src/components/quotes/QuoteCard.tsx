@@ -6,7 +6,8 @@ import { Copy, Check } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/button";
-import type { LeadQuote } from "@/lib/types";
+import type { LeadQuote, ScoringDimension } from "@/lib/types";
+import { SCORING_DIMENSION_LABELS, SCORING_DIMENSION_COLORS } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface QuoteCardProps {
@@ -64,14 +65,37 @@ export default function QuoteCard({ quote }: QuoteCardProps) {
     <Card className={cn("border-l-4", borderColor)}>
       <CardContent className="pt-4 pb-4">
         {/* Quote text */}
-        <p className="text-base text-foreground leading-relaxed mb-3">
+        <p className="text-base text-foreground leading-relaxed mb-2">
           <span className="text-muted-foreground">&bdquo;</span>
           {quote.quote_text}
           <span className="text-muted-foreground">&ldquo;</span>
         </p>
 
+        {/* Reasoning / context */}
+        {quote.context && (
+          <p className="text-xs text-muted-foreground italic mb-3 pl-3 border-l-2 border-muted">
+            {quote.context}
+          </p>
+        )}
+
         {/* Meta row */}
         <div className="flex items-center gap-2 flex-wrap mb-2">
+          {/* Scoring dimension badge */}
+          {quote.scoring_dimension && (
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-[10px] font-semibold",
+                SCORING_DIMENSION_COLORS[quote.scoring_dimension as ScoringDimension]
+              )}
+            >
+              {SCORING_DIMENSION_LABELS[quote.scoring_dimension as ScoringDimension]}
+              {quote.score_value != null && (
+                <span className="ml-1 font-mono">{quote.score_value}/3</span>
+              )}
+            </Badge>
+          )}
+
           {/* Speaker badge */}
           {quote.speaker && SPEAKER_BADGE[quote.speaker] && (
             <Badge
@@ -95,16 +119,6 @@ export default function QuoteCard({ quote }: QuoteCardProps) {
               )}
             >
               {SENTIMENT_LABEL[quote.sentiment]}
-            </Badge>
-          )}
-
-          {/* Topic tag */}
-          {quote.topic && (
-            <Badge
-              variant="outline"
-              className="text-[10px] bg-sidebar-accent/50"
-            >
-              {quote.topic}
             </Badge>
           )}
         </div>

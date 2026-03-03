@@ -29,7 +29,7 @@ export default function LeadTable({ leads }: LeadTableProps) {
   }, [open, leads]);
 
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5 w-full">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full">
       <CardHeader
         className="!flex-row !items-center !justify-between !py-4 cursor-pointer select-none"
         onClick={() => setOpen((v) => !v)}
@@ -58,7 +58,7 @@ export default function LeadTable({ leads }: LeadTableProps) {
           >
             <div className="overflow-x-auto px-6">
               <table className="w-full text-sm">
-                <thead>
+                <thead className="sticky top-0 z-10 bg-card/95 backdrop-blur-sm">
                   <tr className="border-b border-border">
                     <th className="text-left py-3 px-2 text-muted-foreground font-medium">Name</th>
                     <th className="text-left py-3 px-2 text-muted-foreground font-medium">Firma</th>
@@ -73,7 +73,7 @@ export default function LeadTable({ leads }: LeadTableProps) {
                   {leads.map((lead) => (
                     <tr
                       key={lead.id}
-                      className="cursor-pointer hover:bg-muted/80 hover:-translate-y-0.5 border-b border-border/50 transition-all duration-200 group"
+                      className="cursor-pointer even:bg-muted/20 hover:bg-muted/40 border-b border-border/50 transition-colors duration-150 group"
                       onClick={() => router.push(`/leads/${lead.id}`)}
                     >
                       <td className="py-4 px-2 font-medium">

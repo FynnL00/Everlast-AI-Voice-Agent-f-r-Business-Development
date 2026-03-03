@@ -19,7 +19,7 @@ interface SentimentConversionMatrixProps {
   leads: Lead[];
 }
 
-const STATUSES: Lead["status"][] = ["new", "contacted", "qualified", "appointment_booked", "converted", "lost", "not_reached", "rejected"];
+const STATUSES: Lead["status"][] = ["new", "contacted", "qualified", "appointment_booked", "converted", "lost"];
 
 function CustomTooltip({
   active,
@@ -75,7 +75,7 @@ export default function SentimentConversionMatrix({ leads }: SentimentConversion
   const hasData = leads.some((l) => l.sentiment !== null);
 
   return (
-    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-0.5 w-full h-full">
+    <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full h-full">
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold">Konversion nach Sentiment</CardTitle>
       </CardHeader>
