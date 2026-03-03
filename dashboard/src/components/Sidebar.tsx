@@ -9,7 +9,6 @@ import {
   Kanban,
   Menu,
   X,
-  User,
   ChevronRight,
   Sun,
   Moon,
@@ -18,10 +17,19 @@ import {
   ShieldBan,
   Heart,
   ShieldAlert,
+  FileText,
+  Video,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useTheme } from "next-themes";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 interface NavItem {
   href: string;
@@ -190,16 +198,34 @@ export default function Sidebar({ isLive = false, isMockMode = false, onToggleMo
           )}
         </div>
 
-        {/* User section */}
-        <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-background/50 border border-sidebar-border cursor-pointer hover:bg-background/80 transition-colors group">
-          <div className="w-8 h-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center shrink-0 text-sidebar-primary">
-            <User size={14} />
-          </div>
-          <span className="text-sm font-semibold text-foreground flex-1 truncate">
-            Mein Konto
-          </span>
-          <ChevronRight size={14} className="text-muted-foreground group-hover:text-foreground transition-colors" />
-        </div>
+        {/* Unterlagen section */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <div className="flex items-center gap-3 px-3 py-3 rounded-xl bg-background/50 border border-sidebar-border cursor-pointer hover:bg-background/80 transition-colors group" role="button" tabIndex={0}>
+              <div className="w-8 h-8 rounded-full overflow-hidden shrink-0">
+                <Image src="/kiberatung-icon.png" alt="Unterlagen" width={32} height={32} className="object-cover" />
+              </div>
+              <span className="text-sm font-semibold text-foreground flex-1 truncate">
+                Unterlagen
+              </span>
+              <ChevronRight size={14} className="text-muted-foreground group-hover:text-foreground transition-colors" />
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="right" align="end" sideOffset={8} className="w-48">
+            <DropdownMenuItem asChild>
+              <Link href="/demo-calls" className="flex items-center gap-2 cursor-pointer">
+                <FileText size={16} />
+                <span>Demo-Calls</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/loom-video" className="flex items-center gap-2 cursor-pointer">
+                <Video size={16} />
+                <span>Loom-Video</span>
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
