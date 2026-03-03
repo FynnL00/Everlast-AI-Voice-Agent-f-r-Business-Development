@@ -15,6 +15,7 @@ import type { Lead } from "@/lib/types";
 
 interface CallDurationDistributionProps {
   leads: Lead[];
+  subtitle?: string;
 }
 
 interface DurationBucket {
@@ -50,7 +51,7 @@ function CustomTooltip({
   );
 }
 
-export default function CallDurationDistribution({ leads }: CallDurationDistributionProps) {
+export default function CallDurationDistribution({ leads, subtitle }: CallDurationDistributionProps) {
   const data = useMemo<DurationBucket[]>(() => {
     return BUCKETS.map((bucket) => {
       const count = leads.filter((l) => {
@@ -71,8 +72,9 @@ export default function CallDurationDistribution({ leads }: CallDurationDistribu
 
   return (
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full">
-      <CardHeader className="pb-2">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold">Gesprächsdauer</CardTitle>
+        {subtitle && <span className="text-xs text-muted-foreground font-medium">{subtitle}</span>}
       </CardHeader>
       <CardContent className="pb-6">
         <div className="h-[280px]">

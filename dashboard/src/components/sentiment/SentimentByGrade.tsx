@@ -17,6 +17,7 @@ import type { Lead } from "@/lib/types";
 
 interface SentimentByGradeProps {
   leads: Lead[];
+  subtitle?: string;
 }
 
 interface GradeEntry {
@@ -57,7 +58,7 @@ function CustomTooltip({
   );
 }
 
-export default function SentimentByGrade({ leads }: SentimentByGradeProps) {
+export default function SentimentByGrade({ leads, subtitle }: SentimentByGradeProps) {
   const data = useMemo<GradeEntry[]>(() => {
     const grades: ("A" | "B" | "C")[] = ["A", "B", "C"];
     return grades.map((grade) => {
@@ -75,8 +76,9 @@ export default function SentimentByGrade({ leads }: SentimentByGradeProps) {
 
   return (
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full h-full">
-      <CardHeader className="pb-2">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold">Sentiment nach Lead-Grade</CardTitle>
+        {subtitle && <span className="text-xs text-muted-foreground font-medium">{subtitle}</span>}
       </CardHeader>
       <CardContent className="pb-6">
         <div className="h-[320px]">

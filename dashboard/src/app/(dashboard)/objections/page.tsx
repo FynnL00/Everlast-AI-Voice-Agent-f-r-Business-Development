@@ -56,7 +56,6 @@ export default function ObjectionsPage() {
     <div className="min-h-screen py-6 md:py-8 max-w-[1900px] mx-auto space-y-6">
       <PageHeader
         title="Einwände"
-        subtitle="Einwände und Abbruchpunkte"
         icon={ShieldAlert}
         rightContent={
           <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/50 border border-border/50">

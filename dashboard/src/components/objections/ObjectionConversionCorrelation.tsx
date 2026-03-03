@@ -17,6 +17,7 @@ import type { Lead } from "@/lib/types";
 
 interface ObjectionConversionCorrelationProps {
   leads: Lead[];
+  subtitle?: string;
 }
 
 interface CorrelationEntry {
@@ -56,7 +57,7 @@ function CustomTooltip({
   );
 }
 
-export default function ObjectionConversionCorrelation({ leads }: ObjectionConversionCorrelationProps) {
+export default function ObjectionConversionCorrelation({ leads, subtitle }: ObjectionConversionCorrelationProps) {
   const data = useMemo<CorrelationEntry[]>(() => {
     // Find top 5 objections
     const globalCounts: Record<string, number> = {};
@@ -103,8 +104,9 @@ export default function ObjectionConversionCorrelation({ leads }: ObjectionConve
 
   return (
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full h-full">
-      <CardHeader className="pb-2">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold">Einwand-Ergebnis-Korrelation</CardTitle>
+        {subtitle && <span className="text-xs text-muted-foreground font-medium">{subtitle}</span>}
       </CardHeader>
       <CardContent className="pb-6">
         <div className="h-[320px]">

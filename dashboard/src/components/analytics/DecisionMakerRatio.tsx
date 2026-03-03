@@ -12,6 +12,7 @@ import type { Lead } from "@/lib/types";
 
 interface DecisionMakerRatioProps {
   leads: Lead[];
+  subtitle?: string;
 }
 
 // SVG gauge needle rendered as an overlay on top of the donut
@@ -96,7 +97,7 @@ function GaugeNeedleOverlay({ percentage, containerRef }: {
   );
 }
 
-export default function DecisionMakerRatio({ leads }: DecisionMakerRatioProps) {
+export default function DecisionMakerRatio({ leads, subtitle }: DecisionMakerRatioProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { data, percentage } = useMemo(() => {
@@ -118,8 +119,9 @@ export default function DecisionMakerRatio({ leads }: DecisionMakerRatioProps) {
 
   return (
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full h-full">
-      <CardHeader className="pb-2">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold">Entscheider-Quote</CardTitle>
+        {subtitle && <span className="text-xs text-muted-foreground font-medium">{subtitle}</span>}
       </CardHeader>
       <CardContent className="pb-6">
         <div className="h-[280px] relative" ref={containerRef}>

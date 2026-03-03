@@ -15,6 +15,7 @@ import type { Lead } from "@/lib/types";
 
 interface ScoreBreakdownProps {
   leads: Lead[];
+  subtitle?: string;
 }
 
 interface RadarEntry {
@@ -48,7 +49,7 @@ function CustomTooltip({
   );
 }
 
-export default function ScoreBreakdown({ leads }: ScoreBreakdownProps) {
+export default function ScoreBreakdown({ leads, subtitle }: ScoreBreakdownProps) {
   const data = useMemo<RadarEntry[]>(() => {
     const dimensions = [
       { key: "score_company_size" as const, label: DIMENSION_LABELS.company_size },
@@ -69,8 +70,9 @@ export default function ScoreBreakdown({ leads }: ScoreBreakdownProps) {
 
   return (
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full h-full">
-      <CardHeader className="pb-2">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold">Score-Radar</CardTitle>
+        {subtitle && <span className="text-xs text-muted-foreground font-medium">{subtitle}</span>}
       </CardHeader>
       <CardContent className="pb-6">
         <div className="h-[280px]">

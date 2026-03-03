@@ -15,6 +15,8 @@ import type { Lead } from "@/lib/types";
 
 interface ConnectionRateOverTimeProps {
   leads: Lead[];
+  subtitle?: string;
+  days?: number;
 }
 
 interface DayEntry {
@@ -51,11 +53,12 @@ function CustomTooltip({
   );
 }
 
-export default function ConnectionRateOverTime({ leads }: ConnectionRateOverTimeProps) {
+export default function ConnectionRateOverTime({ leads, subtitle, days = 30 }: ConnectionRateOverTimeProps) {
   const data = useMemo<DayEntry[]>(() => {
     const now = new Date();
-    const thirtyDaysAgo = new Date(now);
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const bucketCount = Math.max(days, 1);
+    const cutoff = new Date(now);
+    cutoff.setDate(cutoff.getDate() - bucketCount);
 
     const connectedDispositions = new Set([
       "connected",
@@ -64,7 +67,7 @@ export default function ConnectionRateOverTime({ leads }: ConnectionRateOverTime
 
     // Initialize daily buckets
     const dailyData: Record<string, { connected: number; total: number }> = {};
-    for (let i = 29; i >= 0; i--) {
+    for (let i = bucketCount - 1; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
       const key = d.toLocaleDateString("de-DE", {
@@ -82,7 +85,7 @@ export default function ConnectionRateOverTime({ leads }: ConnectionRateOverTime
 
       const dateStr = l.last_call_attempt_at ?? l.call_started_at ?? l.created_at;
       const dt = new Date(dateStr);
-      if (dt < thirtyDaysAgo) return;
+      if (dt < cutoff) return;
 
       const key = dt.toLocaleDateString("de-DE", {
         day: "2-digit",
@@ -107,15 +110,18 @@ export default function ConnectionRateOverTime({ leads }: ConnectionRateOverTime
       connected: counts.connected,
       total: counts.total,
     }));
-  }, [leads]);
+  }, [leads, days]);
 
   const hasData = data.some((d) => d.total > 0);
 
   return (
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full h-full">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-base font-semibold">Connection Rate (30 Tage)</CardTitle>
-        <CardDescription>Anteil erreichter Kontakte pro Tag</CardDescription>
+        <CardTitle className="text-base font-semibold">Connection Rate</CardTitle>
+        <div className="flex items-center gap-3">
+          <CardDescription>Anteil erreichter Kontakte pro Tag</CardDescription>
+          {subtitle && <span className="text-xs text-muted-foreground font-medium">{subtitle}</span>}
+        </div>
       </CardHeader>
       <CardContent className="pb-6">
         <div className="h-[300px]">

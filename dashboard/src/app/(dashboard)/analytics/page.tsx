@@ -81,6 +81,13 @@ function AnalyticsContent() {
     return leads.filter(l => new Date(l.created_at) >= cutoff);
   }, [leads, timeRange]);
 
+  const chartSubtitle = timeRange === "today" ? "Heute"
+    : timeRange === "7d" ? "Letzte 7 Tage"
+    : timeRange === "30d" ? "Letzte 30 Tage"
+    : "Gesamt";
+
+  const trendDays = timeRange === "today" ? 1 : timeRange === "7d" ? 7 : 30;
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -131,12 +138,12 @@ function AnalyticsContent() {
           <div className="space-y-6">
             <AnalyticsKPIs leads={timeFilteredLeads} />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <SentimentDistribution leads={timeFilteredLeads} />
-              <DropOffAnalysis leads={timeFilteredLeads} />
-              <ScoreBreakdown leads={timeFilteredLeads} />
-              <DecisionMakerRatio leads={timeFilteredLeads} />
+              <SentimentDistribution leads={timeFilteredLeads} subtitle={chartSubtitle} />
+              <DropOffAnalysis leads={timeFilteredLeads} subtitle={chartSubtitle} />
+              <ScoreBreakdown leads={timeFilteredLeads} subtitle={chartSubtitle} />
+              <DecisionMakerRatio leads={timeFilteredLeads} subtitle={chartSubtitle} />
             </div>
-            <CallDurationDistribution leads={timeFilteredLeads} />
+            <CallDurationDistribution leads={timeFilteredLeads} subtitle={chartSubtitle} />
           </div>
         </TabsContent>
 
@@ -144,10 +151,10 @@ function AnalyticsContent() {
         <TabsContent value="sentiment">
           <div className="space-y-6">
             <SentimentKPIs leads={timeFilteredLeads} />
-            <SentimentOverTime leads={timeFilteredLeads} />
+            <SentimentOverTime leads={timeFilteredLeads} subtitle={chartSubtitle} days={trendDays} />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <SentimentByGrade leads={timeFilteredLeads} />
-              <SentimentConversionMatrix leads={timeFilteredLeads} />
+              <SentimentByGrade leads={timeFilteredLeads} subtitle={chartSubtitle} />
+              <SentimentConversionMatrix leads={timeFilteredLeads} subtitle={chartSubtitle} />
             </div>
           </div>
         </TabsContent>
@@ -157,11 +164,11 @@ function AnalyticsContent() {
           <div className="space-y-6">
             <ObjectionsKPIs leads={timeFilteredLeads} />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <ObjectionRanking leads={timeFilteredLeads} />
-              <ObjectionConversionCorrelation leads={timeFilteredLeads} />
+              <ObjectionRanking leads={timeFilteredLeads} subtitle={chartSubtitle} />
+              <ObjectionConversionCorrelation leads={timeFilteredLeads} subtitle={chartSubtitle} />
             </div>
-            <ObjectionTrend leads={timeFilteredLeads} />
-            <ObjectionCounterArguments leads={timeFilteredLeads} />
+            <ObjectionTrend leads={timeFilteredLeads} subtitle={chartSubtitle} />
+            <ObjectionCounterArguments leads={timeFilteredLeads} subtitle={chartSubtitle} />
           </div>
         </TabsContent>
 
@@ -169,10 +176,10 @@ function AnalyticsContent() {
         <TabsContent value="reachability">
           <div className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <OutboundFunnel leads={timeFilteredLeads} />
-              <BestTimeHeatmap leads={timeFilteredLeads} />
+              <OutboundFunnel leads={timeFilteredLeads} subtitle={chartSubtitle} />
+              <BestTimeHeatmap leads={timeFilteredLeads} subtitle={chartSubtitle} />
             </div>
-            <ConnectionRateOverTime leads={timeFilteredLeads} />
+            <ConnectionRateOverTime leads={timeFilteredLeads} subtitle={chartSubtitle} days={trendDays} />
           </div>
         </TabsContent>
       </Tabs>

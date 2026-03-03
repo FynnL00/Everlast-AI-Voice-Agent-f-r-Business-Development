@@ -15,6 +15,7 @@ import type { Lead } from "@/lib/types";
 
 interface SentimentDistributionProps {
   leads: Lead[];
+  subtitle?: string;
 }
 
 const SENTIMENT_CONFIG: Record<string, { label: string; color: string; light: string }> = {
@@ -92,7 +93,7 @@ function CustomTooltip({
   );
 }
 
-export default function SentimentDistribution({ leads }: SentimentDistributionProps) {
+export default function SentimentDistribution({ leads, subtitle }: SentimentDistributionProps) {
   const [activeIndex, setActiveIndex] = useState<number | undefined>(undefined);
   const onPieEnter = useCallback((_: any, index: number) => setActiveIndex(index), []);
   const onPieLeave = useCallback(() => setActiveIndex(undefined), []);
@@ -116,8 +117,9 @@ export default function SentimentDistribution({ leads }: SentimentDistributionPr
 
   return (
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full h-full">
-      <CardHeader className="pb-2">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold">Stimmungsverteilung</CardTitle>
+        {subtitle && <span className="text-xs text-muted-foreground font-medium">{subtitle}</span>}
       </CardHeader>
       <CardContent className="pb-6">
         <div className="h-[280px]">

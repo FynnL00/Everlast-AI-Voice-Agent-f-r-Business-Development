@@ -6,6 +6,7 @@ import type { Lead } from "@/lib/types";
 
 interface OutboundFunnelProps {
   leads: Lead[];
+  subtitle?: string;
 }
 
 interface FunnelStage {
@@ -24,7 +25,7 @@ const STAGE_COLORS = [
   { color: "#10b981", glow: "#10b98150", bg: "#10b98110" }, // Emerald - Konvertiert
 ];
 
-export default function OutboundFunnel({ leads }: OutboundFunnelProps) {
+export default function OutboundFunnel({ leads, subtitle }: OutboundFunnelProps) {
   const [revealed, setRevealed] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
@@ -76,11 +77,14 @@ export default function OutboundFunnel({ leads }: OutboundFunnelProps) {
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px w-full h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-base font-semibold">Outbound Funnel</CardTitle>
-        <CardDescription>
-          {totalAttempts > 0
-            ? `${totalAttempts} Anrufversuche`
-            : "Gesamt"}
-        </CardDescription>
+        <div className="flex items-center gap-3">
+          {totalAttempts > 0 && (
+            <span className="text-xs text-muted-foreground font-medium tabular-nums">
+              {totalAttempts} Anrufversuche
+            </span>
+          )}
+          {subtitle && <span className="text-xs text-muted-foreground font-medium">{subtitle}</span>}
+        </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">
         {totalAttempts === 0 ? (

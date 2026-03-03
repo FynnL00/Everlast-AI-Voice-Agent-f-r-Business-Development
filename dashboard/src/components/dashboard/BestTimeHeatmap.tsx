@@ -6,6 +6,7 @@ import type { Lead } from "@/lib/types";
 
 interface BestTimeHeatmapProps {
   leads: Lead[];
+  subtitle?: string;
 }
 
 const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
@@ -23,7 +24,7 @@ interface CellData {
   rate: number;
 }
 
-export default function BestTimeHeatmap({ leads }: BestTimeHeatmapProps) {
+export default function BestTimeHeatmap({ leads, subtitle }: BestTimeHeatmapProps) {
   const [tooltip, setTooltip] = useState<{
     day: number;
     hour: number;
@@ -110,7 +111,10 @@ export default function BestTimeHeatmap({ leads }: BestTimeHeatmapProps) {
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:shadow-black/10 hover:-translate-y-px w-full h-full flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-base font-semibold">Beste Anrufzeiten</CardTitle>
-        <CardDescription>Connection Rate nach Wochentag & Uhrzeit</CardDescription>
+        <div className="flex items-center gap-3">
+          <CardDescription>Connection Rate nach Wochentag & Uhrzeit</CardDescription>
+          {subtitle && <span className="text-xs text-muted-foreground font-medium">{subtitle}</span>}
+        </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">
         {!hasData ? (

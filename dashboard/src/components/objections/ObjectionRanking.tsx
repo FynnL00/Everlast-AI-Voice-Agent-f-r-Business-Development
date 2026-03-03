@@ -19,6 +19,7 @@ import { BarChart3, Grid3X3 } from "lucide-react";
 
 interface ObjectionRankingProps {
   leads: Lead[];
+  subtitle?: string;
 }
 
 interface ObjectionEntry {
@@ -136,7 +137,7 @@ function TreemapContent(props: {
   );
 }
 
-export default function ObjectionRanking({ leads }: ObjectionRankingProps) {
+export default function ObjectionRanking({ leads, subtitle }: ObjectionRankingProps) {
   const [viewMode, setViewMode] = useState<"bar" | "treemap">("bar");
 
   const data = useMemo<ObjectionEntry[]>(() => {
@@ -171,7 +172,10 @@ export default function ObjectionRanking({ leads }: ObjectionRankingProps) {
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full h-full">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-base font-semibold">Top 10 Einwände</CardTitle>
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-base font-semibold">Top 10 Einwände</CardTitle>
+            {subtitle && <span className="text-xs text-muted-foreground font-medium">{subtitle}</span>}
+          </div>
           <div className="flex items-center gap-1 bg-sidebar-accent/50 rounded-lg p-0.5">
             <button
               onClick={() => setViewMode("bar")}

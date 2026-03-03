@@ -5,29 +5,32 @@ import { useLeads } from "@/lib/leads-context";
 import type { Lead } from "@/lib/types";
 import { STATUS_LABELS } from "@/lib/types";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
-import { TrendingDown, PhoneOff } from "lucide-react";
 
 const FUNNEL_STAGES: Lead["status"][] = [
   "new",
+  "not_reached",
   "contacted",
   "qualified",
   "appointment_booked",
   "converted",
+  "lost",
 ];
 
 const GRADIENTS = [
-  { from: "#475569", to: "#94a3b8" },
-  { from: "#4f46e5", to: "#818cf8" },
-  { from: "#9333ea", to: "#c084fc" },
-  { from: "#d97706", to: "#fbbf24" },
-  { from: "#16a34a", to: "#4ade80" },
+  { from: "#475569", to: "#94a3b8" },   // new - slate
+  { from: "#ea580c", to: "#fb923c" },   // not_reached - orange
+  { from: "#4f46e5", to: "#818cf8" },   // contacted - indigo
+  { from: "#9333ea", to: "#c084fc" },   // qualified - purple
+  { from: "#d97706", to: "#fbbf24" },   // appointment_booked - amber
+  { from: "#16a34a", to: "#4ade80" },   // converted - green
+  { from: "#dc2626", to: "#f87171" },   // lost - red
 ];
 
 export default function PipelineSummary() {
   const { filteredLeads } = useLeads();
   const [hovered, setHovered] = useState<number | null>(null);
 
-  const { stages, lostCount, notReachedCount } = useMemo(() => {
+  const stages = useMemo(() => {
     const counts: Record<Lead["status"], number> = {
       new: 0,
       not_reached: 0,
@@ -38,39 +41,25 @@ export default function PipelineSummary() {
       lost: 0,
     };
     for (const lead of filteredLeads) counts[lead.status]++;
-    const notReachedTotal = counts.not_reached;
 
-    const cumulative: number[] = [];
-    let sum = 0;
-    for (let i = FUNNEL_STAGES.length - 1; i >= 0; i--) {
-      sum += counts[FUNNEL_STAGES[i]];
-      cumulative[i] = sum;
-    }
+    const max = Math.max(...FUNNEL_STAGES.map((s) => counts[s]), 1);
 
-    const max = cumulative[0] || 1;
+    return FUNNEL_STAGES.map((status, i) => {
+      const count = counts[status];
+      const next = i < FUNNEL_STAGES.length - 1 ? counts[FUNNEL_STAGES[i + 1]] : 0;
+      const h = count / max;
 
-    return {
-      stages: FUNNEL_STAGES.map((status, i) => {
-        const left = cumulative[i] / max;
-        const right =
-          i < FUNNEL_STAGES.length - 1
-            ? cumulative[i + 1] / max
-            : left * 0.5;
-
-        return {
-          label: STATUS_LABELS[status],
-          count: cumulative[i],
-          leftH: Math.max(left, 0.15),
-          rightH: Math.max(right, 0.08),
-          conv:
-            i < FUNNEL_STAGES.length - 1 && cumulative[i] > 0
-              ? Math.round((cumulative[i + 1] / cumulative[i]) * 100)
-              : null,
-        };
-      }),
-      lostCount: counts.lost,
-      notReachedCount: notReachedTotal,
-    };
+      return {
+        label: STATUS_LABELS[status],
+        count,
+        leftH: Math.max(h, 0.15),
+        rightH: Math.max(h, 0.15),
+        conv:
+          i < FUNNEL_STAGES.length - 1 && count > 0
+            ? Math.round((next / count) * 100)
+            : null,
+      };
+    });
   }, [filteredLeads]);
 
   if (filteredLeads.length === 0) return null;
@@ -90,7 +79,7 @@ export default function PipelineSummary() {
     <Card className="mb-6 w-full overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold">Funnel-Übersicht</CardTitle>
-        <CardDescription>Kumulierte Pipeline-Stufen</CardDescription>
+        <CardDescription>Leads nach Pipeline-Status</CardDescription>
       </CardHeader>
       <CardContent className="pb-6">
         <div className="w-full overflow-hidden">
@@ -220,42 +209,6 @@ export default function PipelineSummary() {
           </svg>
         </div>
 
-        {(lostCount > 0 || notReachedCount > 0) && (
-          <div className="flex items-center gap-4 mt-2 pt-4 border-t border-border/50 flex-wrap">
-            {lostCount > 0 && (
-              <>
-                <span className="w-20 shrink-0 text-xs font-medium text-muted-foreground text-right">
-                  Verloren
-                </span>
-                <div className="flex items-center gap-2.5 bg-red-500/10 px-3 py-1.5 rounded-md border border-red-500/20">
-                  <TrendingDown size={14} className="text-red-400" />
-                  <span className="text-sm font-bold text-red-400">
-                    {lostCount}
-                  </span>
-                  {filteredLeads.length > 0 && (
-                    <span className="text-xs font-medium text-red-400/70 ml-1">
-                      ({Math.round((lostCount / filteredLeads.length) * 100)}%
-                      Verlustrate)
-                    </span>
-                  )}
-                </div>
-              </>
-            )}
-            {notReachedCount > 0 && (
-              <>
-                <span className="w-20 shrink-0 text-xs font-medium text-muted-foreground text-right">
-                  Nicht erreicht
-                </span>
-                <div className="flex items-center gap-2.5 bg-orange-500/10 px-3 py-1.5 rounded-md border border-orange-500/20">
-                  <PhoneOff size={14} className="text-orange-400" />
-                  <span className="text-sm font-bold text-orange-400">
-                    {notReachedCount}
-                  </span>
-                </div>
-              </>
-            )}
-          </div>
-        )}
       </CardContent>
     </Card>
   );

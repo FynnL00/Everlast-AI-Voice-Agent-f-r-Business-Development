@@ -17,6 +17,8 @@ import type { Lead } from "@/lib/types";
 
 interface SentimentOverTimeProps {
   leads: Lead[];
+  subtitle?: string;
+  days?: number;
 }
 
 function CustomTooltip({
@@ -50,15 +52,16 @@ function CustomTooltip({
   );
 }
 
-export default function SentimentOverTime({ leads }: SentimentOverTimeProps) {
+export default function SentimentOverTime({ leads, subtitle, days = 30 }: SentimentOverTimeProps) {
   const data = useMemo(() => {
     const now = new Date();
-    const thirtyDaysAgo = new Date(now);
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const bucketCount = Math.max(days, 1);
+    const cutoff = new Date(now);
+    cutoff.setDate(cutoff.getDate() - bucketCount);
 
-    // Initialize daily buckets for 30 days
+    // Initialize daily buckets
     const dailyData: Record<string, { positiv: number; neutral: number; negativ: number }> = {};
-    for (let i = 29; i >= 0; i--) {
+    for (let i = bucketCount - 1; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
       const key = d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", timeZone: "Europe/Berlin" });
@@ -69,7 +72,7 @@ export default function SentimentOverTime({ leads }: SentimentOverTimeProps) {
     leads.forEach((l) => {
       if (!l.sentiment) return;
       const createdAt = new Date(l.created_at);
-      if (createdAt < thirtyDaysAgo) return;
+      if (createdAt < cutoff) return;
 
       const key = createdAt.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", timeZone: "Europe/Berlin" });
       if (dailyData[key] && l.sentiment in dailyData[key]) {
@@ -83,12 +86,13 @@ export default function SentimentOverTime({ leads }: SentimentOverTimeProps) {
       Neutral: counts.neutral,
       Negativ: counts.negativ,
     }));
-  }, [leads]);
+  }, [leads, days]);
 
   return (
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full h-full">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-base font-semibold">Sentiment-Verlauf (30 Tage)</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-base font-semibold">Sentiment-Verlauf</CardTitle>
+        {subtitle && <span className="text-xs text-muted-foreground font-medium">{subtitle}</span>}
       </CardHeader>
       <CardContent className="pb-6">
         <div className="h-[320px]">

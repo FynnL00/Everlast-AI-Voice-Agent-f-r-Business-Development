@@ -9,9 +9,10 @@ import type { Lead } from "@/lib/types";
 
 interface ObjectionCounterArgumentsProps {
   leads: Lead[];
+  subtitle?: string;
 }
 
-export default function ObjectionCounterArguments({ leads }: ObjectionCounterArgumentsProps) {
+export default function ObjectionCounterArguments({ leads, subtitle }: ObjectionCounterArgumentsProps) {
   const { categories, loading } = useObjectionCategories();
   const [openIndices, setOpenIndices] = useState<Set<number>>(new Set([0]));
 
@@ -55,9 +56,12 @@ export default function ObjectionCounterArguments({ leads }: ObjectionCounterArg
   return (
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full">
       <CardHeader className="pb-2">
-        <div className="flex items-center gap-2">
-          <Lightbulb className="h-5 w-5 text-amber-400" />
-          <CardTitle className="text-base font-semibold">Gegenargumente</CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="h-5 w-5 text-amber-400" />
+            <CardTitle className="text-base font-semibold">Gegenargumente</CardTitle>
+          </div>
+          {subtitle && <span className="text-xs text-muted-foreground font-medium">{subtitle}</span>}
         </div>
       </CardHeader>
       <CardContent className="pb-6">

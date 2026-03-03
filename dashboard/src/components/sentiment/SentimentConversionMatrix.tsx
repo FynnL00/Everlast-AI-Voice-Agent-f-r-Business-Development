@@ -17,6 +17,7 @@ import type { Lead } from "@/lib/types";
 
 interface SentimentConversionMatrixProps {
   leads: Lead[];
+  subtitle?: string;
 }
 
 const STATUSES: Lead["status"][] = ["new", "not_reached", "contacted", "qualified", "appointment_booked", "converted", "lost"];
@@ -54,7 +55,7 @@ function CustomTooltip({
   );
 }
 
-export default function SentimentConversionMatrix({ leads }: SentimentConversionMatrixProps) {
+export default function SentimentConversionMatrix({ leads, subtitle }: SentimentConversionMatrixProps) {
   const data = useMemo(() => {
     const sentiments: NonNullable<Lead["sentiment"]>[] = ["positiv", "neutral", "negativ"];
 
@@ -76,8 +77,9 @@ export default function SentimentConversionMatrix({ leads }: SentimentConversion
 
   return (
     <Card className="transition-all duration-200 hover:border-foreground/20 hover:shadow-lg hover:-translate-y-px w-full h-full">
-      <CardHeader className="pb-2">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base font-semibold">Konversion nach Sentiment</CardTitle>
+        {subtitle && <span className="text-xs text-muted-foreground font-medium">{subtitle}</span>}
       </CardHeader>
       <CardContent className="pb-6">
         <div className="h-[320px]">
