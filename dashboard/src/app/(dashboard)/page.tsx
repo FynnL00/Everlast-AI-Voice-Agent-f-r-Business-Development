@@ -9,7 +9,8 @@ import ConversionChart from "@/components/ConversionChart";
 import LeadTable from "@/components/LeadTable";
 import ObjectionDonutChart from "@/components/ObjectionDonutChart";
 import DropOffAnalysis from "@/components/analytics/DropOffAnalysis";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Play } from "lucide-react";
+import Link from "next/link";
 import PageHeader from "@/components/ui/PageHeader";
 import { cn, normalizeObjection } from "@/lib/utils";
 import AppointmentCalendar from "@/components/dashboard/AppointmentCalendar";
@@ -173,6 +174,23 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen py-6 md:py-8 max-w-[1900px] mx-auto space-y-6">
+      {/* Video Walkthrough Banner */}
+      <Link
+        href="/loom-video"
+        className="group flex items-center gap-4 px-6 py-4 rounded-2xl bg-gradient-to-r from-sidebar-primary/10 via-sidebar-primary/5 to-transparent border border-sidebar-primary/20 hover:border-sidebar-primary/40 transition-all duration-300 hover:shadow-lg hover:shadow-sidebar-primary/10 hover:-translate-y-px"
+      >
+        <div className="w-10 h-10 rounded-xl bg-sidebar-primary flex items-center justify-center shrink-0 shadow-lg shadow-sidebar-primary/20 group-hover:scale-105 transition-transform">
+          <Play size={18} className="text-white ml-0.5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="text-sm font-semibold text-foreground">Video Walkthrough</div>
+          <div className="text-xs text-muted-foreground">Projektdemo und Tech-Stack Erkl&auml;rung ansehen</div>
+        </div>
+        <span className="text-xs font-medium text-sidebar-primary opacity-0 group-hover:opacity-100 transition-opacity">
+          Ansehen &rarr;
+        </span>
+      </Link>
+
       {/* Header */}
       <PageHeader
         title="Dashboard"

@@ -6,6 +6,7 @@ Built for the **Everlast AI Vibe Coding Challenge**.
 
 | | |
 |---|---|
+| **Video Walkthrough** | [dashboard-xi-eosin.vercel.app/loom-video](https://dashboard-xi-eosin.vercel.app/loom-video) |
 | **Live Dashboard** | [dashboard-xi-eosin.vercel.app](https://dashboard-xi-eosin.vercel.app) |
 | **Phone Number** | +1 (223) 747-2259 |
 | **n8n Instance** | [n8n.srv1169417.hstgr.cloud](https://n8n.srv1169417.hstgr.cloud) |
