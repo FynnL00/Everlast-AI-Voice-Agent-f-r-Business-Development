@@ -16,13 +16,6 @@ const ALLOWED_FIELDS = new Set([
   "notes",
   "next_steps",
   "assigned_to",
-  "disposition_code",
-  "is_dnc",
-  "dnc_reason",
-  "callback_datetime",
-  "next_call_scheduled_at",
-  "follow_up_reason",
-  "campaign_id",
 ]);
 
 const VALID_STATUSES = new Set([
@@ -34,11 +27,6 @@ const VALID_STATUSES = new Set([
   "lost",
   "not_reached",
   "rejected",
-  "queued",
-  "attempting",
-  "exhausted",
-  "callback_scheduled",
-  "dnc",
 ]);
 
 function sanitize(value: unknown): string {

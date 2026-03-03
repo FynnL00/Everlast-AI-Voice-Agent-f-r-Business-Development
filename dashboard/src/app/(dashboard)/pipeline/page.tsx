@@ -3,10 +3,10 @@
 import { useMemo } from "react";
 import {
   KanbanSquare,
-  ListTodo,
-  PhoneCall,
-  CalendarCheck,
-  Repeat,
+  Layers,
+  TrendingUp,
+  TrendingDown,
+  Target,
 } from "lucide-react";
 import { useLeads } from "@/lib/leads-context";
 import PageHeader from "@/components/ui/PageHeader";
@@ -18,26 +18,34 @@ export default function PipelinePage() {
   const { filteredLeads, loading } = useLeads();
 
   const kpis = useMemo(() => {
-    const queued = filteredLeads.filter((l) => l.status === "queued").length;
-
-    const outbound = filteredLeads.filter((l) => l.call_direction === "outbound");
-    const attempts = outbound.reduce((sum, l) => sum + (l.call_attempts || 0), 0);
-    const connected = outbound.filter(
-      (l) => l.disposition_code && ["connected", "qualified", "demo_booked", "callback"].includes(l.disposition_code)
+    const inPipeline = filteredLeads.filter(
+      (l) => !["converted", "lost"].includes(l.status)
     ).length;
-    const connectionRate = attempts > 0 ? Math.round((connected / attempts) * 100) : 0;
 
-    const demosBooked = outbound.filter((l) => l.disposition_code === "demo_booked").length;
-    const demoRate = connected > 0 ? Math.round((demosBooked / connected) * 100) : 0;
+    const converted = filteredLeads.filter(
+      (l) => l.status === "converted"
+    ).length;
+    const lost = filteredLeads.filter((l) => l.status === "lost").length;
+    const closedTotal = converted + lost;
 
-    const leadsWithAttempts = outbound.filter((l) => l.call_attempts > 0);
-    const avgAttempts = leadsWithAttempts.length > 0
-      ? Math.round(
-          (leadsWithAttempts.reduce((sum, l) => sum + l.call_attempts, 0) / leadsWithAttempts.length) * 10
-        ) / 10
-      : 0;
+    const winRate =
+      closedTotal > 0 ? Math.round((converted / closedTotal) * 100) : 0;
+    const lostRate =
+      closedTotal > 0 ? Math.round((lost / closedTotal) * 100) : 0;
 
-    return { queued, connectionRate, demoRate, avgAttempts };
+    const leadsWithScore = filteredLeads.filter(
+      (l) => l.total_score !== null && l.total_score > 0
+    );
+    const avgScore =
+      leadsWithScore.length > 0
+        ? Math.round(
+            (leadsWithScore.reduce((sum, l) => sum + (l.total_score ?? 0), 0) /
+              leadsWithScore.length) *
+              10
+          ) / 10
+        : 0;
+
+    return { inPipeline, winRate, lostRate, avgScore };
   }, [filteredLeads]);
 
   return (
@@ -61,41 +69,41 @@ export default function PipelinePage() {
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <KPICard
-                label="Warteschlange"
-                numericValue={kpis.queued}
-                icon={ListTodo}
+                label="Pipeline-Gesamt"
+                numericValue={kpis.inPipeline}
+                icon={Layers}
                 colorClass="text-blue-400"
                 bgClass="bg-blue-500/10"
-                tooltip="Anzahl der Leads, die in der Warteschlange auf einen Anruf warten."
+                tooltip="Anzahl aktiver Leads, die noch nicht converted oder lost sind."
               />
               <KPICard
-                label="Connection Rate"
-                numericValue={kpis.connectionRate}
+                label="Win Rate"
+                numericValue={kpis.winRate}
                 suffix="%"
-                icon={PhoneCall}
+                icon={TrendingUp}
                 colorClass="text-green-400"
                 bgClass="bg-green-500/10"
-                tooltip="Anteil der Anrufversuche, bei denen der Kontakt erreicht wurde."
-                tooltipFormula="Connection Rate = Erreichte ÷ Versuche × 100"
+                tooltip="Anteil der abgeschlossenen Deals, die gewonnen wurden."
+                tooltipFormula="Win Rate = Converted ÷ (Converted + Lost) × 100"
               />
               <KPICard
-                label="Demo-Rate"
-                numericValue={kpis.demoRate}
+                label="Lost Rate"
+                numericValue={kpis.lostRate}
                 suffix="%"
-                icon={CalendarCheck}
-                colorClass="text-emerald-400"
-                bgClass="bg-emerald-500/10"
-                tooltip="Anteil der erreichten Kontakte, die eine Demo gebucht haben."
-                tooltipFormula="Demo-Rate = Demos gebucht ÷ Erreichte × 100"
+                icon={TrendingDown}
+                colorClass="text-red-400"
+                bgClass="bg-red-500/10"
+                tooltip="Anteil der abgeschlossenen Deals, die verloren gingen."
+                tooltipFormula="Lost Rate = Lost ÷ (Converted + Lost) × 100"
               />
               <KPICard
-                label="Ø Versuche"
-                value={kpis.avgAttempts.toFixed(1)}
-                icon={Repeat}
+                label="Ø Score"
+                value={kpis.avgScore.toFixed(1)}
+                icon={Target}
                 colorClass="text-purple-400"
                 bgClass="bg-purple-500/10"
-                tooltip="Durchschnittliche Anzahl der Anrufversuche pro Lead."
-                tooltipFormula="Ø Versuche = Summe Versuche ÷ Leads mit Versuchen"
+                tooltip="Durchschnittlicher Qualifizierungsscore aller bewerteten Leads."
+                tooltipFormula="Ø Score = Summe Scores ÷ Bewertete Leads"
               />
             </div>
           </div>

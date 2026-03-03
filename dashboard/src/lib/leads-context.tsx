@@ -14,7 +14,7 @@ import type { Lead, LeadFilters } from "@/lib/types";
 
 // Fields fetched for the list view (no transcript for performance)
 const CONTEXT_FIELDS =
-  "id, created_at, updated_at, caller_name, company, email, phone, company_size, current_stack, pain_point, timeline, score_company_size, score_tech_stack, score_pain_point, score_timeline, score_engagement, total_score, lead_grade, call_id, call_duration_seconds, call_started_at, conversation_summary, sentiment, objections_raised, drop_off_point, appointment_booked, appointment_datetime, is_decision_maker, status, next_steps, notes, briefing, briefing_generated_at, assigned_to, campaign_id, call_direction, disposition_code, call_attempts, last_call_attempt_at, next_call_scheduled_at, voicemail_left, gatekeeper_name, callback_datetime, is_dnc, dnc_reason, recording_url, lead_source, follow_up_reason";
+  "id, created_at, updated_at, caller_name, company, email, phone, company_size, current_stack, pain_point, timeline, score_company_size, score_tech_stack, score_pain_point, score_timeline, total_score, lead_grade, call_id, call_duration_seconds, call_started_at, conversation_summary, sentiment, objections_raised, drop_off_point, appointment_booked, appointment_datetime, is_decision_maker, status, next_steps, notes, briefing, briefing_generated_at, assigned_to";
 
 const DEFAULT_FILTERS: LeadFilters = {
   grades: [],
@@ -23,10 +23,6 @@ const DEFAULT_FILTERS: LeadFilters = {
   appointmentBooked: null,
   dateRange: { from: null, to: null },
   assignedTo: null,
-  campaignId: null,
-  dispositionCodes: [],
-  isDnc: null,
-  callDirection: null,
 };
 
 interface LeadsContextValue {
@@ -267,39 +263,14 @@ export function LeadsProvider({ children }: { children: React.ReactNode }) {
       result = result.filter((l) => new Date(l.created_at).getTime() <= to);
     }
 
-    // Campaign filter
-    if (filters.campaignId) {
-      result = result.filter((l) => l.campaign_id === filters.campaignId);
-    }
-
-    // Disposition filter
-    if (filters.dispositionCodes.length > 0) {
-      result = result.filter(
-        (l) =>
-          l.disposition_code !== null &&
-          filters.dispositionCodes.includes(l.disposition_code)
-      );
-    }
-
-    // DNC filter
-    if (filters.isDnc !== null) {
-      result = result.filter((l) => l.is_dnc === filters.isDnc);
-    }
-
-    // Call direction filter
-    if (filters.callDirection) {
-      result = result.filter((l) => l.call_direction === filters.callDirection);
-    }
-
-    // Search query (caller_name, company, email, phone)
+    // Search query (caller_name, company, email)
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter(
         (l) =>
           (l.caller_name && l.caller_name.toLowerCase().includes(q)) ||
           (l.company && l.company.toLowerCase().includes(q)) ||
-          (l.email && l.email.toLowerCase().includes(q)) ||
-          (l.phone && l.phone.includes(q))
+          (l.email && l.email.toLowerCase().includes(q))
       );
     }
 

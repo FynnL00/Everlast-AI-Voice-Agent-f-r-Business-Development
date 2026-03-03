@@ -1,9 +1,8 @@
 import Link from "next/link";
 import type { Lead } from "@/lib/types";
 import SentimentIndicator from "@/components/leads/SentimentIndicator";
-import DispositionBadge from "@/components/ui/DispositionBadge";
 import { cn, getGradeColor, formatDate } from "@/lib/utils";
-import { Building2, Clock, CalendarDays, GripVertical, PhoneOutgoing } from "lucide-react";
+import { Building2, Clock, CalendarDays, GripVertical } from "lucide-react";
 import { useDraggable } from "@dnd-kit/core";
 
 interface PipelineCardProps {
@@ -50,12 +49,6 @@ export default function PipelineCard({ lead, isDragOverlay }: PipelineCardProps)
           </span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          {lead.call_attempts > 0 && (
-            <div className="flex items-center gap-0.5 text-[10px] font-bold text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded">
-              <PhoneOutgoing size={10} />
-              {lead.call_attempts}
-            </div>
-          )}
           <SentimentIndicator sentiment={lead.sentiment} />
           {lead.lead_grade && (
             <div
@@ -79,13 +72,6 @@ export default function PipelineCard({ lead, isDragOverlay }: PipelineCardProps)
           <span className="truncate max-w-[180px]">
             {lead.company}
           </span>
-        </div>
-      )}
-
-      {/* Disposition Badge */}
-      {lead.disposition_code && (
-        <div className="mt-0.5">
-          <DispositionBadge disposition={lead.disposition_code} size="sm" />
         </div>
       )}
 

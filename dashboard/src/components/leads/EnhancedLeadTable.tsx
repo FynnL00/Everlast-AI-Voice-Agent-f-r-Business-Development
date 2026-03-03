@@ -13,7 +13,6 @@ import { cn, formatDuration, formatDate, getGradeColor } from "@/lib/utils";
 import type { Lead, SortField, SortDirection } from "@/lib/types";
 import StatusBadge from "@/components/leads/StatusBadge";
 import SentimentIndicator from "@/components/leads/SentimentIndicator";
-import DispositionBadge from "@/components/ui/DispositionBadge";
 import EmptyState from "@/components/ui/EmptyState";
 import { Badge } from "@/components/ui/Badge";
 
@@ -35,8 +34,6 @@ const COLUMNS: ColumnDef[] = [
   { field: "caller_name", label: "Name / Firma", sortable: true },
   { field: "total_score", label: "Score", sortable: true, className: "text-center" },
   { field: "status", label: "Status", sortable: true },
-  { field: "call_attempts", label: "Versuche", sortable: true, className: "text-center" },
-  { field: "disposition_code", label: "Disposition", sortable: true },
   { field: "appointment_booked", label: "Termin", sortable: true, className: "text-center" },
 ];
 
@@ -162,30 +159,6 @@ export default function EnhancedLeadTable({
                         </>
                       )}
                     </div>
-                  </Link>
-                </td>
-
-                {/* Versuche */}
-                <td className="px-4 py-4 align-middle text-center">
-                  <Link href={`/leads/${lead.id}`} className="block">
-                    {lead.call_direction === 'outbound' && lead.call_attempts > 0 ? (
-                      <span className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-full text-xs font-bold bg-muted/60 text-foreground">
-                        {lead.call_attempts}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">&mdash;</span>
-                    )}
-                  </Link>
-                </td>
-
-                {/* Disposition */}
-                <td className="px-4 py-4 align-middle">
-                  <Link href={`/leads/${lead.id}`} className="block">
-                    {lead.disposition_code ? (
-                      <DispositionBadge disposition={lead.disposition_code} size="sm" />
-                    ) : (
-                      <span className="text-muted-foreground">&mdash;</span>
-                    )}
                   </Link>
                 </td>
 

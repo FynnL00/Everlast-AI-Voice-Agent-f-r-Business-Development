@@ -21,7 +21,7 @@ export default function PipelineColumn({ status, leads }: PipelineColumnProps) {
     <div
       ref={setNodeRef}
       className={cn(
-        "min-w-[220px] w-[220px] flex flex-col rounded-2xl border bg-sidebar-accent/30 overflow-hidden shadow-sm backdrop-blur-md transition-colors duration-200",
+        "min-w-[280px] w-[280px] flex flex-col rounded-2xl border bg-sidebar-accent/30 overflow-hidden shadow-sm backdrop-blur-md transition-colors duration-200",
         isOver
           ? "border-primary/50 bg-primary/5"
           : "border-border"

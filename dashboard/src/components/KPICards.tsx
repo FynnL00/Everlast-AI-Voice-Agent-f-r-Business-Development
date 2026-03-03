@@ -1,91 +1,68 @@
 "use client";
 
-import { PhoneOutgoing, PhoneCall, Voicemail, Clock, CalendarCheck, Gauge } from "lucide-react";
+import { Phone, TrendingUp, Clock, SmilePlus } from "lucide-react";
 import { KPICard } from "@/components/ui/KPICard";
 
 interface KPICardsProps {
-  attempts: number;
-  connectionRate: number;
-  voicemailRate: number;
-  avgDuration: number;
-  demoBookingRate: number;
-  callsPerHour: number;
+  callsInRange: number;
   callLabel: string;
   callSubtitle?: string;
+  conversionRate: number;
+  avgDuration: number;
+  positiveSentimentRate: number;
 }
 
 export default function KPICards({
-  attempts,
-  connectionRate,
-  voicemailRate,
-  avgDuration,
-  demoBookingRate,
-  callsPerHour,
+  callsInRange,
   callLabel,
   callSubtitle,
+  conversionRate,
+  avgDuration,
+  positiveSentimentRate,
 }: KPICardsProps) {
   const mins = Math.floor(avgDuration / 60);
   const secs = Math.round(avgDuration % 60);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <KPICard
         label={callLabel}
-        numericValue={attempts}
+        numericValue={callsInRange}
         suffix=""
-        icon={PhoneOutgoing}
+        icon={Phone}
         colorClass="text-purple-400"
         bgClass="bg-purple-500/10"
         subtitle={callSubtitle}
-        tooltip="Gesamtanzahl aller Outbound-Anrufversuche im gewählten Zeitraum."
+        tooltip="Anzahl eingehender Anrufe im gewählten Zeitraum."
       />
       <KPICard
-        label="Connection Rate"
-        numericValue={connectionRate}
+        label="Conversion-Rate"
+        numericValue={conversionRate}
         suffix="%"
-        icon={PhoneCall}
+        icon={TrendingUp}
         colorClass="text-green-400"
         bgClass="bg-green-500/10"
-        tooltip="Anteil der Anrufversuche, bei denen der Kontakt erreicht wurde."
-        tooltipFormula="Connection Rate = Erreichte ÷ Versuche × 100"
+        tooltip="Anteil der Anrufe, die zu einem gebuchten Termin geführt haben."
+        tooltipFormula="Conversion Rate = Termine ÷ Alle Anrufe × 100"
       />
       <KPICard
-        label="Mailbox-Quote"
-        numericValue={voicemailRate}
-        suffix="%"
-        icon={Voicemail}
-        colorClass="text-amber-400"
-        bgClass="bg-amber-500/10"
-        tooltip="Anteil der Anrufversuche, die auf der Mailbox gelandet sind."
-        tooltipFormula="Mailbox-Quote = Mailbox ÷ Versuche × 100"
-      />
-      <KPICard
-        label="Ø Gesprächsdauer"
+        label="Gesprächsdauer"
         value={`${mins}:${secs.toString().padStart(2, "0")}`}
         icon={Clock}
-        colorClass="text-cyan-400"
-        bgClass="bg-cyan-500/10"
-        tooltip="Durchschnittliche Dauer aller verbundenen Gespräche."
-        tooltipFormula="Ø Dauer = Summe Gesprächszeiten ÷ Verbundene Gespräche"
+        colorClass="text-amber-400"
+        bgClass="bg-amber-500/10"
+        tooltip="Durchschnittliche Dauer aller aufgezeichneten Gespräche."
+        tooltipFormula="Ø Dauer = Summe Gesprächszeiten ÷ Anzahl Gespräche"
       />
       <KPICard
-        label="Demo-Buchungsrate"
-        numericValue={demoBookingRate}
+        label="Sentiment"
+        numericValue={positiveSentimentRate}
         suffix="%"
-        icon={CalendarCheck}
+        icon={SmilePlus}
         colorClass="text-emerald-400"
         bgClass="bg-emerald-500/10"
-        tooltip="Anteil der erreichten Kontakte, die eine Demo gebucht haben."
-        tooltipFormula="Demo-Rate = Demos gebucht ÷ Erreichte × 100"
-      />
-      <KPICard
-        label="Calls/Stunde"
-        value={callsPerHour.toFixed(1)}
-        icon={Gauge}
-        colorClass="text-indigo-400"
-        bgClass="bg-indigo-500/10"
-        tooltip="Durchschnittliche Anzahl Anrufversuche pro Stunde heute."
-        tooltipFormula="Calls/h = Heutige Versuche ÷ Stunden seit Mitternacht"
+        tooltip="Anteil der Gespräche mit positiver Stimmungsanalyse."
+        tooltipFormula="Positiv-Rate = Positive Calls ÷ Calls mit Sentiment × 100"
       />
     </div>
   );

@@ -19,17 +19,14 @@ import {
 import PipelineCard from "./PipelineCard";
 
 const PIPELINE_STAGES: Lead["status"][] = [
-  "queued",
-  "attempting",
-  "not_reached",
-  "callback_scheduled",
+  "new",
   "contacted",
   "qualified",
   "appointment_booked",
   "converted",
   "lost",
-  "exhausted",
-  "dnc",
+  "not_reached",
+  "rejected",
 ];
 
 export default function PipelineBoard() {
@@ -54,11 +51,6 @@ export default function PipelineBoard() {
       lost: [],
       not_reached: [],
       rejected: [],
-      queued: [],
-      attempting: [],
-      exhausted: [],
-      callback_scheduled: [],
-      dnc: [],
     };
     for (const lead of filteredLeads) {
       if (map[lead.status]) {

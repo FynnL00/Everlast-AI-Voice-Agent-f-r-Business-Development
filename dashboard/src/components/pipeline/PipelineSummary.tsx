@@ -37,11 +37,6 @@ export default function PipelineSummary() {
       lost: 0,
       not_reached: 0,
       rejected: 0,
-      queued: 0,
-      attempting: 0,
-      exhausted: 0,
-      callback_scheduled: 0,
-      dnc: 0,
     };
     for (const lead of filteredLeads) counts[lead.status]++;
 
