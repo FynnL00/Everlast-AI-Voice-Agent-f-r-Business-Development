@@ -56,26 +56,40 @@ export default function Dashboard() {
     return leads.filter(l => new Date(l.created_at) >= cutoff);
   }, [leads, timeRange]);
 
-  // Calculate KPIs from time-filtered leads
-  const { callsInRange, conversionRate, avgDuration, positiveSentimentRate } = useMemo(() => {
-    const total = timeFilteredLeads.length;
+  // Calculate outbound KPIs from time-filtered leads
+  const { attempts, connectionRate, voicemailRate, avgDuration, demoBookingRate, callsPerHour } = useMemo(() => {
+    const outboundLeads = timeFilteredLeads.filter(l => l.call_direction === 'outbound');
+    const attempts = outboundLeads.reduce((sum, l) => sum + (l.call_attempts || 0), 0);
 
-    const booked = timeFilteredLeads.filter((l) => l.appointment_booked).length;
-    const conversionRate = total > 0 ? (booked / total) * 100 : 0;
+    const connected = outboundLeads.filter(l =>
+      l.disposition_code && ['connected', 'qualified', 'demo_booked', 'callback'].includes(l.disposition_code)
+    ).length;
+    const connectionRate = attempts > 0 ? Math.round((connected / attempts) * 100) : 0;
 
-    const leadsWithDuration = timeFilteredLeads.filter(l => l.call_duration_seconds != null && l.call_duration_seconds > 0);
-    const duration = leadsWithDuration.length > 0
-      ? leadsWithDuration.reduce((sum, l) => sum + l.call_duration_seconds!, 0) / leadsWithDuration.length : 0;
+    const voicemails = outboundLeads.filter(l => l.disposition_code === 'voicemail').length;
+    const voicemailRate = attempts > 0 ? Math.round((voicemails / attempts) * 100) : 0;
 
-    const leadsWithSentiment = timeFilteredLeads.filter(l => l.sentiment);
-    const positiveCount = leadsWithSentiment.filter(l => l.sentiment === "positiv").length;
-    const positiveSentimentRate = leadsWithSentiment.length > 0 ? Math.round((positiveCount / leadsWithSentiment.length) * 100) : 0;
+    const demosBooked = outboundLeads.filter(l => l.disposition_code === 'demo_booked').length;
+    const demoBookingRate = connected > 0 ? Math.round((demosBooked / connected) * 100) : 0;
 
-    return { callsInRange: total, conversionRate, avgDuration: duration, positiveSentimentRate };
+    // avgDuration: only connected leads with duration
+    const connectedLeads = outboundLeads.filter(l => l.call_duration_seconds && l.call_duration_seconds > 0);
+    const avgDuration = connectedLeads.length > 0
+      ? Math.round(connectedLeads.reduce((sum, l) => sum + (l.call_duration_seconds || 0), 0) / connectedLeads.length)
+      : 0;
+
+    // Calls per hour: attempts today / hours since midnight
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const attemptsToday = outboundLeads.filter(l => l.last_call_attempt_at && new Date(l.last_call_attempt_at) >= today).length;
+    const hoursSinceMidnight = Math.max(new Date().getHours(), 1);
+    const callsPerHour = Math.round(attemptsToday / hoursSinceMidnight * 10) / 10;
+
+    return { attempts, connectionRate, voicemailRate, avgDuration, demoBookingRate, callsPerHour };
   }, [timeFilteredLeads]);
 
   // KPI label
-  const kpiCallLabel = "Anrufe";
+  const kpiCallLabel = "Anrufversuche";
 
   // Grade distribution (memoized)
   const gradeDistribution = useMemo(
@@ -195,11 +209,13 @@ export default function Dashboard() {
           MAIN KPIS
         </span>
         <KPICards
-          callsInRange={callsInRange}
-          callLabel={kpiCallLabel}
-          conversionRate={conversionRate}
+          attempts={attempts}
+          connectionRate={connectionRate}
+          voicemailRate={voicemailRate}
           avgDuration={avgDuration}
-          positiveSentimentRate={positiveSentimentRate}
+          demoBookingRate={demoBookingRate}
+          callsPerHour={callsPerHour}
+          callLabel={kpiCallLabel}
         />
       </div>
 
