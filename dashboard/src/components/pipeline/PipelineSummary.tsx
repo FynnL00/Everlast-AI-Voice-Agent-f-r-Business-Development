@@ -42,20 +42,24 @@ export default function PipelineSummary() {
     };
     for (const lead of filteredLeads) counts[lead.status]++;
 
-    const max = Math.max(...FUNNEL_STAGES.map((s) => counts[s]), 1);
+    const n = FUNNEL_STAGES.length;
+    const minH = 0.18;
 
     return FUNNEL_STAGES.map((status, i) => {
       const count = counts[status];
-      const next = i < FUNNEL_STAGES.length - 1 ? counts[FUNNEL_STAGES[i + 1]] : 0;
-      const h = count / max;
+      const next = i < n - 1 ? counts[FUNNEL_STAGES[i + 1]] : 0;
+
+      // Fixed taper: always decreases left-to-right for funnel shape
+      const leftH = 1 - (i / n) * (1 - minH);
+      const rightH = 1 - ((i + 1) / n) * (1 - minH);
 
       return {
         label: STATUS_LABELS[status],
         count,
-        leftH: Math.max(h, 0.15),
-        rightH: Math.max(h, 0.15),
+        leftH,
+        rightH,
         conv:
-          i < FUNNEL_STAGES.length - 1 && count > 0
+          i < n - 1 && count > 0
             ? Math.round((next / count) * 100)
             : null,
       };

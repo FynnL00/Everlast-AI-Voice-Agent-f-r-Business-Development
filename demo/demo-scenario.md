@@ -37,7 +37,11 @@
 
 > Lisa wird nach dem Zeitrahmen fragen.
 
-**Thomas:** "Das ist dringend. Wir wollen das innerhalb der nächsten vier Wochen umstellen. Das Budget ist auch schon genehmigt."
+**Thomas:** "Das ist dringend. Wir wollen das innerhalb der nächsten vier Wochen umstellen."
+
+> Lisa wird nach dem Budget fragen.
+
+**Thomas:** "Das Budget steht. Wir haben da schon einen fünfstelligen Betrag für ein Automations-Projekt freigegeben. Enterprise-Lizenzen sind kein Problem."
 
 ---
 
@@ -86,13 +90,14 @@
 ---
 
 ## Erwartetes Ergebnis
-- **Lead-Score:** A (11-12/12)
+- **Lead-Score:** A (14-15/15)
 - **Termin:** Gebucht
 - **Qualification:**
   - Company Size: 3 (80 MA = Enterprise)
   - Tech Stack: 3 (Zapier-User, sucht Alternative wegen Kosten)
   - Pain Point: 3 (Konkreter Use Case, quantifizierter Zeitaufwand: 6h/Tag)
-  - Timeline: 3 (Innerhalb 4 Wochen, Budget genehmigt)
+  - Timeline: 3 (Innerhalb 4 Wochen, dringend)
+  - Budget: 3 (Fünfstelliges Projektbudget freigegeben, Enterprise-Lizenzen kein Problem)
 - **Einwände:** "Wechselkosten von Zapier" (1 Versuch, erfolgreich behandelt)
 - **Sentiment:** Positiv
 - **Status:** appointment_booked
@@ -105,7 +110,7 @@
 - [ ] `book_appointment` wird nach Slot-Auswahl + Kontaktdaten aufgerufen
 - [ ] `save_lead_info` wird still am Ende aufgerufen (nicht angekündigt)
 - [ ] E-Mail wird zurückgelesen zur Bestätigung
-- [ ] Post-Call Scoring ergibt A-Lead (11-12/12)
+- [ ] Post-Call Scoring ergibt A-Lead (14-15/15)
 - [ ] Termine werden als deutsche Wörter vorgelesen (nicht ISO-Strings)
 
 ## Tipps für die Aufnahme
