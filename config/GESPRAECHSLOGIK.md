@@ -28,7 +28,7 @@
 | Parameter | Wert |
 |-----------|------|
 | Provider | OpenRouter |
-| Modell | `openai/gpt-5-mini` |
+| Modell | `openai/gpt-4o` |
 | Temperature | 0.55 |
 | Max Tokens | 350 |
 

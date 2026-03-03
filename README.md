@@ -1,6 +1,6 @@
 # n8n Voice Agent "Lisa" — AI-Powered Inbound SDR
 
-> 24/7 AI voice agent that qualifies leads via natural German conversation, books demo appointments through Cal.com, scores leads with GPT-5-mini, and streams results to a real-time Next.js dashboard.
+> 24/7 AI voice agent that qualifies leads via natural German conversation, books demo appointments through Cal.com, scores leads with GPT-4o, and streams results to a real-time Next.js dashboard.
 
 Built for the **Everlast AI Vibe Coding Challenge**.
 
@@ -25,7 +25,7 @@ graph TB
     subgraph "Vapi Voice Pipeline"
         B[Vapi Platform]
         C["Deepgram Nova-3 (STT)"]
-        D["GPT-5-mini via OpenRouter (LLM)"]
+        D["GPT-4o via OpenAI (LLM)"]
         E["ElevenLabs Turbo v2.5 (TTS)"]
         A -->|Phone| B
         B -->|Audio Stream| C
@@ -79,7 +79,7 @@ sequenceDiagram
     participant Caller
     participant Vapi
     participant Deepgram as Deepgram Nova-3
-    participant LLM as GPT-5-mini
+    participant LLM as GPT-4o
     participant TTS as ElevenLabs Turbo v2.5
     participant n8n as n8n Webhook
 
@@ -107,7 +107,7 @@ sequenceDiagram
 The LLM triggers function calls that hit separate n8n webhooks. Each webhook uses `responseMode: "responseNode"` — Vapi holds the HTTP connection open until the n8n workflow completes and returns a `results` array. Three tool calls exist: `check_availability` reads Cal.com slots, `book_appointment` writes Cal.com + Supabase, and `save_lead_info` writes lead data to Supabase.
 
 **2. Asynchronous Post-Call Processing (after call)**
-Vapi sends an end-of-call report to a fourth webhook using `responseMode: "onReceived"` (fire-and-forget). The workflow extracts the transcript, sends it to GPT-5-mini for structured scoring (`response_format: { type: "json_object" }`), and UPSERTs scores, summary, and sentiment into Supabase.
+Vapi sends an end-of-call report to a fourth webhook using `responseMode: "onReceived"` (fire-and-forget). The workflow extracts the transcript, sends it to GPT-4o for structured scoring (`response_format: { type: "json_object" }`), and UPSERTs scores, summary, and sentiment into Supabase.
 
 **3. Real-Time Dashboard (continuous)**
 The Next.js dashboard subscribes to Supabase Realtime changes on the `leads` table. When a lead is inserted or scores update, the dashboard reflects changes within seconds — no polling, no refresh needed.
@@ -117,7 +117,7 @@ The Next.js dashboard subscribes to Supabase Realtime changes on the `leads` tab
 | Workflow | Trigger | Mode | Purpose |
 |---|---|---|---|
 | **Tool-Call Handler** | 3 Webhooks | `responseNode` (sync) | Vapi tool calls: check availability, book appointment, save lead data |
-| **Post-Call Processing** | 1 Webhook | `onReceived` (async) | Transcript analysis, AI scoring via GPT-5-mini, Supabase write |
+| **Post-Call Processing** | 1 Webhook | `onReceived` (async) | Transcript analysis, AI scoring via GPT-4o, Supabase write |
 | **Campaign Scheduling Engine** | Cron / Manual | — | Outbound call cadence automation |
 | **Campaign CRUD API** | 5 Webhooks | `responseNode` (sync) | Campaign management endpoints (create, update, pause, activate) |
 
@@ -128,7 +128,7 @@ The Next.js dashboard subscribes to Supabase Realtime changes on the `leads` tab
 | Component | Tool | Version / Model | Why |
 |---|---|---|---|
 | **Voice Platform** | Vapi | — | Webhook-based tool calls, flexible orchestration, no vendor lock-in |
-| **LLM** | GPT-5-mini via OpenRouter | `openai/gpt-5-mini` | Best latency-to-quality for German, native function calling, JSON mode |
+| **LLM** | GPT-4o via OpenAI | `gpt-4o` | Best latency-to-quality for German, native function calling, JSON mode |
 | **STT** | Deepgram | Nova-3 | Fastest streaming transcription, strong German language support |
 | **TTS** | ElevenLabs | Turbo v2.5 | Most natural German voices, low-latency streaming |
 | **Orchestration** | n8n (self-hosted) | — | Visual workflows — the product Lisa is also selling |
@@ -149,7 +149,7 @@ The Next.js dashboard subscribes to Supabase Realtime changes on the `leads` tab
 - **5-Dimension Lead Scoring** — Company size, tech stack, pain point, timeline, budget (1–3 points each)
 - **Automatic A/B/C Grading** — Database trigger computes grade from scores, never set manually
 - **Real-Time Appointment Booking** — Checks Cal.com availability and books 30-min demo slots during the call
-- **AI Post-Call Analysis** — GPT-5-mini analyzes transcript for scores, sentiment, objections, and next steps
+- **AI Post-Call Analysis** — GPT-4o analyzes transcript for scores, sentiment, objections, and next steps
 - **Live KPI Dashboard** — Supabase Realtime subscriptions, updates within seconds
 - **14+ Dashboard Pages** — Leads, analytics, pipeline, campaigns, sentiment, objections, quotes, team, DNC
 - **Outbound Campaign System** — Cadence scheduling, disposition tracking, voicemail detection
@@ -267,7 +267,7 @@ Five dimensions, each scored 1–3 points:
 
 - Node.js 18+
 - n8n instance (self-hosted or cloud)
-- API keys for: **Vapi**, **OpenRouter**, **Cal.com**, **Supabase**
+- API keys for: **Vapi**, **OpenAI**, **Cal.com**, **Supabase**
 - ElevenLabs and Deepgram are configured through Vapi (no separate keys needed)
 
 ### 1. Supabase
@@ -283,7 +283,7 @@ Five dimensions, each scored 1–3 points:
 2. Configure credentials in each workflow:
    - **Supabase:** REST API using your service role key
    - **Cal.com:** API key + event type ID
-   - **OpenRouter:** API key (for post-call scoring)
+   - **OpenAI:** API key (for post-call scoring)
 3. Set `X-Webhook-Secret` header authentication on all webhooks
 4. **Activate** all 4 workflows
 5. Note the **production** webhook URLs (not test URLs — production URLs do not contain `/test/`)
@@ -291,10 +291,8 @@ Five dimensions, each scored 1–3 points:
 ### 3. Vapi Agent
 
 1. Create a new assistant in [Vapi Dashboard](https://vapi.ai)
-2. Configure the LLM as a **Custom LLM** provider:
-   - Base URL: `https://openrouter.ai/api/v1`
-   - API Key: your OpenRouter key
-   - Model: `openai/gpt-5-mini`
+2. Configure the LLM with **OpenAI** as provider:
+   - Model: `gpt-4o`
    - Temperature: `0.55`, Max Tokens: `350`
 3. Set **System Prompt** from `config/system-prompt.md`
 4. Configure **Voice**: ElevenLabs, Turbo v2.5, Voice ID `NkMe1eztMQReztnhYfeX`
@@ -351,11 +349,11 @@ The system uses 3 distinct n8n webhooks (`/vapi-check-availability`, `/vapi-book
 
 **Why:** Each webhook has its own complete error handling chain that guarantees a `Respond to Webhook` node is always reached, regardless of failures. A single-webhook router pattern creates a "diamond of death" where any missed branch silently drops the HTTP response, causing Vapi to hang for the full timeout duration. With separate webhooks, each path is independently testable and debuggable in n8n's visual editor.
 
-### GPT-5-mini via OpenRouter
+### GPT-4o via OpenAI
 
-Lisa uses GPT-5-mini through OpenRouter rather than calling OpenAI directly.
+Lisa uses GPT-4o directly through OpenAI's API via Vapi's built-in provider.
 
-**Why:** OpenRouter provides a unified API with automatic failover across providers. GPT-5-mini was selected for its optimal balance of latency and conversational quality in German — fast enough for real-time voice interaction while maintaining nuanced dialogue. Temperature `0.55` balances natural-sounding conversation with scoring consistency. For post-call scoring, the `response_format: { type: "json_object" }` parameter guarantees structured output without prompt hacking or parsing fragility.
+**Why:** GPT-4o offers the best balance of latency and conversational quality for German — fast enough for real-time voice interaction while maintaining nuanced dialogue. Using OpenAI directly through Vapi's native provider eliminates an extra network hop compared to proxy services. Temperature `0.55` balances natural-sounding conversation with scoring consistency. For post-call scoring, the `response_format: { type: "json_object" }` parameter guarantees structured output without prompt hacking or parsing fragility.
 
 ### UPSERT on call_id
 
@@ -382,7 +380,7 @@ The post-call webhook uses `responseMode: "onReceived"` instead. Vapi fires the 
 Five layers minimize time-to-first-audio:
 
 1. **Deepgram Nova-3 streaming STT** — transcribes in real-time, no batch delay
-2. **GPT-5-mini** — optimized for speed, `max_tokens: 350` caps response length
+2. **GPT-4o** — optimized for speed, `max_tokens: 350` caps response length
 3. **ElevenLabs Turbo v2.5** — streaming TTS with lowest latency mode
 4. **Office background sound** — ambient noise fills micro-pauses so the caller does not perceive silence
 5. **Smart endpointing** — `on_punctuation_seconds: 0.5`, `on_no_punctuation_seconds: 1.5` balance responsiveness with letting the caller finish their thought

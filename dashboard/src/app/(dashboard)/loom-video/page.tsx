@@ -6,16 +6,16 @@ import { Card, CardContent } from "@/components/ui/Card";
 
 const videos = [
   {
-    title: "Überblick über die verwendeten Tools und Workflows",
-    description:
-      "Kompletter Walkthrough durch den Tech-Stack: Vapi Voice Agent, n8n Workflows, Cal.com Buchung und Supabase Datenbank.",
-    src: "/videos/tools-workflows.mp4",
-  },
-  {
-    title: "Präsentation des KPI-Überwachungstools",
+    title: "Demo des n8n Sales Tools",
     description:
       "Live-Demo des Next.js Dashboards – Lead-Qualifizierung, Pipeline, Conversion-Trend und Sentiment-Analyse.",
     src: "/videos/kpi-dashboard.mp4",
+  },
+  {
+    title: "Tech-Stack Erläuterung",
+    description:
+      "Kompletter Walkthrough durch den Tech-Stack: Vapi Voice Agent, n8n Workflows, Cal.com Buchung und Supabase Datenbank.",
+    src: "/videos/tools-workflows.mp4",
   },
 ];
 

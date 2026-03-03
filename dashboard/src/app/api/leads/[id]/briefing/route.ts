@@ -17,11 +17,6 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = request.cookies.get("dashboard_session");
-  if (!session) {
-    return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
-  }
-
   const { id } = await params;
 
   if (!UUID_REGEX.test(id)) {
@@ -123,7 +118,7 @@ Maximal 300 Woerter. Auf Deutsch.`;
         Authorization: `Bearer ${openrouterApiKey}`,
       },
       body: JSON.stringify({
-        model: "openai/gpt-5-mini",
+        model: "openai/gpt-4o",
         messages: [
           {
             role: "system",

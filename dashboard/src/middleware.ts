@@ -17,11 +17,6 @@ function isRateLimited(key: string): boolean {
 }
 
 export function middleware(request: NextRequest) {
-  const session = request.cookies.get("dashboard_session");
-  if (!session && !request.nextUrl.pathname.startsWith("/login") && !request.nextUrl.pathname.startsWith("/api/auth")) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
   // Rate limit the briefing API (expensive OpenRouter calls)
   if (request.nextUrl.pathname.includes("/briefing")) {
     const ip = request.headers.get("x-forwarded-for") ?? "unknown";
@@ -37,5 +32,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next|api/auth|login|favicon).*)"],
+  matcher: ["/((?!_next|favicon).*)"],
 };

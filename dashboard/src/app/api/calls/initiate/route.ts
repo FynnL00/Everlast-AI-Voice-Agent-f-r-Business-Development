@@ -2,11 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseAdminConfigured } from "@/lib/supabase-server";
 
 export async function POST(request: NextRequest) {
-  const session = request.cookies.get("dashboard_session");
-  if (!session) {
-    return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
-  }
-
   if (!isSupabaseAdminConfigured()) {
     return NextResponse.json({ error: "Supabase nicht konfiguriert" }, { status: 503 });
   }

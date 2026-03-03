@@ -44,11 +44,6 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = request.cookies.get("dashboard_session");
-  if (!session) {
-    return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
-  }
-
   const { id } = await params;
 
   if (!UUID_REGEX.test(id)) {
