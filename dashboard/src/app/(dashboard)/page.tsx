@@ -89,7 +89,7 @@ export default function Dashboard() {
   }, [timeFilteredLeads]);
 
   // KPI label
-  const kpiCallLabel = "Anrufversuche";
+  const kpiCallLabel = "Gespräche";
 
   // Grade distribution (memoized)
   const gradeDistribution = useMemo(

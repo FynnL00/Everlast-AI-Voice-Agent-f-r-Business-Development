@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   KanbanSquare,
   PhoneCall,
@@ -12,24 +12,54 @@ import PageHeader from "@/components/ui/PageHeader";
 import { KPICard } from "@/components/ui/KPICard";
 import PipelineSummary from "@/components/pipeline/PipelineSummary";
 import PipelineBoard from "@/components/pipeline/PipelineBoard";
+import { cn } from "@/lib/utils";
+
+type TimeRange = "today" | "7d" | "30d" | "total";
+
+const TIME_RANGE_LABELS: Record<TimeRange, string> = {
+  today: "Heute",
+  "7d": "7 Tage",
+  "30d": "30 Tage",
+  total: "Total",
+};
+
+const berlinFormatter = new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Berlin" });
+function toBerlinDate(iso: string): string {
+  return berlinFormatter.format(new Date(iso));
+}
 
 export default function PipelinePage() {
   const { filteredLeads, loading } = useLeads();
+  const [timeRange, setTimeRange] = useState<TimeRange>("total");
+
+  const timeFilteredLeads = useMemo(() => {
+    if (timeRange === "total") return filteredLeads;
+    const now = new Date();
+    if (timeRange === "today") {
+      const berlinToday = toBerlinDate(now.toISOString());
+      return filteredLeads.filter(l => toBerlinDate(l.created_at) === berlinToday);
+    }
+    const days = timeRange === "7d" ? 7 : 30;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    cutoff.setHours(0, 0, 0, 0);
+    return filteredLeads.filter(l => new Date(l.created_at) >= cutoff);
+  }, [filteredLeads, timeRange]);
 
   const kpis = useMemo(() => {
-    const attempts = filteredLeads.reduce((sum, l) => {
+    const attempts = timeFilteredLeads.reduce((sum, l) => {
       const a = l.call_attempts || 0;
       return sum + (a > 0 ? a : 1);
     }, 0);
-    const connected = filteredLeads.filter(
+    const connected = timeFilteredLeads.filter(
       (l) => l.disposition_code && ["connected", "callback"].includes(l.disposition_code)
     ).length;
     const connectionRate = attempts > 0 ? Math.round((connected / attempts) * 100) : 0;
 
-    const demosBooked = filteredLeads.filter((l) => l.appointment_booked).length;
+    const demosBooked = timeFilteredLeads.filter((l) => l.appointment_booked).length;
     const demoRate = connected > 0 ? Math.round((demosBooked / connected) * 100) : 0;
 
-    const leadsWithAttempts = filteredLeads.filter((l) => (l.call_attempts || 0) > 0);
+    const leadsWithAttempts = timeFilteredLeads.filter((l) => (l.call_attempts || 0) > 0);
     const avgAttempts = leadsWithAttempts.length > 0
       ? Math.round(
           (leadsWithAttempts.reduce((sum, l) => sum + l.call_attempts, 0) / leadsWithAttempts.length) * 10
@@ -37,7 +67,7 @@ export default function PipelinePage() {
       : 0;
 
     return { connectionRate, demoRate, avgAttempts };
-  }, [filteredLeads]);
+  }, [timeFilteredLeads]);
 
   return (
     <div className="min-h-screen py-6 md:py-8 max-w-[1900px] mx-auto space-y-6">
@@ -45,6 +75,27 @@ export default function PipelinePage() {
         title="Pipeline"
         subtitle="Leads nach Status in der Vertriebspipeline"
         icon={KanbanSquare}
+        rightContent={
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/50 border border-border/50">
+            {(["today", "7d", "30d", "total"] as const).map((range) => {
+              const isActive = timeRange === range;
+              return (
+                <button
+                  key={range}
+                  onClick={() => setTimeRange(range)}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-medium rounded-lg transition-all duration-200",
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  {TIME_RANGE_LABELS[range]}
+                </button>
+              );
+            })}
+          </div>
+        }
       />
 
       {loading ? (
@@ -70,14 +121,14 @@ export default function PipelinePage() {
                 tooltipFormula="Connection Rate = Erreichte ÷ Versuche × 100"
               />
               <KPICard
-                label="Demo-Rate"
+                label="Conversion-Rate"
                 numericValue={kpis.demoRate}
                 suffix="%"
                 icon={CalendarCheck}
                 colorClass="text-emerald-400"
                 bgClass="bg-emerald-500/10"
                 tooltip="Anteil der erreichten Kontakte, die eine Demo gebucht haben."
-                tooltipFormula="Demo-Rate = Demos gebucht ÷ Erreichte × 100"
+                tooltipFormula="Conversion-Rate = Demos gebucht ÷ Erreichte × 100"
               />
               <KPICard
                 label="Ø Versuche"
