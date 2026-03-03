@@ -1,43 +1,52 @@
 "use client";
 
-import { Video, Play, ExternalLink } from "lucide-react";
+import { Video } from "lucide-react";
 import PageHeader from "@/components/ui/PageHeader";
 import { Card, CardContent } from "@/components/ui/Card";
+
+const videos = [
+  {
+    title: "Überblick über die verwendeten Tools und Workflows",
+    description:
+      "Kompletter Walkthrough durch den Tech-Stack: Vapi Voice Agent, n8n Workflows, Cal.com Buchung und Supabase Datenbank.",
+    src: "/videos/tools-workflows.mp4",
+  },
+  {
+    title: "Präsentation des KPI-Überwachungstools",
+    description:
+      "Live-Demo des Next.js Dashboards – Lead-Qualifizierung, Pipeline, Conversion-Trend und Sentiment-Analyse.",
+    src: "/videos/kpi-dashboard.mp4",
+  },
+];
 
 export default function LoomVideoPage() {
   return (
     <div className="min-h-screen py-6 md:py-8 max-w-[1900px] mx-auto space-y-6">
-      <PageHeader title="Loom-Video" subtitle="Tool-Walkthrough und Demo" icon={Video} />
+      <PageHeader
+        title="Loom-Video"
+        subtitle="Tool-Walkthrough und Demo"
+        icon={Video}
+      />
 
-      {/* Card 1: Video-Embed */}
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <div className="aspect-video bg-black/20 rounded-xl flex items-center justify-center flex-col gap-4">
-            {/* TODO: Loom-Embed-URL hier einfügen */}
-            {/* <iframe src="https://www.loom.com/embed/VIDEO_ID" frameBorder="0" allowFullScreen className="w-full h-full rounded-xl" /> */}
-            <div className="w-20 h-20 rounded-full bg-primary/20 text-primary flex items-center justify-center">
-              <Play size={48} />
+      {videos.map((video) => (
+        <Card key={video.src}>
+          <CardContent className="pt-6 space-y-4">
+            <h2 className="text-lg font-semibold">{video.title}</h2>
+            <div className="aspect-video rounded-xl overflow-hidden bg-black/20">
+              <video
+                src={video.src}
+                controls
+                playsInline
+                preload="metadata"
+                className="w-full h-full rounded-xl"
+              />
             </div>
-            <span className="text-muted-foreground text-sm">Video wird vorbereitet...</span>
-          </div>
-          <p className="text-muted-foreground text-sm">
-            Hier stelle ich das n8n Voice Agent Dashboard vor – von der Lead-Qualifizierung über die Pipeline bis zur Sentiment-Analyse.
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Card 2: Externer Link zu Loom */}
-      <a href="https://www.loom.com" target="_blank" rel="noopener noreferrer">
-        <Card>
-          <CardContent className="pt-6 space-y-1">
-            <div className="flex items-center gap-2 font-semibold">
-              <ExternalLink size={18} />
-              Alle Videos auf Loom ansehen
-            </div>
-            <p className="text-muted-foreground text-sm">Weitere Demos und Walkthroughs</p>
+            <p className="text-muted-foreground text-sm">
+              {video.description}
+            </p>
           </CardContent>
         </Card>
-      </a>
+      ))}
     </div>
   );
 }
