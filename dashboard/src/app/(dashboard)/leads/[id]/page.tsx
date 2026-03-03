@@ -126,8 +126,9 @@ export default function LeadDetailPage() {
 
   const earlyStage = lead ? isEarlyStage(lead) : false;
   const showCadence =
-    callAttempts.length > 0 ||
-    (lead?.call_direction === "outbound");
+    !lead?.appointment_booked &&
+    (callAttempts.length > 0 ||
+    (lead?.call_direction === "outbound"));
 
   const handleUpdate = useCallback(
     async (fields: Partial<LeadUpdatePayload>) => {
